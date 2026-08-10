@@ -1,14 +1,111 @@
 rules_version = '2';
 
-// ⚠️ DEV-ONLY RULES — fully open read/write, no authentication required.
-// This matches the current prototype (mock/demo login, no real auth yet).
-// Before going to production, replace this file with rules similar to
-// firestore.prod.rules.example (require real Firebase Auth + role checks
-// stored on the user's custom claims or a `users/{uid}` document).
+// Requires real Firebase Authentication (see lib/auth-context.tsx) — every
+// signed-in account has a users/{uid} profile doc (role + linkedId) created
+// by scripts/seed.ts. These rules mirror the same "only see what's yours"
+// scoping the UI applies at the database level too, so it can't be bypassed
+// by talking to Firestore directly.
+//
+// IMPORTANT — Firestore `list` rule evaluation: a security rule for a list
+// (collection/query) request must hold for the query AS ISSUED, not per
+// returned document. Firestore does not filter a query down to "the docs
+// you're allowed to see" — it proves (or fails to prove) the rule holds for
+// every possible result of that exact query, then allows or denies the
+// whole request. That means an unconstrained `collection(db, name)` read
+// only ever works for roles whose access doesn't depend on document data
+// (admin via the wildcard below; technician via a role check that's true
+// regardless of the document). Anyone whose access depends on a field on
+// the document (createdByUid, ownerId, category, ...) MUST query with a
+// matching `where()` clause so Firestore can prove the rule holds for the
+// constrained result set — see lib/firestore/hooks.ts (useMy*, useOwner*,
+// useSupportTicketsByCategory) for the client side of this.
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function myProfile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function myRole() {
+      return signedIn() ? myProfile().role : null;
+    }
+
+    function isAdmin() {
+      return signedIn() && myRole() == "admin";
+    }
+
+    function isTechnician() {
+      return signedIn() && myRole() == "technician";
+    }
+
+    // Admin manages everything.
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if isAdmin();
+    }
+
+    // An account can read its own profile (role/linkedId are provisioned
+    // server-side by the seed script, not self-editable from the client).
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Reference/catalog data: any signed-in account can read it; writes go
+    // through the admin rule above.
+    match /properties/{id} { allow read: if signedIn(); }
+    match /owners/{id} { allow read: if signedIn(); }
+    match /tenants/{id} { allow read: if signedIn(); }
+    match /technicians/{id} { allow read: if signedIn(); }
+    match /contracts/{id} { allow read: if signedIn(); }
+    match /clients/{id} { allow read: if signedIn(); }
+    match /invoices/{id} { allow read: if signedIn(); }
+    match /accountManagers/{id} { allow read: if signedIn(); }
+    match /systemUsers/{id} { allow read: if signedIn(); }
+
+    // Quotes: admin/owner can create. Any signed-in account can read at the
+    // rules level — the UI narrows an owner's view to quotes tied to their
+    // own properties (app/quotes/page.tsx), but quotes don't carry a
+    // propertyId to check here (only a free-text propertyTitle), so this
+    // layer can't enforce the same narrowing without denormalizing an
+    // ownerId onto each quote. Worth doing before real production use.
+    match /quotes/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && (myRole() == "admin" || myRole() == "owner");
+    }
+
+    // Support tickets: anyone signed in can file one (as themselves only).
+    // Only the sender, or the staff team routed to that category, can read
+    // or update it. The technician disjunct only works for unconstrained
+    // list queries because it's a constant per-user fact (see the note up
+    // top); the app queries `where("category","==","الدعم الفني")` for the
+    // technical-support board so that constraint plus this rule line up.
+    match /supportTickets/{id} {
+      allow create: if signedIn() && request.resource.data.createdByUid == request.auth.uid;
+      allow read: if signedIn() && (
+        resource.data.createdByUid == request.auth.uid ||
+        (resource.data.category == "الدعم الفني" && isTechnician())
+      );
+      allow update: if signedIn() && resource.data.category == "الدعم الفني" && isTechnician();
+    }
+
+    // Maintenance requests: tenants file their own (as themselves only).
+    // Visible to the tenant who filed it, technicians (staff — constant
+    // per-user fact, safe for an unconstrained list), and the owner of the
+    // property it's on (ownerId is copied onto the request at creation
+    // time so this rule doesn't need a cross-collection get() keyed by a
+    // per-document field, which has the same list-provability problem).
+    // Only technicians can update status — matches the UI, where only
+    // /technician exposes the status control.
+    match /maintenanceRequests/{id} {
+      allow create: if signedIn() && request.resource.data.createdByUid == request.auth.uid;
+      allow read: if signedIn() && (
+        resource.data.createdByUid == request.auth.uid ||
+        isTechnician() ||
+        (myRole() == "owner" && resource.data.ownerId == myProfile().linkedId)
+      );
+      allow update: if isTechnician();
     }
   }
 }

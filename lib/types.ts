@@ -1,8 +1,13 @@
 export type Role = "admin" | "owner" | "tenant" | "technician";
 
+// linkedId points to the owners/tenants/technicians record this account
+// represents (null for admin, who isn't tied to a single record).
 export interface SessionUser {
+  uid: string;
   role: Role;
   name: string;
+  email: string;
+  linkedId: string | null;
 }
 
 export type PropertyType = "شقة" | "فيلا" | "محل تجاري" | "مكتب" | "أرض" | "استراحة";
@@ -111,7 +116,9 @@ export type MaintenanceStatus = "جديد" | "قيد التنفيذ" | "مكتم
 export interface MaintenanceRequest {
   id: string;
   propertyId: string;
+  ownerId?: string | null;
   tenantName: string;
+  createdByUid?: string;
   technicianId: string | null;
   title: string;
   description: string;
@@ -140,6 +147,7 @@ export interface SupportTicket {
   subject: string;
   category: TicketCategory;
   from: string;
+  createdByUid?: string;
   priority: Priority;
   status: TicketStatus;
   createdAt: string;
@@ -154,6 +162,16 @@ export interface AccountManager {
   email: string;
   color: string;
   bio: string;
+}
+
+// Firestore doc at users/{uid} — the source of truth for a signed-in
+// account's role and which business record it represents.
+export interface UserProfile {
+  id: string;
+  role: Role;
+  name: string;
+  email: string;
+  linkedId: string | null;
 }
 
 export interface SystemUser {

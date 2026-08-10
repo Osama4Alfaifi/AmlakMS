@@ -7,26 +7,25 @@ import { Badge } from "@/components/ui/Badge";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { BarChartCard } from "@/components/charts/Charts";
 import { currency } from "@/lib/mock-data";
-import { useContracts, useFirestoreDoc, useMaintenanceRequests, useProperties, useTechnicians } from "@/lib/firestore/hooks";
-import { CURRENT_OWNER_ID } from "@/lib/demo-identity";
+import { useAuth } from "@/lib/auth-context";
+import { useContracts, useFirestoreDoc, useOwnerMaintenanceRequests, useProperties, useTechnicians } from "@/lib/firestore/hooks";
 import type { Owner } from "@/lib/types";
 import { Building2, FileText, TrendingUp, Wrench } from "lucide-react";
 
 export default function OwnerDashboardPage() {
-  const currentOwner = useFirestoreDoc<Owner>("owners", CURRENT_OWNER_ID);
+  const { user } = useAuth();
+  const currentOwner = useFirestoreDoc<Owner>("owners", user?.linkedId ?? undefined);
   const { data: properties } = useProperties();
   const { data: contracts } = useContracts();
-  const { data: maintenanceRequests } = useMaintenanceRequests();
+  const { data: myMaintenance } = useOwnerMaintenanceRequests(user?.linkedId);
   const { data: technicians } = useTechnicians();
 
   if (!currentOwner) return null;
 
   const myProperties = properties.filter((p) => p.ownerId === currentOwner.id);
-  const myPropertyIds = new Set(myProperties.map((p) => p.id));
   const myContracts = contracts.filter((c) => c.ownerId === currentOwner.id);
   const activeContracts = myContracts.filter((c) => c.status === "نشط");
   const annualIncome = activeContracts.reduce((sum, c) => sum + c.value, 0);
-  const myMaintenance = maintenanceRequests.filter((m) => myPropertyIds.has(m.propertyId));
   const openMaintenance = myMaintenance.filter((m) => m.status !== "مكتمل");
 
   const incomeByProperty = myProperties.map((p) => ({

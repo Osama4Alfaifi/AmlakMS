@@ -2,48 +2,67 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Role, SessionUser } from "./types";
-
-const STORAGE_KEY = "amlakms.session";
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User as FirebaseUser } from "firebase/auth";
+import { doc, onSnapshot } from "firebase/firestore";
+import { getDb, getFirebaseAuth } from "./firebase/client";
+import type { Role, SessionUser, UserProfile } from "./types";
 
 interface AuthContextValue {
   user: SessionUser | null;
   ready: boolean;
-  login: (role: Role, name: string) => void;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<SessionUser | null>(null);
-  const [ready, setReady] = useState(false);
+  // undefined = not resolved yet, null = signed out, User = signed in.
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null | undefined>(undefined);
+  // Firestore users/{uid} doc carrying role + linkedId — the actual source
+  // of truth for what this account can do (Firebase Auth only proves *who*
+  // they are, not their role).
+  const [profile, setProfile] = useState<UserProfile | null | undefined>(undefined);
+
+  useEffect(() => onAuthStateChanged(getFirebaseAuth(), setFirebaseUser), []);
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) setUser(JSON.parse(raw));
-    } catch {
-      // ignore corrupted storage
+    if (!firebaseUser) {
+      setProfile(firebaseUser === null ? null : undefined);
+      return;
     }
-    setReady(true);
-  }, []);
+    setProfile(undefined);
+    const unsub = onSnapshot(
+      doc(getDb(), "users", firebaseUser.uid),
+      (snap) => setProfile(snap.exists() ? ({ id: snap.id, ...snap.data() } as UserProfile) : null),
+      (err) => {
+        console.error("Failed to load user profile:", err);
+        setProfile(null);
+      }
+    );
+    return unsub;
+  }, [firebaseUser]);
+
+  const ready = firebaseUser !== undefined && (firebaseUser === null || profile !== undefined);
+
+  const user: SessionUser | null =
+    firebaseUser && profile
+      ? { uid: firebaseUser.uid, role: profile.role, name: profile.name, email: profile.email, linkedId: profile.linkedId }
+      : null;
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       ready,
-      login: (role, name) => {
-        const next = { role, name };
-        setUser(next);
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      login: async (email, password) => {
+        await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
       },
-      logout: () => {
-        setUser(null);
-        window.localStorage.removeItem(STORAGE_KEY);
+      logout: async () => {
+        await signOut(getFirebaseAuth());
       },
     }),
-    [user, ready]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user?.uid, user?.role, user?.name, ready]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

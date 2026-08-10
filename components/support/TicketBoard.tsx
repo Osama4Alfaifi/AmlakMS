@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { useAuth } from "@/lib/auth-context";
-import { useSupportTickets } from "@/lib/firestore/hooks";
+import { useMySupportTickets, useSupportTicketsByCategory } from "@/lib/firestore/hooks";
 import { createSupportTicket, updateSupportTicketStatus } from "@/lib/firestore/mutations";
 import type { Priority, Role, TicketCategory, TicketStatus } from "@/lib/types";
 import { CheckCircle2, CircleDot, Loader2, Plus } from "lucide-react";
@@ -24,17 +24,22 @@ export function TicketBoard({
   title: string;
 }) {
   const { user } = useAuth();
-  const { data: allTickets } = useSupportTickets();
 
-  // Staff = the team this category is routed to (they see every ticket).
-  // Everyone else only ever sees the tickets they personally submitted.
+  // Staff = the team this category is routed to (they see every ticket in
+  // it). Everyone else only ever sees the tickets they personally
+  // submitted. These need two different Firestore queries — a `list` rule
+  // must hold for the query as issued (see firestore.rules), so staff query
+  // "where category == X" and everyone else queries "where createdByUid ==
+  // me" — an unconstrained fetch-everything-then-filter wouldn't satisfy
+  // the rule for a non-staff sender.
   const isStaff = user?.role === "admin" || (category === "الدعم الفني" && user?.role === "technician");
+  const { data: staffTickets } = useSupportTicketsByCategory(isStaff ? category : undefined);
+  const { data: myTickets } = useMySupportTickets(!isStaff ? user?.uid : undefined);
 
-  const tickets = useMemo(() => {
-    const inCategory = allTickets.filter((t) => t.category === category);
-    if (isStaff) return inCategory;
-    return inCategory.filter((t) => t.from === user?.name);
-  }, [allTickets, category, isStaff, user?.name]);
+  const tickets = useMemo(
+    () => (isStaff ? staffTickets : myTickets.filter((t) => t.category === category)),
+    [isStaff, staffTickets, myTickets, category]
+  );
 
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -49,14 +54,16 @@ export function TicketBoard({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const senderName = isStaff ? from : user?.name ?? "";
+    if (!user) return;
+    const senderName = isStaff ? from : user.name;
     if (!subject.trim() || !senderName.trim()) return;
     setSubmitting(true);
     await createSupportTicket({
-      number: `TCK-${3000 + allTickets.length + 1}`,
+      number: `TCK-${3000 + tickets.length + 1}`,
       subject,
       category,
       from: senderName,
+      createdByUid: user.uid,
       priority,
       status: "مفتوحة",
       createdAt: new Date().toISOString().slice(0, 10),

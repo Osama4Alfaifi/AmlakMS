@@ -30,8 +30,8 @@ export function Topbar({ title, onMenuClick }: { title?: string; onMenuClick?: (
           {user.name.charAt(0)}
         </div>
         <button
-          onClick={() => {
-            logout();
+          onClick={async () => {
+            await logout();
             router.push("/");
           }}
           className="p-2 rounded-lg text-muted hover:text-danger-500 hover:bg-danger-50 transition-colors"

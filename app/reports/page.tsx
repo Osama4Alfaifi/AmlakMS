@@ -12,7 +12,6 @@ import { PieChartCard, RevenueAreaChart } from "@/components/charts/Charts";
 import { useAuth } from "@/lib/auth-context";
 import { currency, monthlyRevenue } from "@/lib/mock-data";
 import { useFirestoreDoc, useInvoices, useProperties } from "@/lib/firestore/hooks";
-import { CURRENT_OWNER_ID, CURRENT_TENANT_ID } from "@/lib/demo-identity";
 import type { Owner, Tenant } from "@/lib/types";
 import { Eye, FileWarning, ReceiptText, Wallet } from "lucide-react";
 
@@ -21,8 +20,8 @@ export default function ReportsPage() {
   const [status, setStatus] = useState("الكل");
   const { data: invoices } = useInvoices();
   const { data: properties } = useProperties();
-  const currentOwner = useFirestoreDoc<Owner>("owners", user?.role === "owner" ? CURRENT_OWNER_ID : undefined);
-  const currentTenant = useFirestoreDoc<Tenant>("tenants", user?.role === "tenant" ? CURRENT_TENANT_ID : undefined);
+  const currentOwner = useFirestoreDoc<Owner>("owners", user?.role === "owner" ? user.linkedId ?? undefined : undefined);
+  const currentTenant = useFirestoreDoc<Tenant>("tenants", user?.role === "tenant" ? user.linkedId ?? undefined : undefined);
 
   const scopedInvoices = useMemo(() => {
     if (user?.role === "owner" && currentOwner) {

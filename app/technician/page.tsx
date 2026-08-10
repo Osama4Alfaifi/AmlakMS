@@ -7,14 +7,15 @@ import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/compon
 import { Badge } from "@/components/ui/Badge";
 import { Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
+import { useAuth } from "@/lib/auth-context";
 import { useFirestoreDoc, useMaintenanceRequests, useProperties } from "@/lib/firestore/hooks";
 import { claimMaintenanceRequest, updateMaintenanceRequest } from "@/lib/firestore/mutations";
-import { CURRENT_TECHNICIAN_ID } from "@/lib/demo-identity";
 import type { MaintenanceStatus, Technician } from "@/lib/types";
 import { CheckCircle2, ClipboardList, Star, Wrench } from "lucide-react";
 
 export default function TechnicianDashboardPage() {
-  const currentTechnician = useFirestoreDoc<Technician>("technicians", CURRENT_TECHNICIAN_ID);
+  const { user } = useAuth();
+  const currentTechnician = useFirestoreDoc<Technician>("technicians", user?.linkedId ?? undefined);
   const { data: requests } = useMaintenanceRequests();
   const { data: properties } = useProperties();
 

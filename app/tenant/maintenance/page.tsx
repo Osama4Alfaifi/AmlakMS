@@ -1,41 +1,41 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select, Textarea } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
-import { useFirestoreDoc, useMaintenanceRequests } from "@/lib/firestore/hooks";
+import { useAuth } from "@/lib/auth-context";
+import { useFirestoreDoc, useMyMaintenanceRequests, useProperties } from "@/lib/firestore/hooks";
 import { createMaintenanceRequest } from "@/lib/firestore/mutations";
-import { CURRENT_TENANT_ID } from "@/lib/demo-identity";
 import type { Priority, Tenant } from "@/lib/types";
 import { CheckCircle2 } from "lucide-react";
 
 export default function TenantMaintenancePage() {
-  const currentTenant = useFirestoreDoc<Tenant>("tenants", CURRENT_TENANT_ID);
-  const { data: allRequests } = useMaintenanceRequests();
+  const { user } = useAuth();
+  const currentTenant = useFirestoreDoc<Tenant>("tenants", user?.linkedId ?? undefined);
+  const { data: requests } = useMyMaintenanceRequests(user?.uid);
+  const { data: properties } = useProperties();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("متوسط");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const requests = useMemo(
-    () => (currentTenant ? allRequests.filter((m) => m.tenantName === currentTenant.name) : []),
-    [allRequests, currentTenant]
-  );
-
-  if (!currentTenant) return null;
+  if (!currentTenant || !user) return null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim() || !currentTenant) return;
+    if (!title.trim() || !currentTenant || !user) return;
     setSubmitting(true);
+    const property = properties.find((p) => p.id === currentTenant.propertyId);
     await createMaintenanceRequest({
       propertyId: currentTenant.propertyId,
+      ownerId: property?.ownerId ?? null,
       tenantName: currentTenant.name,
+      createdByUid: user.uid,
       technicianId: null,
       title,
       description,

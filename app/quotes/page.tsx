@@ -12,7 +12,6 @@ import { currency } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth-context";
 import { useFirestoreDoc, useProperties, useQuotes } from "@/lib/firestore/hooks";
 import { createQuote } from "@/lib/firestore/mutations";
-import { CURRENT_OWNER_ID } from "@/lib/demo-identity";
 import type { InvoiceItem, Owner } from "@/lib/types";
 import { Eye, Plus, Trash2 } from "lucide-react";
 
@@ -25,7 +24,7 @@ export default function QuotesPage() {
   const { user } = useAuth();
   const { data: allQuotes } = useQuotes();
   const { data: properties } = useProperties();
-  const currentOwner = useFirestoreDoc<Owner>("owners", user?.role === "owner" ? CURRENT_OWNER_ID : undefined);
+  const currentOwner = useFirestoreDoc<Owner>("owners", user?.role === "owner" ? user.linkedId ?? undefined : undefined);
 
   // Owners only see quotes tied to their own properties; admin sees all.
   const quotesList = useMemo(() => {

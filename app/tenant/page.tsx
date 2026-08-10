@@ -8,30 +8,30 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { currency } from "@/lib/mock-data";
+import { useAuth } from "@/lib/auth-context";
 import {
   useContracts,
   useFirestoreDoc,
   useInvoices,
-  useMaintenanceRequests,
+  useMyMaintenanceRequests,
   useProperties,
 } from "@/lib/firestore/hooks";
-import { CURRENT_TENANT_ID } from "@/lib/demo-identity";
 import type { Tenant } from "@/lib/types";
 import { CalendarClock, FileText, Receipt, Wrench } from "lucide-react";
 
 export default function TenantDashboardPage() {
-  const currentTenant = useFirestoreDoc<Tenant>("tenants", CURRENT_TENANT_ID);
+  const { user } = useAuth();
+  const currentTenant = useFirestoreDoc<Tenant>("tenants", user?.linkedId ?? undefined);
   const { data: contracts } = useContracts();
   const { data: properties } = useProperties();
   const { data: invoices } = useInvoices();
-  const { data: maintenanceRequests } = useMaintenanceRequests();
+  const { data: myMaintenance } = useMyMaintenanceRequests(user?.uid);
 
   if (!currentTenant) return null;
 
   const contract = contracts.find((c) => c.id === currentTenant.contractId);
   const property = properties.find((p) => p.id === currentTenant.propertyId);
   const myInvoices = invoices.filter((i) => i.clientName === currentTenant.name);
-  const myMaintenance = maintenanceRequests.filter((m) => m.tenantName === currentTenant.name);
   const openMaintenance = myMaintenance.filter((m) => m.status !== "مكتمل");
   const pendingInvoice = myInvoices.find((i) => i.status !== "مدفوعة");
 
