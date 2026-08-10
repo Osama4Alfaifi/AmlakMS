@@ -1,32 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select, Textarea } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
-import { maintenanceRequests, tenants } from "@/lib/mock-data";
-import type { MaintenanceRequest, Priority } from "@/lib/types";
+import { useFirestoreDoc, useMaintenanceRequests } from "@/lib/firestore/hooks";
+import { createMaintenanceRequest } from "@/lib/firestore/mutations";
+import { CURRENT_TENANT_ID } from "@/lib/demo-identity";
+import type { Priority, Tenant } from "@/lib/types";
 import { CheckCircle2 } from "lucide-react";
 
-const currentTenant = tenants[0];
-
 export default function TenantMaintenancePage() {
-  const [requests, setRequests] = useState<MaintenanceRequest[]>(
-    maintenanceRequests.filter((m) => m.tenantName === currentTenant.name)
-  );
+  const currentTenant = useFirestoreDoc<Tenant>("tenants", CURRENT_TENANT_ID);
+  const { data: allRequests } = useMaintenanceRequests();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("متوسط");
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  const requests = useMemo(
+    () => (currentTenant ? allRequests.filter((m) => m.tenantName === currentTenant.name) : []),
+    [allRequests, currentTenant]
+  );
+
+  if (!currentTenant) return null;
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim()) return;
-    const newRequest: MaintenanceRequest = {
-      id: `mr-new-${Date.now()}`,
+    if (!title.trim() || !currentTenant) return;
+    setSubmitting(true);
+    await createMaintenanceRequest({
       propertyId: currentTenant.propertyId,
       tenantName: currentTenant.name,
       technicianId: null,
@@ -35,8 +42,8 @@ export default function TenantMaintenancePage() {
       priority,
       status: "جديد",
       createdAt: new Date().toISOString().slice(0, 10),
-    };
-    setRequests((prev) => [newRequest, ...prev]);
+    });
+    setSubmitting(false);
     setTitle("");
     setDescription("");
     setPriority("متوسط");
@@ -72,10 +79,10 @@ export default function TenantMaintenancePage() {
                 <Label htmlFor="description">تفاصيل إضافية</Label>
                 <Textarea id="description" rows={4} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="اشرح المشكلة بالتفصيل..." />
               </div>
-              <Button type="submit">إرسال الطلب</Button>
+              <Button type="submit" disabled={submitting}>{submitting ? "جارِ الإرسال..." : "إرسال الطلب"}</Button>
               {submitted && (
                 <p className="flex items-center gap-1.5 text-success-700 text-xs font-semibold">
-                  <CheckCircle2 size={15} /> تم إرسال طلبك بنجاح
+                  <CheckCircle2 size={15} /> تم إرسال طلبك بنجاح، وسيظهر فورًا لدى فريق الصيانة
                 </p>
               )}
             </form>

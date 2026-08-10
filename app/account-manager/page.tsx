@@ -5,14 +5,17 @@ import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Label, Textarea } from "@/components/ui/Input";
-import { accountManagers, clients } from "@/lib/mock-data";
+import { useAccountManagers, useClients } from "@/lib/firestore/hooks";
 import { CheckCircle2, Clock, Mail, MessageSquare, Phone, Users } from "lucide-react";
 
-const manager = accountManagers[0];
-
 export default function AccountManagerPage() {
+  const { data: accountManagers } = useAccountManagers();
+  const { data: clients } = useClients();
+  const manager = accountManagers[0];
   const [message, setMessage] = useState("");
   const [sent, setSent] = useState(false);
+
+  if (!manager) return null;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

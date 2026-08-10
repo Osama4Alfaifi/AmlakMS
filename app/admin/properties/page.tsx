@@ -6,10 +6,13 @@ import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/compon
 import { Badge } from "@/components/ui/Badge";
 import { Input, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
-import { currency, getOwnerById, properties } from "@/lib/mock-data";
+import { currency } from "@/lib/mock-data";
+import { useOwners, useProperties } from "@/lib/firestore/hooks";
 import { Search } from "lucide-react";
 
 export default function AdminPropertiesPage() {
+  const { data: properties } = useProperties();
+  const { data: owners } = useOwners();
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("الكل");
   const cities = ["الكل", ...Array.from(new Set(properties.map((p) => p.city)))];
@@ -19,7 +22,7 @@ export default function AdminPropertiesPage() {
       properties.filter(
         (p) => (city === "الكل" || p.city === city) && (p.title.includes(query) || p.district.includes(query))
       ),
-    [query, city]
+    [properties, query, city]
   );
 
   return (
@@ -63,7 +66,7 @@ export default function AdminPropertiesPage() {
                   <Td className="text-muted">{p.city} · {p.district}</Td>
                   <Td>{p.area} م²</Td>
                   <Td className="font-semibold">{currency(p.price)}{p.listingType === "إيجار" && <span className="text-muted font-normal">/سنويًا</span>}</Td>
-                  <Td className="text-muted">{getOwnerById(p.ownerId)?.name}</Td>
+                  <Td className="text-muted">{owners.find((o) => o.id === p.ownerId)?.name}</Td>
                   <Td><Badge>{p.status}</Badge></Td>
                 </Tr>
               ))}

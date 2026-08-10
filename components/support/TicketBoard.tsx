@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
-import { supportTickets } from "@/lib/mock-data";
-import type { Priority, Role, SupportTicket, TicketCategory, TicketStatus } from "@/lib/types";
+import { useSupportTickets } from "@/lib/firestore/hooks";
+import { createSupportTicket, updateSupportTicketStatus } from "@/lib/firestore/mutations";
+import type { Priority, Role, TicketCategory, TicketStatus } from "@/lib/types";
 import { CheckCircle2, CircleDot, Loader2, Plus } from "lucide-react";
 
 export function TicketBoard({
@@ -21,8 +22,11 @@ export function TicketBoard({
   allow: Role[];
   title: string;
 }) {
-  const [tickets, setTickets] = useState<SupportTicket[]>(supportTickets.filter((t) => t.category === category));
+  const { data: allTickets } = useSupportTickets();
+  const tickets = useMemo(() => allTickets.filter((t) => t.category === category), [allTickets, category]);
+
   const [showForm, setShowForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [subject, setSubject] = useState("");
   const [from, setFrom] = useState("");
   const [priority, setPriority] = useState<Priority>("متوسط");
@@ -32,18 +36,12 @@ export function TicketBoard({
   const inProgress = tickets.filter((t) => t.status === "قيد المعالجة").length;
   const closed = tickets.filter((t) => t.status === "مغلقة").length;
 
-  const nextNumber = useMemo(() => `TCK-${3000 + tickets.length + supportTickets.length}`, [tickets.length]);
-
-  function updateStatus(id: string, status: TicketStatus) {
-    setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
-  }
-
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!subject.trim() || !from.trim()) return;
-    const ticket: SupportTicket = {
-      id: `tk-new-${Date.now()}`,
-      number: nextNumber,
+    setSubmitting(true);
+    await createSupportTicket({
+      number: `TCK-${3000 + allTickets.length + 1}`,
       subject,
       category,
       from,
@@ -51,8 +49,8 @@ export function TicketBoard({
       status: "مفتوحة",
       createdAt: new Date().toISOString().slice(0, 10),
       description,
-    };
-    setTickets((prev) => [ticket, ...prev]);
+    });
+    setSubmitting(false);
     setShowForm(false);
     setSubject("");
     setFrom("");
@@ -108,7 +106,11 @@ export function TicketBoard({
                     <Td><Badge>{t.priority}</Badge></Td>
                     <Td className="text-muted">{t.createdAt}</Td>
                     <Td>
-                      <Select value={t.status} onChange={(e) => updateStatus(t.id, e.target.value as TicketStatus)} className="w-32 py-1.5 text-xs">
+                      <Select
+                        value={t.status}
+                        onChange={(e) => updateSupportTicketStatus(t.id, e.target.value as TicketStatus)}
+                        className="w-32 py-1.5 text-xs"
+                      >
                         <option value="مفتوحة">مفتوحة</option>
                         <option value="قيد المعالجة">قيد المعالجة</option>
                         <option value="مغلقة">مغلقة</option>
@@ -136,7 +138,9 @@ export function TicketBoard({
                   <option value="عاجل">عاجل</option>
                 </Select>
                 <Input placeholder="وصف مختصر" value={description} onChange={(e) => setDescription(e.target.value)} />
-                <Button type="submit" className="sm:col-span-2 self-start">إرسال التذكرة</Button>
+                <Button type="submit" disabled={submitting} className="sm:col-span-2 self-start">
+                  {submitting ? "جارِ الإرسال..." : "إرسال التذكرة"}
+                </Button>
               </form>
             </CardContent>
           </Card>

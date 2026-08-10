@@ -6,19 +6,21 @@ import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/compon
 import { Badge } from "@/components/ui/Badge";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { BarChartCard } from "@/components/charts/Charts";
-import {
-  contracts,
-  currency,
-  maintenanceRequests,
-  owners,
-  properties,
-  getTechnicianById,
-} from "@/lib/mock-data";
+import { currency } from "@/lib/mock-data";
+import { useContracts, useFirestoreDoc, useMaintenanceRequests, useProperties, useTechnicians } from "@/lib/firestore/hooks";
+import { CURRENT_OWNER_ID } from "@/lib/demo-identity";
+import type { Owner } from "@/lib/types";
 import { Building2, FileText, TrendingUp, Wrench } from "lucide-react";
 
-const currentOwner = owners[0];
-
 export default function OwnerDashboardPage() {
+  const currentOwner = useFirestoreDoc<Owner>("owners", CURRENT_OWNER_ID);
+  const { data: properties } = useProperties();
+  const { data: contracts } = useContracts();
+  const { data: maintenanceRequests } = useMaintenanceRequests();
+  const { data: technicians } = useTechnicians();
+
+  if (!currentOwner) return null;
+
   const myProperties = properties.filter((p) => p.ownerId === currentOwner.id);
   const myPropertyIds = new Set(myProperties.map((p) => p.id));
   const myContracts = contracts.filter((c) => c.ownerId === currentOwner.id);
@@ -137,7 +139,7 @@ export default function OwnerDashboardPage() {
                   <Tr key={m.id}>
                     <Td className="font-semibold">{m.title}</Td>
                     <Td><Badge>{m.priority}</Badge></Td>
-                    <Td className="text-muted">{getTechnicianById(m.technicianId)?.name ?? "غير معيّن"}</Td>
+                    <Td className="text-muted">{technicians.find((t) => t.id === m.technicianId)?.name ?? "غير معيّن"}</Td>
                     <Td><Badge>{m.status}</Badge></Td>
                   </Tr>
                 ))}

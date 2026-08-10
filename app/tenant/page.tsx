@@ -7,21 +7,29 @@ import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/compon
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
+import { currency } from "@/lib/mock-data";
 import {
-  contracts,
-  currency,
-  getPropertyById,
-  invoices,
-  maintenanceRequests,
-  tenants,
-} from "@/lib/mock-data";
+  useContracts,
+  useFirestoreDoc,
+  useInvoices,
+  useMaintenanceRequests,
+  useProperties,
+} from "@/lib/firestore/hooks";
+import { CURRENT_TENANT_ID } from "@/lib/demo-identity";
+import type { Tenant } from "@/lib/types";
 import { CalendarClock, FileText, Receipt, Wrench } from "lucide-react";
 
-const currentTenant = tenants[0];
-
 export default function TenantDashboardPage() {
+  const currentTenant = useFirestoreDoc<Tenant>("tenants", CURRENT_TENANT_ID);
+  const { data: contracts } = useContracts();
+  const { data: properties } = useProperties();
+  const { data: invoices } = useInvoices();
+  const { data: maintenanceRequests } = useMaintenanceRequests();
+
+  if (!currentTenant) return null;
+
   const contract = contracts.find((c) => c.id === currentTenant.contractId);
-  const property = getPropertyById(currentTenant.propertyId);
+  const property = properties.find((p) => p.id === currentTenant.propertyId);
   const myInvoices = invoices.filter((i) => i.clientName === currentTenant.name);
   const myMaintenance = maintenanceRequests.filter((m) => m.tenantName === currentTenant.name);
   const openMaintenance = myMaintenance.filter((m) => m.status !== "مكتمل");

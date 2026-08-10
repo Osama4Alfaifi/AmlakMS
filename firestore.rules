@@ -1,0 +1,14 @@
+rules_version = '2';
+
+// ⚠️ DEV-ONLY RULES — fully open read/write, no authentication required.
+// This matches the current prototype (mock/demo login, no real auth yet).
+// Before going to production, replace this file with rules similar to
+// firestore.prod.rules.example (require real Firebase Auth + role checks
+// stored on the user's custom claims or a `users/{uid}` document).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}

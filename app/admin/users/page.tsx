@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/compon
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
-import { systemUsers } from "@/lib/mock-data";
+import { useSystemUsers } from "@/lib/firestore/hooks";
 import { Search } from "lucide-react";
 
 const roleLabels: Record<string, string> = {
@@ -18,6 +18,7 @@ const roleLabels: Record<string, string> = {
 };
 
 export default function AdminUsersPage() {
+  const { data: systemUsers } = useSystemUsers();
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(

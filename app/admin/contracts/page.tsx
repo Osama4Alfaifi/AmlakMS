@@ -4,12 +4,14 @@ import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
-import { contracts, currency, getOwnerById, getPropertyById, tenants } from "@/lib/mock-data";
+import { currency } from "@/lib/mock-data";
+import { useContracts, useOwners, useProperties, useTenants } from "@/lib/firestore/hooks";
 
 export default function AdminContractsPage() {
-  function tenantName(id: string) {
-    return tenants.find((t) => t.id === id)?.name ?? "—";
-  }
+  const { data: contracts } = useContracts();
+  const { data: properties } = useProperties();
+  const { data: owners } = useOwners();
+  const { data: tenants } = useTenants();
 
   return (
     <DashboardShell allow={["admin"]} title="العقود">
@@ -39,9 +41,9 @@ export default function AdminContractsPage() {
               {contracts.map((c) => (
                 <Tr key={c.id}>
                   <Td className="font-semibold text-brand-700">{c.id.toUpperCase()}</Td>
-                  <Td className="max-w-[180px] truncate">{getPropertyById(c.propertyId)?.title}</Td>
-                  <Td className="text-muted">{getOwnerById(c.ownerId)?.name}</Td>
-                  <Td className="text-muted">{tenantName(c.tenantId)}</Td>
+                  <Td className="max-w-[180px] truncate">{properties.find((p) => p.id === c.propertyId)?.title}</Td>
+                  <Td className="text-muted">{owners.find((o) => o.id === c.ownerId)?.name}</Td>
+                  <Td className="text-muted">{tenants.find((t) => t.id === c.tenantId)?.name ?? "—"}</Td>
                   <Td>{c.type}</Td>
                   <Td className="font-semibold">{currency(c.value)}</Td>
                   <Td className="text-muted">{c.startDate}</Td>

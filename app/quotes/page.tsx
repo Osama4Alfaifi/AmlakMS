@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/Button";
 import { Input, Label } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { currency } from "@/lib/mock-data";
-import { addQuote, getAllQuotes, nextQuoteNumber } from "@/lib/quotes-store";
-import type { InvoiceItem, Quote } from "@/lib/types";
+import { useQuotes } from "@/lib/firestore/hooks";
+import { createQuote } from "@/lib/firestore/mutations";
+import type { InvoiceItem } from "@/lib/types";
 import { Eye, Plus, Trash2 } from "lucide-react";
 
 function totalOf(items: InvoiceItem[], taxRate: number) {
@@ -19,18 +20,15 @@ function totalOf(items: InvoiceItem[], taxRate: number) {
 }
 
 export default function QuotesPage() {
-  const [quotesList, setQuotesList] = useState<Quote[]>([]);
+  const { data: quotesList } = useQuotes();
   const [showForm, setShowForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const [clientName, setClientName] = useState("");
   const [propertyTitle, setPropertyTitle] = useState("");
   const [validUntil, setValidUntil] = useState("");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<InvoiceItem[]>([{ description: "", quantity: 1, unitPrice: 0 }]);
-
-  useEffect(() => {
-    setQuotesList(getAllQuotes());
-  }, []);
 
   function updateItem(index: number, patch: Partial<InvoiceItem>) {
     setItems((prev) => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)));
@@ -44,12 +42,13 @@ export default function QuotesPage() {
     setItems((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!clientName.trim() || !propertyTitle.trim()) return;
-    const quote: Quote = {
-      id: `q-new-${Date.now()}`,
-      number: nextQuoteNumber(),
+    setSubmitting(true);
+    const number = `QT-${new Date().getFullYear()}-${String(200 + quotesList.length + 1).padStart(3, "0")}`;
+    await createQuote({
+      number,
       clientName,
       propertyTitle,
       items: items.filter((i) => i.description.trim()),
@@ -58,9 +57,8 @@ export default function QuotesPage() {
       createdAt: new Date().toISOString().slice(0, 10),
       validUntil: validUntil || new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
       notes,
-    };
-    addQuote(quote);
-    setQuotesList(getAllQuotes());
+    });
+    setSubmitting(false);
     setShowForm(false);
     setClientName("");
     setPropertyTitle("");
@@ -184,7 +182,7 @@ export default function QuotesPage() {
                     الإجمالي شامل الضريبة (15%):{" "}
                     <span className="font-bold text-foreground">{currency(totalOf(items, 0.15))}</span>
                   </p>
-                  <Button type="submit">حفظ عرض السعر</Button>
+                  <Button type="submit" disabled={submitting}>{submitting ? "جارِ الحفظ..." : "حفظ عرض السعر"}</Button>
                 </div>
               </form>
             </CardContent>

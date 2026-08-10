@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   BarChart3,
@@ -14,7 +16,7 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
-import { clients, contracts, properties, systemUsers } from "@/lib/mock-data";
+import { useClients, useContracts, useProperties, useSystemUsers } from "@/lib/firestore/hooks";
 
 const portals = [
   {
@@ -112,6 +114,11 @@ const toneClasses: Record<string, string> = {
 };
 
 export default function LandingPage() {
+  const { data: properties } = useProperties();
+  const { data: contracts } = useContracts();
+  const { data: clients } = useClients();
+  const { data: systemUsers } = useSystemUsers();
+
   const stats = [
     { label: "عقار مُدار", value: properties.length },
     { label: "عقد نشط", value: contracts.filter((c) => c.status === "نشط").length },

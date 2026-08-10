@@ -6,16 +6,17 @@ import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/compon
 import { Badge } from "@/components/ui/Badge";
 import { Input, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
-import { clients } from "@/lib/mock-data";
+import { useClients } from "@/lib/firestore/hooks";
 import { Search } from "lucide-react";
 
 export default function AdminClientsPage() {
+  const { data: clients } = useClients();
   const [query, setQuery] = useState("");
   const [type, setType] = useState("الكل");
 
   const filtered = useMemo(
     () => clients.filter((c) => (type === "الكل" || c.type === type) && c.name.includes(query)),
-    [query, type]
+    [clients, query, type]
   );
 
   return (

@@ -1,37 +1,33 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
-import { getPropertyById, maintenanceRequests, technicians } from "@/lib/mock-data";
-import type { MaintenanceRequest, MaintenanceStatus } from "@/lib/types";
+import { useFirestoreDoc, useMaintenanceRequests, useProperties } from "@/lib/firestore/hooks";
+import { claimMaintenanceRequest, updateMaintenanceRequest } from "@/lib/firestore/mutations";
+import { CURRENT_TECHNICIAN_ID } from "@/lib/demo-identity";
+import type { MaintenanceStatus, Technician } from "@/lib/types";
 import { CheckCircle2, ClipboardList, Star, Wrench } from "lucide-react";
 
-const currentTechnician = technicians[0];
-
 export default function TechnicianDashboardPage() {
-  const [requests, setRequests] = useState<MaintenanceRequest[]>(maintenanceRequests);
+  const currentTechnician = useFirestoreDoc<Technician>("technicians", CURRENT_TECHNICIAN_ID);
+  const { data: requests } = useMaintenanceRequests();
+  const { data: properties } = useProperties();
 
   const myTasks = useMemo(
-    () => requests.filter((r) => r.technicianId === currentTechnician.id),
-    [requests]
+    () => (currentTechnician ? requests.filter((r) => r.technicianId === currentTechnician.id) : []),
+    [requests, currentTechnician]
   );
   const unassigned = useMemo(() => requests.filter((r) => r.technicianId === null), [requests]);
 
+  if (!currentTechnician) return null;
+
   const inProgress = myTasks.filter((r) => r.status === "قيد التنفيذ").length;
   const completed = myTasks.filter((r) => r.status === "مكتمل").length;
-
-  function updateStatus(id: string, status: MaintenanceStatus) {
-    setRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
-  }
-
-  function claim(id: string) {
-    setRequests((prev) => prev.map((r) => (r.id === id ? { ...r, technicianId: currentTechnician.id, status: "قيد التنفيذ" } : r)));
-  }
 
   return (
     <DashboardShell allow={["technician"]} title={`أهلًا، ${currentTechnician.name}`}>
@@ -73,13 +69,13 @@ export default function TechnicianDashboardPage() {
                       <span className="block truncate">{r.title}</span>
                       <span className="block text-xs text-muted truncate">{r.description}</span>
                     </Td>
-                    <Td className="text-muted max-w-[160px] truncate">{getPropertyById(r.propertyId)?.title}</Td>
+                    <Td className="text-muted max-w-[160px] truncate">{properties.find((p) => p.id === r.propertyId)?.title}</Td>
                     <Td><Badge>{r.priority}</Badge></Td>
                     <Td className="text-muted">{r.scheduledDate ?? "—"}</Td>
                     <Td>
                       <Select
                         value={r.status}
-                        onChange={(e) => updateStatus(r.id, e.target.value as MaintenanceStatus)}
+                        onChange={(e) => updateMaintenanceRequest(r.id, { status: e.target.value as MaintenanceStatus })}
                         className="w-32 py-1.5 text-xs"
                       >
                         <option value="جديد">جديد</option>
@@ -120,11 +116,11 @@ export default function TechnicianDashboardPage() {
                 {unassigned.map((r) => (
                   <Tr key={r.id}>
                     <Td className="font-semibold">{r.title}</Td>
-                    <Td className="text-muted max-w-[160px] truncate">{getPropertyById(r.propertyId)?.title}</Td>
+                    <Td className="text-muted max-w-[160px] truncate">{properties.find((p) => p.id === r.propertyId)?.title}</Td>
                     <Td><Badge>{r.priority}</Badge></Td>
                     <Td>
                       <button
-                        onClick={() => claim(r.id)}
+                        onClick={() => claimMaintenanceRequest(r.id, currentTechnician.id)}
                         className="text-xs font-semibold text-brand-700 hover:underline"
                       >
                         استلام الطلب

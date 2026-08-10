@@ -10,26 +10,30 @@ import { Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { PieChartCard, RevenueAreaChart } from "@/components/charts/Charts";
 import { useAuth } from "@/lib/auth-context";
-import { currency, invoices, monthlyRevenue, owners, properties, tenants } from "@/lib/mock-data";
+import { currency, monthlyRevenue } from "@/lib/mock-data";
+import { useFirestoreDoc, useInvoices, useProperties } from "@/lib/firestore/hooks";
+import { CURRENT_OWNER_ID, CURRENT_TENANT_ID } from "@/lib/demo-identity";
+import type { Owner, Tenant } from "@/lib/types";
 import { Eye, FileWarning, ReceiptText, Wallet } from "lucide-react";
-
-const currentOwner = owners[0];
-const currentTenant = tenants[0];
 
 export default function ReportsPage() {
   const { user } = useAuth();
   const [status, setStatus] = useState("الكل");
+  const { data: invoices } = useInvoices();
+  const { data: properties } = useProperties();
+  const currentOwner = useFirestoreDoc<Owner>("owners", user?.role === "owner" ? CURRENT_OWNER_ID : undefined);
+  const currentTenant = useFirestoreDoc<Tenant>("tenants", user?.role === "tenant" ? CURRENT_TENANT_ID : undefined);
 
   const scopedInvoices = useMemo(() => {
-    if (user?.role === "owner") {
+    if (user?.role === "owner" && currentOwner) {
       const myTitles = new Set(properties.filter((p) => p.ownerId === currentOwner.id).map((p) => p.title));
       return invoices.filter((i) => myTitles.has(i.propertyTitle));
     }
-    if (user?.role === "tenant") {
+    if (user?.role === "tenant" && currentTenant) {
       return invoices.filter((i) => i.clientName === currentTenant.name);
     }
     return invoices;
-  }, [user?.role]);
+  }, [user?.role, currentOwner, currentTenant, properties, invoices]);
 
   const filtered = status === "الكل" ? scopedInvoices : scopedInvoices.filter((i) => i.status === status);
 

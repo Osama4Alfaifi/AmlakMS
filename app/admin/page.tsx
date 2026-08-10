@@ -6,28 +6,39 @@ import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/compon
 import { Badge } from "@/components/ui/Badge";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { BarChartCard, PieChartCard, RevenueAreaChart } from "@/components/charts/Charts";
+import { monthlyRevenue } from "@/lib/mock-data";
 import {
-  clients,
-  contracts,
-  contractsByStatus,
-  monthlyRevenue,
-  properties,
-  propertyTypeDistribution,
-  supportTickets,
-  systemUsers,
-} from "@/lib/mock-data";
+  useClients,
+  useContracts,
+  useProperties,
+  useSupportTickets,
+  useSystemUsers,
+} from "@/lib/firestore/hooks";
 import { Building2, Contact, FileText, Users } from "lucide-react";
 import Link from "next/link";
 
-function cityDistribution() {
-  const map = new Map<string, number>();
-  properties.forEach((p) => map.set(p.city, (map.get(p.city) ?? 0) + 1));
-  return Array.from(map, ([name, value]) => ({ name, عقارات: value }));
-}
-
 export default function AdminOverviewPage() {
+  const { data: properties } = useProperties();
+  const { data: contracts } = useContracts();
+  const { data: clients } = useClients();
+  const { data: systemUsers } = useSystemUsers();
+  const { data: supportTickets } = useSupportTickets();
+
   const activeContracts = contracts.filter((c) => c.status === "نشط").length;
   const openTickets = supportTickets.filter((t) => t.status !== "مغلقة").length;
+
+  const cityMap = new Map<string, number>();
+  properties.forEach((p) => cityMap.set(p.city, (cityMap.get(p.city) ?? 0) + 1));
+  const cityDistribution = Array.from(cityMap, ([name, value]) => ({ name, عقارات: value }));
+
+  const typeMap = new Map<string, number>();
+  properties.forEach((p) => typeMap.set(p.type, (typeMap.get(p.type) ?? 0) + 1));
+  const propertyTypeDistribution = Array.from(typeMap, ([name, value]) => ({ name, value }));
+
+  const contractsByStatus = ["نشط", "منتهي", "قيد التجديد"].map((s) => ({
+    name: s,
+    value: contracts.filter((c) => c.status === s).length,
+  }));
 
   return (
     <DashboardShell allow={["admin"]}>
@@ -50,7 +61,7 @@ export default function AdminOverviewPage() {
         <RevenueAreaChart data={monthlyRevenue} />
 
         <div className="grid lg:grid-cols-2 gap-4">
-          <BarChartCard data={cityDistribution()} title="توزيع العقارات حسب المدينة" dataKey="عقارات" color="#3563f4" />
+          <BarChartCard data={cityDistribution} title="توزيع العقارات حسب المدينة" dataKey="عقارات" color="#3563f4" />
           <PieChartCard data={propertyTypeDistribution} title="توزيع العقارات حسب النوع" />
         </div>
 

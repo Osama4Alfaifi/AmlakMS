@@ -5,7 +5,8 @@ import { useMemo, useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Label, Select } from "@/components/ui/Input";
-import { currency, properties } from "@/lib/mock-data";
+import { currency } from "@/lib/mock-data";
+import { useProperties } from "@/lib/firestore/hooks";
 
 const PropertyMap = dynamic(() => import("@/components/map/PropertyMap").then((m) => m.PropertyMap), {
   ssr: false,
@@ -15,6 +16,7 @@ const PropertyMap = dynamic(() => import("@/components/map/PropertyMap").then((m
 });
 
 export default function MapPage() {
+  const { data: properties } = useProperties();
   const [city, setCity] = useState("الكل");
   const [type, setType] = useState("الكل");
   const [status, setStatus] = useState("الكل");
@@ -31,7 +33,7 @@ export default function MapPage() {
           (type === "الكل" || p.type === type) &&
           (status === "الكل" || p.status === status)
       ),
-    [city, type, status]
+    [properties, city, type, status]
   );
 
   return (

@@ -1,21 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Building2, ArrowRight, Printer } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { currency } from "@/lib/mock-data";
-import { getQuoteById } from "@/lib/quotes-store";
+import { useFirestoreDoc } from "@/lib/firestore/hooks";
 import type { Quote } from "@/lib/types";
 
 export default function QuotePrintPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const [quote, setQuote] = useState<Quote | null | undefined>(undefined);
-
-  useEffect(() => {
-    setQuote(getQuoteById(params.id) ?? null);
-  }, [params.id]);
+  const quote = useFirestoreDoc<Quote>("quotes", params.id);
 
   if (quote === undefined) return null;
 

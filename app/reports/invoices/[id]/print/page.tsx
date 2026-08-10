@@ -4,12 +4,16 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowRight, Building2, Printer } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { currency, invoices } from "@/lib/mock-data";
+import { currency } from "@/lib/mock-data";
+import { useFirestoreDoc } from "@/lib/firestore/hooks";
+import type { Invoice } from "@/lib/types";
 
 export default function InvoicePrintPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const invoice = invoices.find((i) => i.id === params.id);
+  const invoice = useFirestoreDoc<Invoice>("invoices", params.id);
+
+  if (invoice === undefined) return null;
 
   if (!invoice) {
     return (
