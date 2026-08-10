@@ -6,8 +6,9 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Input, Select } from "@/components/ui/Input";
+import { Input, Label, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
+import { useAuth } from "@/lib/auth-context";
 import { useSupportTickets } from "@/lib/firestore/hooks";
 import { createSupportTicket, updateSupportTicketStatus } from "@/lib/firestore/mutations";
 import type { Priority, Role, TicketCategory, TicketStatus } from "@/lib/types";
@@ -22,8 +23,18 @@ export function TicketBoard({
   allow: Role[];
   title: string;
 }) {
+  const { user } = useAuth();
   const { data: allTickets } = useSupportTickets();
-  const tickets = useMemo(() => allTickets.filter((t) => t.category === category), [allTickets, category]);
+
+  // Staff = the team this category is routed to (they see every ticket).
+  // Everyone else only ever sees the tickets they personally submitted.
+  const isStaff = user?.role === "admin" || (category === "الدعم الفني" && user?.role === "technician");
+
+  const tickets = useMemo(() => {
+    const inCategory = allTickets.filter((t) => t.category === category);
+    if (isStaff) return inCategory;
+    return inCategory.filter((t) => t.from === user?.name);
+  }, [allTickets, category, isStaff, user?.name]);
 
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -38,13 +49,14 @@ export function TicketBoard({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!subject.trim() || !from.trim()) return;
+    const senderName = isStaff ? from : user?.name ?? "";
+    if (!subject.trim() || !senderName.trim()) return;
     setSubmitting(true);
     await createSupportTicket({
       number: `TCK-${3000 + allTickets.length + 1}`,
       subject,
       category,
-      from,
+      from: senderName,
       priority,
       status: "مفتوحة",
       createdAt: new Date().toISOString().slice(0, 10),
@@ -71,7 +83,11 @@ export function TicketBoard({
           <CardHeader>
             <div>
               <CardTitle>{title}</CardTitle>
-              <CardSubtitle>{tickets.length} تذكرة إجمالية</CardSubtitle>
+              <CardSubtitle>
+                {isStaff
+                  ? `${tickets.length} تذكرة إجمالية — كموظف مسؤول، تظهر لك كل التذاكر`
+                  : `${tickets.length} تذكرة أرسلتها أنت فقط`}
+              </CardSubtitle>
             </div>
             <Button size="sm" onClick={() => setShowForm((v) => !v)}>
               <Plus size={15} /> تذكرة جديدة
@@ -106,15 +122,19 @@ export function TicketBoard({
                     <Td><Badge>{t.priority}</Badge></Td>
                     <Td className="text-muted">{t.createdAt}</Td>
                     <Td>
-                      <Select
-                        value={t.status}
-                        onChange={(e) => updateSupportTicketStatus(t.id, e.target.value as TicketStatus)}
-                        className="w-32 py-1.5 text-xs"
-                      >
-                        <option value="مفتوحة">مفتوحة</option>
-                        <option value="قيد المعالجة">قيد المعالجة</option>
-                        <option value="مغلقة">مغلقة</option>
-                      </Select>
+                      {isStaff ? (
+                        <Select
+                          value={t.status}
+                          onChange={(e) => updateSupportTicketStatus(t.id, e.target.value as TicketStatus)}
+                          className="w-32 py-1.5 text-xs"
+                        >
+                          <option value="مفتوحة">مفتوحة</option>
+                          <option value="قيد المعالجة">قيد المعالجة</option>
+                          <option value="مغلقة">مغلقة</option>
+                        </Select>
+                      ) : (
+                        <Badge>{t.status}</Badge>
+                      )}
                     </Td>
                   </Tr>
                 ))}
@@ -131,7 +151,14 @@ export function TicketBoard({
             <CardContent>
               <form onSubmit={handleSubmit} className="grid sm:grid-cols-2 gap-4">
                 <Input placeholder="الموضوع" value={subject} onChange={(e) => setSubject(e.target.value)} required />
-                <Input placeholder="اسم مقدم الطلب" value={from} onChange={(e) => setFrom(e.target.value)} required />
+                {isStaff ? (
+                  <Input placeholder="اسم مقدم الطلب" value={from} onChange={(e) => setFrom(e.target.value)} required />
+                ) : (
+                  <div>
+                    <Label>مقدم الطلب</Label>
+                    <Input value={user?.name ?? ""} disabled />
+                  </div>
+                )}
                 <Select value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
                   <option value="منخفض">منخفض</option>
                   <option value="متوسط">متوسط</option>

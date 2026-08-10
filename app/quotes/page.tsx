@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/Button";
 import { Input, Label } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { currency } from "@/lib/mock-data";
-import { useQuotes } from "@/lib/firestore/hooks";
+import { useAuth } from "@/lib/auth-context";
+import { useFirestoreDoc, useProperties, useQuotes } from "@/lib/firestore/hooks";
 import { createQuote } from "@/lib/firestore/mutations";
-import type { InvoiceItem } from "@/lib/types";
+import { CURRENT_OWNER_ID } from "@/lib/demo-identity";
+import type { InvoiceItem, Owner } from "@/lib/types";
 import { Eye, Plus, Trash2 } from "lucide-react";
 
 function totalOf(items: InvoiceItem[], taxRate: number) {
@@ -20,7 +22,19 @@ function totalOf(items: InvoiceItem[], taxRate: number) {
 }
 
 export default function QuotesPage() {
-  const { data: quotesList } = useQuotes();
+  const { user } = useAuth();
+  const { data: allQuotes } = useQuotes();
+  const { data: properties } = useProperties();
+  const currentOwner = useFirestoreDoc<Owner>("owners", user?.role === "owner" ? CURRENT_OWNER_ID : undefined);
+
+  // Owners only see quotes tied to their own properties; admin sees all.
+  const quotesList = useMemo(() => {
+    if (user?.role !== "owner") return allQuotes;
+    if (!currentOwner) return [];
+    const myTitles = new Set(properties.filter((p) => p.ownerId === currentOwner.id).map((p) => p.title));
+    return allQuotes.filter((q) => myTitles.has(q.propertyTitle));
+  }, [allQuotes, properties, user?.role, currentOwner]);
+
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -46,7 +60,7 @@ export default function QuotesPage() {
     e.preventDefault();
     if (!clientName.trim() || !propertyTitle.trim()) return;
     setSubmitting(true);
-    const number = `QT-${new Date().getFullYear()}-${String(200 + quotesList.length + 1).padStart(3, "0")}`;
+    const number = `QT-${new Date().getFullYear()}-${String(200 + allQuotes.length + 1).padStart(3, "0")}`;
     await createQuote({
       number,
       clientName,
@@ -74,7 +88,9 @@ export default function QuotesPage() {
           <CardHeader>
             <div>
               <CardTitle>عروض الأسعار</CardTitle>
-              <CardSubtitle>{quotesList.length} عرض سعر — قابلة للتصدير كملف PDF</CardSubtitle>
+              <CardSubtitle>
+                {quotesList.length} عرض سعر {user?.role === "owner" ? "لعقاراتك" : "— قابلة للتصدير كملف PDF"}
+              </CardSubtitle>
             </div>
             <Button size="sm" onClick={() => setShowForm((v) => !v)}>
               <Plus size={15} /> عرض سعر جديد

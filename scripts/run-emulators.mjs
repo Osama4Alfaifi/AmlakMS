@@ -58,7 +58,28 @@ if (!currentVersion || currentVersion < 21) {
   }
 }
 
-const child = spawn("npx", ["firebase", "emulators:start", "--only", "firestore,auth", "--project", "amlakms-dev"], {
+// Persist emulator data across restarts: imported on start if present,
+// written back out on a clean exit (Ctrl+C). Without this, every restart
+// comes back with only the seeded data and loses anything created since.
+const dataDir = ".firebase-emulator-data";
+const args = [
+  "firebase",
+  "emulators:start",
+  "--only",
+  "firestore,auth",
+  "--project",
+  "amlakms-dev",
+  "--export-on-exit",
+  dataDir,
+];
+if (existsSync(dataDir)) {
+  args.push("--import", dataDir);
+  console.log(`Restoring emulator data from ./${dataDir}`);
+} else {
+  console.log("No saved emulator data found — starting empty (run `npm run seed` after this starts).");
+}
+
+const child = spawn("npx", args, {
   stdio: "inherit",
   shell: true,
   env,
