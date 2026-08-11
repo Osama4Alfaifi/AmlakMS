@@ -61,16 +61,30 @@ service cloud.firestore {
     // An account can read its own profile (role/linkedId are provisioned
     // server-side by the seed script, not self-editable from the client).
     match /users/{uid} {
-      allow read: if signedIn() && request.auth.uid == uid;
+      // Accountants can read every profile too, to resolve actor names on
+      // the activity log (app/admin/audit-log) — everyone else only ever
+      // sees their own.
+      allow read: if signedIn() && (request.auth.uid == uid || isAccountant());
     }
 
     // Reference/catalog data: any signed-in account can read it; writes go
     // through the admin rule above.
     match /properties/{id} { allow read: if signedIn(); }
     match /owners/{id} { allow read: if signedIn(); }
-    match /tenants/{id} { allow read: if signedIn(); }
+    // Accountants register a new tenant inline when writing a contract for
+    // someone not yet in the system (update covers back-filling the new
+    // tenant's contractId once the contract itself has been created).
+    match /tenants/{id} {
+      allow read: if signedIn();
+      allow create, update: if isAccountant();
+    }
     match /technicians/{id} { allow read: if signedIn(); }
-    match /contracts/{id} { allow read: if signedIn(); }
+    // Accountants create/manage contracts (and their payment schedules) —
+    // see app/admin/contracts and lib/contracts/schedule.ts.
+    match /contracts/{id} {
+      allow read: if signedIn();
+      allow create, update: if isAccountant();
+    }
     // Clients: reference data readable by anyone signed in; leasing agents
     // additionally manage the CRM fields (stage/interestedPropertyId) on
     // lead records, and can add new leads.
@@ -99,11 +113,18 @@ service cloud.firestore {
     // Document links are internal admin tooling only — no explicit rule:
     // falls through to default-deny for everyone except admin (wildcard).
 
+    // Receipt/disbursement vouchers — accountant tooling.
+    match /vouchers/{id} {
+      allow read, create, update: if isAccountant();
+    }
+
     // Append-only audit trail: anyone signed in can log their own action
-    // (so a tenant filing a maintenance request can log it too), but only
-    // admin can read (wildcard above) — no update/delete for anyone.
+    // (so a tenant filing a maintenance request can log it too). Read is
+    // admin (wildcard above) plus accountant explicitly, since the
+    // accountant's activity log (app/admin/audit-log) needs it too.
     match /auditLogs/{id} {
       allow create: if signedIn() && request.resource.data.actorUid == request.auth.uid;
+      allow read: if isAccountant();
     }
 
     // Expenses: owners only see expenses on their own properties (ownerId

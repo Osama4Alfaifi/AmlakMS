@@ -55,6 +55,16 @@ export interface Tenant {
 }
 
 export type ContractStatus = "نشط" | "منتهي" | "قيد التجديد";
+export type PaymentCycle = "شهري" | "ربع سنوي" | "نصف سنوي" | "سنوي";
+export type PaymentStatus = "مستحقة" | "مسددة";
+
+export interface ContractPayment {
+  id: string;
+  dueDate: string;
+  amount: number;
+  status: PaymentStatus;
+  paidAt?: string;
+}
 
 export interface Contract {
   id: string;
@@ -62,11 +72,34 @@ export interface Contract {
   ownerId: string;
   tenantId: string;
   type: "إيجار" | "بيع";
+  // تاريخ إبرام العقد — قد يسبق تاريخ بداية سريانه.
+  signedAt?: string;
   startDate: string;
   endDate: string;
   value: number;
-  paymentCycle: "شهري" | "ربع سنوي" | "سنوي";
+  paymentCycle: PaymentCycle;
   status: ContractStatus;
+  // رابط خارجي لنسخة العقد (Drive وغيره) — لا رفع حقيقي داخل التطبيق؛ نفس نهج DocumentLink.
+  documentUrl?: string;
+  // مُولَّد تلقائيًا عند الإنشاء من (المدة ÷ دورة الدفع) — انظر lib/contracts/schedule.ts.
+  payments: ContractPayment[];
+}
+
+export type VoucherType = "قبض" | "صرف";
+export type VoucherMethod = "نقدًا" | "تحويل بنكي";
+
+export interface Voucher {
+  id: string;
+  number: string;
+  type: VoucherType;
+  personName: string;
+  amount: number;
+  method: VoucherMethod;
+  statement: string;
+  date: string;
+  contractId?: string;
+  createdAt: string;
+  createdByUid?: string;
 }
 
 export type ClientType = "مالك" | "مستأجر" | "عميل محتمل";

@@ -1,36 +1,80 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
+import Link from "next/link";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Input, Select } from "@/components/ui/Input";
+import { Input, Label, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { currency } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
 import { downloadExcel } from "@/lib/excel";
+import { generatePaymentSchedule } from "@/lib/contracts/schedule";
 import { useContracts, useOwners, useProperties, useTenants } from "@/lib/firestore/hooks";
-import { Download, FileSpreadsheet, Search } from "lucide-react";
+import { createContract, createTenant, endContract, updateContractPayments, updateTenantContract } from "@/lib/firestore/mutations";
+import type { ContractPayment, PaymentCycle } from "@/lib/types";
+import {
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Download,
+  ExternalLink,
+  FileSpreadsheet,
+  Plus,
+  Receipt,
+  Search,
+  XCircle,
+} from "lucide-react";
+
+const PAYMENT_CYCLES: PaymentCycle[] = ["شهري", "ربع سنوي", "نصف سنوي", "سنوي"];
+const today = () => new Date().toISOString().slice(0, 10);
+
+function emptyForm() {
+  return {
+    type: "إيجار" as "إيجار" | "بيع",
+    propertyId: "",
+    tenantMode: "existing" as "existing" | "new",
+    tenantId: "",
+    newTenantName: "",
+    newTenantPhone: "",
+    newTenantEmail: "",
+    value: "",
+    signedAt: today(),
+    startDate: today(),
+    endDate: "",
+    paymentCycle: "سنوي" as PaymentCycle,
+    documentUrl: "",
+  };
+}
 
 export default function AdminContractsPage() {
   const { data: contracts } = useContracts();
   const { data: properties } = useProperties();
   const { data: owners } = useOwners();
   const { data: tenants } = useTenants();
+
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("الكل");
   const statuses = ["الكل", "نشط", "منتهي", "قيد التجديد"];
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState(emptyForm());
+
+  const propertyTitleById = useMemo(() => new Map(properties.map((p) => [p.id, p.title])), [properties]);
+  const tenantNameById = useMemo(() => new Map(tenants.map((t) => [t.id, t.name])), [tenants]);
 
   const enriched = useMemo(
     () =>
       contracts.map((c) => ({
         contract: c,
-        propertyTitle: properties.find((p) => p.id === c.propertyId)?.title ?? "",
+        propertyTitle: propertyTitleById.get(c.propertyId) ?? "",
         ownerName: owners.find((o) => o.id === c.ownerId)?.name ?? "",
-        tenantName: tenants.find((t) => t.id === c.tenantId)?.name ?? "",
+        tenantName: tenantNameById.get(c.tenantId) ?? "",
       })),
-    [contracts, properties, owners, tenants]
+    [contracts, propertyTitleById, owners, tenantNameById]
   );
 
   const filtered = useMemo(
@@ -56,65 +100,305 @@ export default function AdminContractsPage() {
       الحالة: c.status,
     }));
 
+  const previewSchedule: ContractPayment[] =
+    form.startDate && form.endDate && Number(form.value) > 0
+      ? generatePaymentSchedule(form.startDate, form.endDate, Number(form.value), form.paymentCycle)
+      : [];
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const property = properties.find((p) => p.id === form.propertyId);
+    if (!property || !form.endDate || !Number(form.value)) return;
+    if (form.tenantMode === "existing" && !form.tenantId) return;
+    if (form.tenantMode === "new" && !form.newTenantName.trim()) return;
+
+    setSubmitting(true);
+    let tenantId = form.tenantId;
+    if (form.tenantMode === "new") {
+      tenantId = await createTenant({
+        name: form.newTenantName,
+        phone: form.newTenantPhone,
+        email: form.newTenantEmail,
+        propertyId: property.id,
+        contractId: "",
+      });
+    }
+
+    const contractId = await createContract({
+      propertyId: property.id,
+      ownerId: property.ownerId,
+      tenantId,
+      type: form.type,
+      signedAt: form.signedAt || undefined,
+      startDate: form.startDate,
+      endDate: form.endDate,
+      value: Number(form.value),
+      paymentCycle: form.paymentCycle,
+      status: "نشط",
+      documentUrl: form.documentUrl || undefined,
+    });
+
+    if (form.tenantMode === "new") {
+      await updateTenantContract(tenantId, contractId);
+    }
+
+    setSubmitting(false);
+    setShowForm(false);
+    setForm(emptyForm());
+  }
+
+  async function handleSettlePayment(contractId: string, payments: ContractPayment[], paymentId: string) {
+    const updated = payments.map((p) => (p.id === paymentId ? { ...p, status: "مسددة" as const, paidAt: today() } : p));
+    const settled = updated.find((p) => p.id === paymentId)!;
+    await updateContractPayments(contractId, updated, `دفعة مسددة بقيمة ${settled.amount.toLocaleString("ar-SA")} ﷼`);
+  }
+
   return (
     <DashboardShell allow={["admin", "accountant"]} title="العقود">
-      <Card>
-        <CardHeader>
-          <div>
-            <CardTitle>جميع العقود</CardTitle>
-            <CardSubtitle>{filtered.length} من {contracts.length} عقد إيجار وبيع مسجّل</CardSubtitle>
-          </div>
-          <div className="flex items-center gap-2">
-            <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-36">
-              {statuses.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </Select>
-            <div className="relative w-52">
-              <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
-              <Input placeholder="بحث..." value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />
+      <div className="flex flex-col gap-6">
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>جميع العقود</CardTitle>
+              <CardSubtitle>{filtered.length} من {contracts.length} عقد — اضغط على أي صف لعرض جدول الدفعات</CardSubtitle>
             </div>
-            <Button size="sm" variant="outline" onClick={() => downloadCsv("العقود", exportRows())}>
-              <Download size={15} /> تصدير CSV
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => downloadExcel("العقود", "العقود", exportRows())}>
-              <FileSpreadsheet size={15} /> تصدير Excel
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <THead>
-              <Tr>
-                <Th>رقم العقد</Th>
-                <Th>العقار</Th>
-                <Th>المالك</Th>
-                <Th>المستأجر</Th>
-                <Th>النوع</Th>
-                <Th>القيمة</Th>
-                <Th>البداية</Th>
-                <Th>النهاية</Th>
-                <Th>الحالة</Th>
-              </Tr>
-            </THead>
-            <TBody>
-              {filtered.map(({ contract: c, propertyTitle, ownerName, tenantName }) => (
-                <Tr key={c.id}>
-                  <Td className="font-semibold text-brand-700">{c.id.toUpperCase()}</Td>
-                  <Td className="max-w-[180px] truncate">{propertyTitle}</Td>
-                  <Td className="text-muted">{ownerName}</Td>
-                  <Td className="text-muted">{tenantName || "—"}</Td>
-                  <Td>{c.type}</Td>
-                  <Td className="font-semibold">{currency(c.value)}</Td>
-                  <Td className="text-muted">{c.startDate}</Td>
-                  <Td className="text-muted">{c.endDate}</Td>
-                  <Td><Badge>{c.status}</Badge></Td>
+            <div className="flex items-center gap-2">
+              <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-36">
+                {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
+              </Select>
+              <div className="relative w-52">
+                <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
+                <Input placeholder="بحث..." value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />
+              </div>
+              <Button size="sm" variant="outline" onClick={() => downloadCsv("العقود", exportRows())}>
+                <Download size={15} /> تصدير CSV
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => downloadExcel("العقود", "العقود", exportRows())}>
+                <FileSpreadsheet size={15} /> تصدير Excel
+              </Button>
+              <Button size="sm" onClick={() => setShowForm((v) => !v)}>
+                <Plus size={15} /> عقد جديد
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <THead>
+                <Tr>
+                  <Th></Th>
+                  <Th>رقم العقد</Th>
+                  <Th>العقار</Th>
+                  <Th>المالك</Th>
+                  <Th>المستأجر</Th>
+                  <Th>النوع</Th>
+                  <Th>القيمة</Th>
+                  <Th>البداية</Th>
+                  <Th>النهاية</Th>
+                  <Th>الحالة</Th>
                 </Tr>
-              ))}
-            </TBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </THead>
+              <TBody>
+                {filtered.map(({ contract: c, propertyTitle, ownerName, tenantName }) => {
+                  const isOpen = expandedId === c.id;
+                  return (
+                    <Fragment key={c.id}>
+                      <Tr className="cursor-pointer" onClick={() => setExpandedId(isOpen ? null : c.id)}>
+                        <Td className="w-8 text-muted">{isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</Td>
+                        <Td className="font-semibold text-brand-700">
+                          <span className="inline-flex items-center gap-1.5">
+                            {c.id.toUpperCase()}
+                            {c.documentUrl && (
+                              <a
+                                href={c.documentUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(ev) => ev.stopPropagation()}
+                                title="عرض نسخة العقد"
+                                className="text-muted hover:text-brand-700"
+                              >
+                                <ExternalLink size={13} />
+                              </a>
+                            )}
+                          </span>
+                        </Td>
+                        <Td className="max-w-[180px] truncate">{propertyTitle}</Td>
+                        <Td className="text-muted">{ownerName}</Td>
+                        <Td className="text-muted">{tenantName || "—"}</Td>
+                        <Td>{c.type}</Td>
+                        <Td className="font-semibold">{currency(c.value)}</Td>
+                        <Td className="text-muted">{c.startDate}</Td>
+                        <Td className="text-muted">{c.endDate}</Td>
+                        <Td><Badge>{c.status}</Badge></Td>
+                      </Tr>
+                      {isOpen && (
+                        <Tr className="bg-background">
+                          <Td colSpan={10} className="py-4 whitespace-normal align-top">
+                            <div className="pr-8 flex flex-col gap-4">
+                              <div>
+                                <p className="text-xs font-semibold text-muted mb-2">جدول الدفعات ({(c.payments ?? []).length})</p>
+                                <table className="w-full text-sm max-w-lg">
+                                  <thead>
+                                    <tr className="text-xs text-muted border-b border-border">
+                                      <th className="text-right font-semibold py-1.5">تاريخ الاستحقاق</th>
+                                      <th className="text-right font-semibold py-1.5">المبلغ</th>
+                                      <th className="text-right font-semibold py-1.5">الحالة</th>
+                                      <th></th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {(c.payments ?? []).map((p) => (
+                                      <tr key={p.id} className="border-b border-border/60">
+                                        <td className="py-1.5 text-muted">{p.dueDate}</td>
+                                        <td className="py-1.5 font-medium">{currency(p.amount)}</td>
+                                        <td className="py-1.5"><Badge>{p.status}</Badge></td>
+                                        <td className="py-1.5">
+                                          {p.status === "مستحقة" ? (
+                                            <div className="flex items-center gap-2">
+                                              <button
+                                                onClick={() => handleSettlePayment(c.id, c.payments, p.id)}
+                                                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
+                                              >
+                                                <CheckCircle2 size={13} /> تسديد
+                                              </button>
+                                            </div>
+                                          ) : (
+                                            <Link
+                                              href={`/admin/vouchers?type=${encodeURIComponent("قبض")}&personName=${encodeURIComponent(tenantName)}&amount=${p.amount}&contractId=${c.id}`}
+                                              className="inline-flex items-center gap-1 text-xs font-semibold text-muted hover:text-brand-700"
+                                            >
+                                              <Receipt size={13} /> إصدار سند قبض
+                                            </Link>
+                                          )}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                              {c.status === "نشط" && (
+                                <button
+                                  onClick={() => {
+                                    if (confirm("هل تريد إنهاء هذا العقد؟")) endContract(c.id);
+                                  }}
+                                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-danger-500 hover:text-danger-700 self-start"
+                                >
+                                  <XCircle size={14} /> إنهاء العقد
+                                </button>
+                              )}
+                            </div>
+                          </Td>
+                        </Tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </TBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {showForm && (
+          <Card>
+            <CardHeader>
+              <CardTitle>عقد جديد</CardTitle>
+              <CardSubtitle>سيُولَّد جدول الدفعات تلقائيًا حسب المدة ودورة الدفع</CardSubtitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                <div className="grid sm:grid-cols-4 gap-4">
+                  <div>
+                    <Label htmlFor="ctype">نوع العقد</Label>
+                    <Select id="ctype" value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as "إيجار" | "بيع" }))}>
+                      <option value="إيجار">إيجار</option>
+                      <option value="بيع">بيع</option>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="cproperty">العقار</Label>
+                    <Select id="cproperty" value={form.propertyId} onChange={(e) => setForm((f) => ({ ...f, propertyId: e.target.value }))} required>
+                      <option value="" disabled>اختر عقارًا</option>
+                      {properties.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="cvalue">القيمة (﷼)</Label>
+                    <Input id="cvalue" type="number" min={0} value={form.value} onChange={(e) => setForm((f) => ({ ...f, value: e.target.value }))} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="ccycle">دورة الدفع</Label>
+                    <Select id="ccycle" value={form.paymentCycle} onChange={(e) => setForm((f) => ({ ...f, paymentCycle: e.target.value as PaymentCycle }))}>
+                      {PAYMENT_CYCLES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2.5">
+                  <div className="flex items-center gap-2">
+                    <Label className="mb-0">المستأجر</Label>
+                    <div className="flex rounded-lg border border-border overflow-hidden text-xs">
+                      <button type="button" onClick={() => setForm((f) => ({ ...f, tenantMode: "existing" }))} className={`px-3 py-1.5 font-semibold ${form.tenantMode === "existing" ? "bg-brand-600 text-white" : "text-muted"}`}>
+                        مستأجر موجود
+                      </button>
+                      <button type="button" onClick={() => setForm((f) => ({ ...f, tenantMode: "new" }))} className={`px-3 py-1.5 font-semibold ${form.tenantMode === "new" ? "bg-brand-600 text-white" : "text-muted"}`}>
+                        مستأجر جديد
+                      </button>
+                    </div>
+                  </div>
+                  {form.tenantMode === "existing" ? (
+                    <Select value={form.tenantId} onChange={(e) => setForm((f) => ({ ...f, tenantId: e.target.value }))} required>
+                      <option value="" disabled>اختر مستأجرًا</option>
+                      {tenants.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </Select>
+                  ) : (
+                    <div className="grid sm:grid-cols-3 gap-3">
+                      <Input placeholder="اسم المستأجر" value={form.newTenantName} onChange={(e) => setForm((f) => ({ ...f, newTenantName: e.target.value }))} required />
+                      <Input placeholder="الجوال" value={form.newTenantPhone} onChange={(e) => setForm((f) => ({ ...f, newTenantPhone: e.target.value }))} />
+                      <Input placeholder="البريد الإلكتروني" type="email" value={form.newTenantEmail} onChange={(e) => setForm((f) => ({ ...f, newTenantEmail: e.target.value }))} />
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid sm:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="csigned">تاريخ إبرام العقد</Label>
+                    <Input id="csigned" type="date" value={form.signedAt} onChange={(e) => setForm((f) => ({ ...f, signedAt: e.target.value }))} />
+                  </div>
+                  <div>
+                    <Label htmlFor="cstart">تاريخ بداية العقد</Label>
+                    <Input id="cstart" type="date" value={form.startDate} onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="cend">تاريخ نهاية العقد</Label>
+                    <Input id="cend" type="date" value={form.endDate} onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))} required />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="cdoc">رابط نسخة العقد (اختياري)</Label>
+                  <Input id="cdoc" type="url" dir="ltr" placeholder="https://" value={form.documentUrl} onChange={(e) => setForm((f) => ({ ...f, documentUrl: e.target.value }))} />
+                </div>
+
+                {previewSchedule.length > 0 && (
+                  <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm">
+                    <p className="font-semibold text-brand-700 mb-2">
+                      سيتم إنشاء {previewSchedule.length} {previewSchedule.length === 1 ? "دفعة" : "دفعات"} تلقائيًا:
+                    </p>
+                    <ul className="flex flex-col gap-1 text-xs text-muted">
+                      {previewSchedule.map((p) => (
+                        <li key={p.id}>{p.dueDate} — {currency(p.amount)}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <Button type="submit" disabled={submitting} className="self-start">
+                  {submitting ? "جارِ الحفظ..." : "حفظ العقد"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </DashboardShell>
   );
 }

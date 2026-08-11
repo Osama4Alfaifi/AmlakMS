@@ -2,9 +2,12 @@
 
 import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import { getDb, getFirebaseAuth } from "@/lib/firebase/client";
+import { generatePaymentSchedule } from "@/lib/contracts/schedule";
 import type {
   AuditAction,
   Building,
+  Contract,
+  ContractPayment,
   DocumentLink,
   Expense,
   ExpenseStatus,
@@ -13,11 +16,13 @@ import type {
   MaintenanceStatus,
   Quote,
   SupportTicket,
+  Tenant,
   TicketStatus,
   Unit,
   Vendor,
   Viewing,
   ViewingStatus,
+  Voucher,
 } from "@/lib/types";
 
 // Records who did what for the admin-only audit log (app/admin/audit-log).
@@ -136,5 +141,48 @@ export async function updateViewingStatus(id: string, status: ViewingStatus) {
 export async function createDocumentLink(documentLink: Omit<DocumentLink, "id">) {
   const ref = await addDoc(collection(getDb(), "documentLinks"), documentLink);
   void logAudit("documentLinks", ref.id, "create", documentLink.title);
+  return ref.id;
+}
+
+// Accountant/admin only (see firestore.rules). The payment schedule is
+// generated here, not passed in, so every creation path gets it — see
+// lib/contracts/schedule.ts.
+export async function createContract(contract: Omit<Contract, "id" | "payments">) {
+  const payments = generatePaymentSchedule(contract.startDate, contract.endDate, contract.value, contract.paymentCycle);
+  const ref = await addDoc(collection(getDb(), "contracts"), { ...contract, payments });
+  void logAudit("contracts", ref.id, "create", `عقد جديد بقيمة ${contract.value.toLocaleString("ar-SA")} ﷼`);
+  return ref.id;
+}
+
+// Caller passes the full updated array (it already has the current one via
+// useContracts/useFirestoreDoc) — avoids an extra read-before-write round
+// trip, same as how updateMaintenanceRequest takes a ready-made patch.
+export async function updateContractPayments(contractId: string, payments: ContractPayment[], label?: string) {
+  await updateDoc(doc(getDb(), "contracts", contractId), { payments });
+  void logAudit("contracts", contractId, "update", label);
+}
+
+export async function endContract(contractId: string) {
+  await updateDoc(doc(getDb(), "contracts", contractId), { status: "منتهي" });
+  void logAudit("contracts", contractId, "update", "تم إنهاء العقد");
+}
+
+export async function createTenant(tenant: Omit<Tenant, "id">) {
+  const ref = await addDoc(collection(getDb(), "tenants"), tenant);
+  void logAudit("tenants", ref.id, "create", tenant.name);
+  return ref.id;
+}
+
+// Back-fills a newly created tenant's contractId once the contract itself
+// exists (contract.tenantId and tenant.contractId reference each other, so
+// one side has to be written second — see the contract-creation flow in
+// app/admin/contracts).
+export async function updateTenantContract(tenantId: string, contractId: string) {
+  await updateDoc(doc(getDb(), "tenants", tenantId), { contractId });
+}
+
+export async function createVoucher(voucher: Omit<Voucher, "id">) {
+  const ref = await addDoc(collection(getDb(), "vouchers"), voucher);
+  void logAudit("vouchers", ref.id, "create", `سند ${voucher.type} رقم ${voucher.number}`);
   return ref.id;
 }

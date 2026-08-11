@@ -1,3 +1,4 @@
+import { generatePaymentSchedule } from "./contracts/schedule";
 import type {
   AccountManager,
   Building,
@@ -77,16 +78,23 @@ export const tenants: Tenant[] = [
   { id: "ten-7", name: "سعود الرشيد", phone: "0507778899", email: "saud.r@mail.com", propertyId: "prop-17", contractId: "con-7" },
 ];
 
-export const contracts: Contract[] = [
-  { id: "con-1", propertyId: "prop-1", ownerId: "own-1", tenantId: "ten-1", type: "إيجار", startDate: "2026-02-01", endDate: "2028-01-31", value: 65000, paymentCycle: "سنوي", status: "نشط" },
-  { id: "con-2", propertyId: "prop-3", ownerId: "own-3", tenantId: "ten-2", type: "إيجار", startDate: "2026-03-15", endDate: "2027-03-14", value: 42000, paymentCycle: "سنوي", status: "نشط" },
-  { id: "con-3", propertyId: "prop-5", ownerId: "own-4", tenantId: "ten-3", type: "إيجار", startDate: "2025-12-01", endDate: "2027-11-30", value: 38000, paymentCycle: "سنوي", status: "نشط" },
-  { id: "con-4", propertyId: "prop-7", ownerId: "own-2", tenantId: "ten-4", type: "إيجار", startDate: "2026-02-20", endDate: "2027-02-19", value: 32000, paymentCycle: "ربع سنوي", status: "قيد التجديد" },
-  { id: "con-5", propertyId: "prop-11", ownerId: "own-1", tenantId: "ten-5", type: "إيجار", startDate: "2026-01-01", endDate: "2026-12-31", value: 34000, paymentCycle: "شهري", status: "منتهي" },
-  { id: "con-6", propertyId: "prop-13", ownerId: "own-3", tenantId: "ten-6", type: "إيجار", startDate: "2026-04-01", endDate: "2027-03-31", value: 45000, paymentCycle: "سنوي", status: "نشط" },
-  { id: "con-7", propertyId: "prop-17", ownerId: "own-2", tenantId: "ten-7", type: "إيجار", startDate: "2026-03-01", endDate: "2027-02-28", value: 27000, paymentCycle: "سنوي", status: "نشط" },
-  { id: "con-8", propertyId: "prop-12", ownerId: "own-2", tenantId: "ten-1", type: "بيع", startDate: "2025-10-20", endDate: "2025-10-20", value: 1650000, paymentCycle: "سنوي", status: "منتهي" },
+const rawContracts: Omit<Contract, "payments">[] = [
+  { id: "con-1", propertyId: "prop-1", ownerId: "own-1", tenantId: "ten-1", type: "إيجار", signedAt: "2026-01-20", startDate: "2026-02-01", endDate: "2028-01-31", value: 65000, paymentCycle: "سنوي", status: "نشط" },
+  { id: "con-2", propertyId: "prop-3", ownerId: "own-3", tenantId: "ten-2", type: "إيجار", signedAt: "2026-03-05", startDate: "2026-03-15", endDate: "2027-03-14", value: 42000, paymentCycle: "سنوي", status: "نشط" },
+  { id: "con-3", propertyId: "prop-5", ownerId: "own-4", tenantId: "ten-3", type: "إيجار", signedAt: "2025-11-20", startDate: "2025-12-01", endDate: "2027-11-30", value: 38000, paymentCycle: "سنوي", status: "نشط" },
+  // Deliberately near-term (relative to "today" in this demo dataset) so the
+  // notifications feature has something real to surface out of the box.
+  { id: "con-4", propertyId: "prop-7", ownerId: "own-2", tenantId: "ten-4", type: "إيجار", signedAt: "2026-02-10", startDate: "2026-02-20", endDate: "2026-08-20", value: 32000, paymentCycle: "ربع سنوي", status: "قيد التجديد" },
+  { id: "con-5", propertyId: "prop-11", ownerId: "own-1", tenantId: "ten-5", type: "إيجار", signedAt: "2025-12-20", startDate: "2026-01-01", endDate: "2026-12-31", value: 34000, paymentCycle: "شهري", status: "منتهي" },
+  { id: "con-6", propertyId: "prop-13", ownerId: "own-3", tenantId: "ten-6", type: "إيجار", signedAt: "2026-03-20", startDate: "2026-04-01", endDate: "2027-03-31", value: 45000, paymentCycle: "نصف سنوي", status: "نشط" },
+  { id: "con-7", propertyId: "prop-17", ownerId: "own-2", tenantId: "ten-7", type: "إيجار", signedAt: "2026-02-15", startDate: "2026-03-01", endDate: "2027-02-28", value: 27000, paymentCycle: "سنوي", status: "نشط" },
+  { id: "con-8", propertyId: "prop-12", ownerId: "own-2", tenantId: "ten-1", type: "بيع", signedAt: "2025-10-20", startDate: "2025-10-20", endDate: "2025-10-20", value: 1650000, paymentCycle: "سنوي", status: "منتهي" },
 ];
+
+export const contracts: Contract[] = rawContracts.map((c) => ({
+  ...c,
+  payments: generatePaymentSchedule(c.startDate, c.endDate, c.value, c.paymentCycle),
+}));
 
 export const clients: Client[] = [
   ...owners.map((o): Client => ({ id: o.id, name: o.name, phone: o.phone, email: o.email, type: "مالك", joinedAt: o.joinedAt })),

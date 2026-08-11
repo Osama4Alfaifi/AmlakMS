@@ -25,6 +25,7 @@ import type {
   UserProfile,
   Vendor,
   Viewing,
+  Voucher,
 } from "@/lib/types";
 
 // Firestore rules require an authenticated request. On a fresh page load,
@@ -162,6 +163,11 @@ export function useAuditLogs() {
 // (wildcard), used only from app/admin/audit-log.
 export function useAllUserProfiles() {
   return useFirestoreCollection<UserProfile>("users");
+}
+
+// Accountant/admin only (see firestore.rules).
+export function useVouchers() {
+  return useFirestoreCollection<Voucher>("vouchers");
 }
 
 function fieldConstraint(

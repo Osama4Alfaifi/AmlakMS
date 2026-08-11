@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/compon
 import { Badge } from "@/components/ui/Badge";
 import { Input, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
-import { useAllUserProfiles, useAuditLogs } from "@/lib/firestore/hooks";
+import { computeNotifications } from "@/lib/notifications";
+import { useAllUserProfiles, useAuditLogs, useContracts, useProperties } from "@/lib/firestore/hooks";
 import type { AuditAction } from "@/lib/types";
 import { Search } from "lucide-react";
 
@@ -23,45 +24,79 @@ const ENTITY_TYPE_LABEL: Record<string, string> = {
   clients: "عميل",
   viewings: "معاينة",
   documentLinks: "مستند",
+  contracts: "عقد",
+  vouchers: "سند",
+  tenants: "مستأجر",
 };
+
+interface Row {
+  id: string;
+  timestamp: string;
+  actorName: string;
+  actionLabel: string;
+  actionTone: "success" | "info" | "warning";
+  entityLabel: string;
+  detail: string;
+}
 
 export default function AdminAuditLogPage() {
   const { data: logs } = useAuditLogs();
   const { data: profiles } = useAllUserProfiles();
+  const { data: contracts } = useContracts();
+  const { data: properties } = useProperties();
 
   const [query, setQuery] = useState("");
   const [entityType, setEntityType] = useState("الكل");
 
   const profileByUid = useMemo(() => new Map(profiles.map((p) => [p.id, p])), [profiles]);
-  const entityTypes = useMemo(() => ["الكل", ...Array.from(new Set(logs.map((l) => l.entityType)))], [logs]);
 
-  const sorted = useMemo(() => [...logs].sort((a, b) => b.timestamp.localeCompare(a.timestamp)), [logs]);
+  const rows = useMemo<Row[]>(() => {
+    const realRows: Row[] = logs.map((l) => ({
+      id: l.id,
+      timestamp: l.timestamp,
+      actorName: profileByUid.get(l.actorUid)?.name ?? l.actorUid.slice(0, 8),
+      actionLabel: ACTION_LABEL[l.action],
+      actionTone: l.action === "create" ? "success" : "info",
+      entityLabel: ENTITY_TYPE_LABEL[l.entityType] ?? l.entityType,
+      detail: l.label ?? "—",
+    }));
+
+    const reminderRows: Row[] = computeNotifications(contracts, properties).map((n) => ({
+      id: n.id,
+      timestamp: `${n.date}T00:00:00.000Z`,
+      actorName: "—",
+      actionLabel: "تذكير",
+      actionTone: "warning",
+      entityLabel: n.type,
+      detail: n.message,
+    }));
+
+    return [...realRows, ...reminderRows].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  }, [logs, profileByUid, contracts, properties]);
+
+  const entityTypes = useMemo(() => ["الكل", ...Array.from(new Set(rows.map((r) => r.entityLabel)))], [rows]);
 
   const filtered = useMemo(
     () =>
-      sorted.filter((l) => {
-        const actorName = profileByUid.get(l.actorUid)?.name ?? "";
-        return (
-          (entityType === "الكل" || l.entityType === entityType) &&
-          (actorName.includes(query) || (l.label ?? "").includes(query) || l.entityType.includes(query))
-        );
-      }),
-    [sorted, entityType, query, profileByUid]
+      rows.filter(
+        (r) =>
+          (entityType === "الكل" || r.entityLabel === entityType) &&
+          (r.actorName.includes(query) || r.detail.includes(query) || r.entityLabel.includes(query))
+      ),
+    [rows, entityType, query]
   );
 
   return (
-    <DashboardShell allow={["admin"]} title="سجل التدقيق">
+    <DashboardShell allow={["admin", "accountant"]} title="سجل العمليات">
       <Card>
         <CardHeader>
           <div>
             <CardTitle>سجل العمليات</CardTitle>
-            <CardSubtitle>{filtered.length} من {logs.length} عملية مسجّلة تلقائيًا عبر النظام</CardSubtitle>
+            <CardSubtitle>{filtered.length} من {rows.length} عملية — يشمل التذكيرات المحسوبة (عقود قرب الانتهاء ودفعات مستحقة)</CardSubtitle>
           </div>
           <div className="flex items-center gap-2">
-            <Select value={entityType} onChange={(e) => setEntityType(e.target.value)} className="w-40">
-              {entityTypes.map((t) => (
-                <option key={t} value={t}>{t === "الكل" ? "الكل" : ENTITY_TYPE_LABEL[t] ?? t}</option>
-              ))}
+            <Select value={entityType} onChange={(e) => setEntityType(e.target.value)} className="w-44">
+              {entityTypes.map((t) => <option key={t} value={t}>{t}</option>)}
             </Select>
             <div className="relative w-52">
               <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
@@ -86,18 +121,15 @@ export default function AdminAuditLogPage() {
                   <Td colSpan={5} className="text-center text-muted py-6">لا توجد عمليات مطابقة</Td>
                 </Tr>
               )}
-              {filtered.map((l) => {
-                const actor = profileByUid.get(l.actorUid);
-                return (
-                  <Tr key={l.id}>
-                    <Td className="text-muted whitespace-nowrap">{new Date(l.timestamp).toLocaleString("ar-SA")}</Td>
-                    <Td className="font-semibold">{actor?.name ?? l.actorUid.slice(0, 8)}</Td>
-                    <Td><Badge tone={l.action === "create" ? "success" : "info"}>{ACTION_LABEL[l.action]}</Badge></Td>
-                    <Td>{ENTITY_TYPE_LABEL[l.entityType] ?? l.entityType}</Td>
-                    <Td className="text-muted max-w-[280px] truncate">{l.label ?? "—"}</Td>
-                  </Tr>
-                );
-              })}
+              {filtered.map((r) => (
+                <Tr key={r.id}>
+                  <Td className="text-muted whitespace-nowrap">{new Date(r.timestamp).toLocaleString("ar-SA")}</Td>
+                  <Td className="font-semibold">{r.actorName}</Td>
+                  <Td><Badge tone={r.actionTone}>{r.actionLabel}</Badge></Td>
+                  <Td>{r.entityLabel}</Td>
+                  <Td className="text-muted max-w-[320px] truncate">{r.detail}</Td>
+                </Tr>
+              ))}
             </TBody>
           </Table>
         </CardContent>
