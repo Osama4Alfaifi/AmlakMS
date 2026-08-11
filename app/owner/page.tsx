@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment, useState } from "react";
 import Link from "next/link";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { StatCard } from "@/components/ui/StatCard";
@@ -19,10 +20,11 @@ import {
   useTechnicians,
 } from "@/lib/firestore/hooks";
 import type { Owner } from "@/lib/types";
-import { Building2, FileScan, FileText, TrendingDown, TrendingUp, Wallet, Wrench } from "lucide-react";
+import { Building2, ChevronDown, ChevronUp, FileScan, FileText, TrendingDown, TrendingUp, Wallet, Wrench } from "lucide-react";
 
 export default function OwnerDashboardPage() {
   const { user } = useAuth();
+  const [expandedExpenseId, setExpandedExpenseId] = useState<string | null>(null);
   const currentOwner = useFirestoreDoc<Owner>("owners", user?.linkedId ?? undefined);
   const { data: properties } = useProperties();
   const { data: contracts } = useContracts();
@@ -207,6 +209,7 @@ export default function OwnerDashboardPage() {
             <Table>
               <THead>
                 <Tr>
+                  <Th></Th>
                   <Th>الفئة</Th>
                   <Th>المورّد</Th>
                   <Th>المبلغ</Th>
@@ -217,18 +220,48 @@ export default function OwnerDashboardPage() {
               <TBody>
                 {myExpenses.length === 0 && (
                   <Tr>
-                    <Td colSpan={5} className="text-center text-muted py-6">لا توجد مصروفات مسجّلة</Td>
+                    <Td colSpan={6} className="text-center text-muted py-6">لا توجد مصروفات مسجّلة</Td>
                   </Tr>
                 )}
-                {myExpenses.map((e) => (
-                  <Tr key={e.id}>
-                    <Td className="font-semibold">{e.category}</Td>
-                    <Td className="text-muted">{e.vendorName ?? "—"}</Td>
-                    <Td className="font-semibold">{currency(e.amount)}</Td>
-                    <Td className="text-muted">{e.date}</Td>
-                    <Td><Badge>{e.status}</Badge></Td>
-                  </Tr>
-                ))}
+                {myExpenses.map((e) => {
+                  const isOpen = expandedExpenseId === e.id;
+                  return (
+                    <Fragment key={e.id}>
+                      <Tr className="cursor-pointer" onClick={() => setExpandedExpenseId(isOpen ? null : e.id)}>
+                        <Td className="w-8 text-muted">{isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</Td>
+                        <Td className="font-semibold">{e.category}</Td>
+                        <Td className="text-muted">{e.vendorName ?? "—"}</Td>
+                        <Td className="font-semibold">{currency(e.amount)}</Td>
+                        <Td className="text-muted">{e.date}</Td>
+                        <Td><Badge>{e.status}</Badge></Td>
+                      </Tr>
+                      {isOpen && (
+                        <Tr className="bg-background">
+                          <Td colSpan={6} className="py-3 whitespace-normal align-top">
+                            <div className="pr-8">
+                              <p className="text-xs font-semibold text-muted mb-2">تفصيل المبلغ ({e.items?.length ?? 0} بند)</p>
+                              <table className="w-full text-sm max-w-md">
+                                <tbody>
+                                  {(e.items ?? []).map((item, idx) => (
+                                    <tr key={idx} className="border-b border-border/60">
+                                      <td className="py-1.5 text-muted">{item.description}</td>
+                                      <td className="py-1.5 text-left font-medium">{currency(item.amount)}</td>
+                                    </tr>
+                                  ))}
+                                  <tr>
+                                    <td className="py-1.5 font-semibold">الإجمالي</td>
+                                    <td className="py-1.5 text-left font-bold text-brand-700">{currency(e.amount)}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                              {e.notes && <p className="text-xs text-muted mt-2">ملاحظات: {e.notes}</p>}
+                            </div>
+                          </Td>
+                        </Tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
               </TBody>
             </Table>
           </CardContent>

@@ -1,7 +1,7 @@
 "use client";
 
 import { type FirebaseApp, getApps, initializeApp } from "firebase/app";
-import { connectFirestoreEmulator, getFirestore, type Firestore } from "firebase/firestore";
+import { connectFirestoreEmulator, getFirestore, initializeFirestore, type Firestore } from "firebase/firestore";
 import { connectAuthEmulator, getAuth, type Auth } from "firebase/auth";
 
 // Falls back to a demo config so the app runs against the local Firestore
@@ -30,7 +30,16 @@ declare global {
 
 export function getDb(): Firestore {
   const app = getFirebaseApp();
-  const db = getFirestore(app);
+  // Optional fields (vendorName, notes, ...) are omitted with `value ||
+  // undefined` at call sites — the Firestore client SDK rejects `undefined`
+  // field values by default, so this setting is required for those writes
+  // to succeed when the optional field is left blank.
+  let db: Firestore;
+  try {
+    db = initializeFirestore(app, { ignoreUndefinedProperties: true });
+  } catch {
+    db = getFirestore(app);
+  }
   if (useEmulator && typeof window !== "undefined" && !globalThis.__amlakmsEmulatorConnected) {
     connectFirestoreEmulator(db, "127.0.0.1", 8080);
     globalThis.__amlakmsEmulatorConnected = true;

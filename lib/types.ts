@@ -113,6 +113,11 @@ export type ExpenseCategory =
   | "أخرى";
 export type ExpenseStatus = "مدفوعة" | "معلقة";
 
+export interface ExpenseItem {
+  description: string;
+  amount: number;
+}
+
 export interface Expense {
   id: string;
   propertyId: string;
@@ -122,6 +127,10 @@ export interface Expense {
   // directly on the document, not resolved via a cross-collection get().
   ownerId: string;
   category: ExpenseCategory;
+  // What the total is made of (e.g. "دهانات" 100 + "خلاطات" 400 + "شغل يد"
+  // 300). `amount` is kept as the sum of items so existing aggregations
+  // (KPI totals, owner net income) don't need to recompute it everywhere.
+  items: ExpenseItem[];
   amount: number;
   date: string;
   vendorName?: string;

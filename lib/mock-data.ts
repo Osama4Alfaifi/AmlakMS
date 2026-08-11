@@ -92,20 +92,20 @@ export const clients: Client[] = [
 ];
 
 export const expenses: Expense[] = [
-  { id: "exp-1", propertyId: "prop-1", ownerId: "own-1", category: "صيانة", amount: 800, date: "2026-03-05", vendorName: "فريق الصيانة الداخلي", status: "مدفوعة" },
-  { id: "exp-2", propertyId: "prop-1", ownerId: "own-1", category: "تأمين", amount: 1200, date: "2026-02-15", status: "معلقة" },
-  { id: "exp-3", propertyId: "prop-3", ownerId: "own-3", category: "كهرباء", amount: 450, date: "2026-04-01", status: "مدفوعة" },
-  { id: "exp-4", propertyId: "prop-3", ownerId: "own-3", category: "صيانة", amount: 600, date: "2026-05-10", vendorName: "مؤسسة الفا للصيانة", status: "معلقة" },
-  { id: "exp-5", propertyId: "prop-5", ownerId: "own-4", category: "أمن", amount: 900, date: "2026-01-20", vendorName: "شركة الحارس الأمنية", status: "مدفوعة" },
-  { id: "exp-6", propertyId: "prop-5", ownerId: "own-4", category: "رسوم حكومية", amount: 350, date: "2026-06-01", status: "مدفوعة" },
-  { id: "exp-7", propertyId: "prop-7", ownerId: "own-2", category: "صيانة", amount: 500, date: "2026-03-20", status: "معلقة" },
-  { id: "exp-8", propertyId: "prop-7", ownerId: "own-2", category: "تنظيف", amount: 300, date: "2026-07-01", vendorName: "مؤسسة النظافة الشاملة", status: "مدفوعة" },
-  { id: "exp-9", propertyId: "prop-11", ownerId: "own-1", category: "كهرباء", amount: 700, date: "2026-02-10", status: "مدفوعة" },
-  { id: "exp-10", propertyId: "prop-11", ownerId: "own-1", category: "صيانة", amount: 1100, date: "2026-04-15", vendorName: "مؤسسة الفا للصيانة", status: "معلقة" },
-  { id: "exp-11", propertyId: "prop-13", ownerId: "own-3", category: "تأمين", amount: 950, date: "2026-05-01", status: "مدفوعة" },
-  { id: "exp-12", propertyId: "prop-13", ownerId: "own-3", category: "مياه", amount: 200, date: "2026-06-20", status: "مدفوعة" },
-  { id: "exp-13", propertyId: "prop-17", ownerId: "own-2", category: "صيانة", amount: 400, date: "2026-03-15", status: "مدفوعة" },
-  { id: "exp-14", propertyId: "prop-17", ownerId: "own-2", category: "رسوم حكومية", amount: 250, date: "2026-07-10", status: "معلقة" },
+  { id: "exp-1", propertyId: "prop-1", ownerId: "own-1", category: "صيانة", items: [{ description: "دهانات", amount: 100 }, { description: "خلاطات", amount: 400 }, { description: "أجرة عمل (شغل يد)", amount: 300 }], amount: 800, date: "2026-03-05", vendorName: "فريق الصيانة الداخلي", status: "مدفوعة" },
+  { id: "exp-2", propertyId: "prop-1", ownerId: "own-1", category: "تأمين", items: [{ description: "قسط تأمين العقار السنوي", amount: 1200 }], amount: 1200, date: "2026-02-15", status: "معلقة" },
+  { id: "exp-3", propertyId: "prop-3", ownerId: "own-3", category: "كهرباء", items: [{ description: "فاتورة استهلاك كهرباء", amount: 450 }], amount: 450, date: "2026-04-01", status: "مدفوعة" },
+  { id: "exp-4", propertyId: "prop-3", ownerId: "own-3", category: "صيانة", items: [{ description: "فحص وصيانة دورية", amount: 250 }, { description: "قطع غيار", amount: 200 }, { description: "أجرة فني", amount: 150 }], amount: 600, date: "2026-05-10", vendorName: "مؤسسة الفا للصيانة", status: "معلقة" },
+  { id: "exp-5", propertyId: "prop-5", ownerId: "own-4", category: "أمن", items: [{ description: "رسوم خدمة الحراسة الأمنية — شهر", amount: 900 }], amount: 900, date: "2026-01-20", vendorName: "شركة الحارس الأمنية", status: "مدفوعة" },
+  { id: "exp-6", propertyId: "prop-5", ownerId: "own-4", category: "رسوم حكومية", items: [{ description: "رسوم بلدية", amount: 200 }, { description: "رسوم صك إلكتروني", amount: 150 }], amount: 350, date: "2026-06-01", status: "مدفوعة" },
+  { id: "exp-7", propertyId: "prop-7", ownerId: "own-2", category: "صيانة", items: [{ description: "إصلاح تسريب مياه", amount: 300 }, { description: "مواد سباكة", amount: 200 }], amount: 500, date: "2026-03-20", status: "معلقة" },
+  { id: "exp-8", propertyId: "prop-7", ownerId: "own-2", category: "تنظيف", items: [{ description: "تنظيف شامل بعد إخلاء المستأجر", amount: 300 }], amount: 300, date: "2026-07-01", vendorName: "مؤسسة النظافة الشاملة", status: "مدفوعة" },
+  { id: "exp-9", propertyId: "prop-11", ownerId: "own-1", category: "كهرباء", items: [{ description: "فاتورة استهلاك كهرباء", amount: 700 }], amount: 700, date: "2026-02-10", status: "مدفوعة" },
+  { id: "exp-10", propertyId: "prop-11", ownerId: "own-1", category: "صيانة", items: [{ description: "صيانة تكييف مركزي", amount: 600 }, { description: "قطع غيار وفريونات", amount: 350 }, { description: "أجرة فني", amount: 150 }], amount: 1100, date: "2026-04-15", vendorName: "مؤسسة الفا للصيانة", status: "معلقة" },
+  { id: "exp-11", propertyId: "prop-13", ownerId: "own-3", category: "تأمين", items: [{ description: "قسط تأمين العقار السنوي", amount: 950 }], amount: 950, date: "2026-05-01", status: "مدفوعة" },
+  { id: "exp-12", propertyId: "prop-13", ownerId: "own-3", category: "مياه", items: [{ description: "فاتورة استهلاك مياه", amount: 200 }], amount: 200, date: "2026-06-20", status: "مدفوعة" },
+  { id: "exp-13", propertyId: "prop-17", ownerId: "own-2", category: "صيانة", items: [{ description: "دهانات وترميم بسيط", amount: 250 }, { description: "أجرة عمل (شغل يد)", amount: 150 }], amount: 400, date: "2026-03-15", status: "مدفوعة" },
+  { id: "exp-14", propertyId: "prop-17", ownerId: "own-2", category: "رسوم حكومية", items: [{ description: "رسوم صك إلكتروني", amount: 250 }], amount: 250, date: "2026-07-10", status: "معلقة" },
 ];
 
 export const invoices: Invoice[] = [

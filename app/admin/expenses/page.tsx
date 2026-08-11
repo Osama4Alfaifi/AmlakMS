@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
@@ -11,10 +11,14 @@ import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { currency } from "@/lib/mock-data";
 import { useExpenses, useProperties } from "@/lib/firestore/hooks";
 import { createExpense } from "@/lib/firestore/mutations";
-import type { ExpenseCategory } from "@/lib/types";
-import { Plus, Receipt, TrendingDown, Wallet } from "lucide-react";
+import type { ExpenseCategory, ExpenseItem } from "@/lib/types";
+import { ChevronDown, ChevronUp, Plus, Receipt, TrendingDown, Trash2, Wallet } from "lucide-react";
 
 const CATEGORIES: ExpenseCategory[] = ["صيانة", "كهرباء", "مياه", "تنظيف", "أمن", "تأمين", "رسوم حكومية", "أخرى"];
+
+function itemsTotal(items: ExpenseItem[]) {
+  return items.reduce((s, i) => s + (Number(i.amount) || 0), 0);
+}
 
 export default function AdminExpensesPage() {
   const { data: expenses } = useExpenses();
@@ -24,10 +28,11 @@ export default function AdminExpensesPage() {
   const [category, setCategory] = useState("الكل");
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const [propertyId, setPropertyId] = useState("");
   const [expCategory, setExpCategory] = useState<ExpenseCategory>("صيانة");
-  const [amount, setAmount] = useState("");
+  const [items, setItems] = useState<ExpenseItem[]>([{ description: "", amount: 0 }]);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [vendorName, setVendorName] = useState("");
   const [notes, setNotes] = useState("");
@@ -48,16 +53,30 @@ export default function AdminExpensesPage() {
   const paid = expenses.filter((e) => e.status === "مدفوعة").reduce((s, e) => s + e.amount, 0);
   const pending = expenses.filter((e) => e.status === "معلقة").reduce((s, e) => s + e.amount, 0);
 
+  function updateItem(index: number, patch: Partial<ExpenseItem>) {
+    setItems((prev) => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)));
+  }
+
+  function addItem() {
+    setItems((prev) => [...prev, { description: "", amount: 0 }]);
+  }
+
+  function removeItem(index: number) {
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const property = properties.find((p) => p.id === propertyId);
-    if (!property || !amount) return;
+    const validItems = items.filter((i) => i.description.trim() && i.amount > 0);
+    if (!property || validItems.length === 0) return;
     setSubmitting(true);
     await createExpense({
       propertyId: property.id,
       ownerId: property.ownerId,
       category: expCategory,
-      amount: Number(amount),
+      items: validItems,
+      amount: itemsTotal(validItems),
       date,
       vendorName: vendorName || undefined,
       notes: notes || undefined,
@@ -67,7 +86,7 @@ export default function AdminExpensesPage() {
     setShowForm(false);
     setPropertyId("");
     setExpCategory("صيانة");
-    setAmount("");
+    setItems([{ description: "", amount: 0 }]);
     setVendorName("");
     setNotes("");
   }
@@ -85,7 +104,7 @@ export default function AdminExpensesPage() {
           <CardHeader>
             <div>
               <CardTitle>سجل المصروفات</CardTitle>
-              <CardSubtitle>{expenses.length} مصروف على مستوى المحفظة العقارية</CardSubtitle>
+              <CardSubtitle>{expenses.length} مصروف على مستوى المحفظة العقارية — اضغط على أي صف لعرض التفاصيل</CardSubtitle>
             </div>
             <div className="flex items-center gap-2">
               <Select value={category} onChange={(e) => setCategory(e.target.value)} className="w-36">
@@ -103,6 +122,7 @@ export default function AdminExpensesPage() {
             <Table>
               <THead>
                 <Tr>
+                  <Th></Th>
                   <Th>العقار</Th>
                   <Th>الفئة</Th>
                   <Th>المورّد</Th>
@@ -114,19 +134,49 @@ export default function AdminExpensesPage() {
               <TBody>
                 {filtered.length === 0 && (
                   <Tr>
-                    <Td colSpan={6} className="text-center text-muted py-6">لا توجد مصروفات مطابقة</Td>
+                    <Td colSpan={7} className="text-center text-muted py-6">لا توجد مصروفات مطابقة</Td>
                   </Tr>
                 )}
-                {filtered.map((e) => (
-                  <Tr key={e.id}>
-                    <Td className="font-semibold max-w-[200px] truncate">{propertyTitleById.get(e.propertyId) ?? "—"}</Td>
-                    <Td>{e.category}</Td>
-                    <Td className="text-muted">{e.vendorName ?? "—"}</Td>
-                    <Td className="font-semibold">{currency(e.amount)}</Td>
-                    <Td className="text-muted">{e.date}</Td>
-                    <Td><Badge>{e.status}</Badge></Td>
-                  </Tr>
-                ))}
+                {filtered.map((e) => {
+                  const isOpen = expandedId === e.id;
+                  return (
+                    <Fragment key={e.id}>
+                      <Tr className="cursor-pointer" onClick={() => setExpandedId(isOpen ? null : e.id)}>
+                        <Td className="w-8 text-muted">{isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</Td>
+                        <Td className="font-semibold max-w-[200px] truncate">{propertyTitleById.get(e.propertyId) ?? "—"}</Td>
+                        <Td>{e.category}</Td>
+                        <Td className="text-muted">{e.vendorName ?? "—"}</Td>
+                        <Td className="font-semibold">{currency(e.amount)}</Td>
+                        <Td className="text-muted">{e.date}</Td>
+                        <Td><Badge>{e.status}</Badge></Td>
+                      </Tr>
+                      {isOpen && (
+                        <Tr className="bg-background">
+                          <Td colSpan={7} className="py-3 whitespace-normal align-top">
+                            <div className="pr-8">
+                              <p className="text-xs font-semibold text-muted mb-2">تفصيل المبلغ ({e.items?.length ?? 0} بند)</p>
+                              <table className="w-full text-sm max-w-md">
+                                <tbody>
+                                  {(e.items ?? []).map((item, idx) => (
+                                    <tr key={idx} className="border-b border-border/60">
+                                      <td className="py-1.5 text-muted">{item.description}</td>
+                                      <td className="py-1.5 text-left font-medium">{currency(item.amount)}</td>
+                                    </tr>
+                                  ))}
+                                  <tr>
+                                    <td className="py-1.5 font-semibold">الإجمالي</td>
+                                    <td className="py-1.5 text-left font-bold text-brand-700">{currency(e.amount)}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                              {e.notes && <p className="text-xs text-muted mt-2">ملاحظات: {e.notes}</p>}
+                            </div>
+                          </Td>
+                        </Tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
               </TBody>
             </Table>
           </CardContent>
@@ -138,43 +188,72 @@ export default function AdminExpensesPage() {
               <CardTitle>تسجيل مصروف جديد</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="grid sm:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="property">العقار</Label>
-                  <Select id="property" value={propertyId} onChange={(e) => setPropertyId(e.target.value)} required>
-                    <option value="" disabled>اختر عقارًا</option>
-                    {properties.map((p) => (
-                      <option key={p.id} value={p.id}>{p.title}</option>
-                    ))}
-                  </Select>
+              <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                <div className="grid sm:grid-cols-4 gap-4">
+                  <div>
+                    <Label htmlFor="property">العقار</Label>
+                    <Select id="property" value={propertyId} onChange={(e) => setPropertyId(e.target.value)} required>
+                      <option value="" disabled>اختر عقارًا</option>
+                      {properties.map((p) => (
+                        <option key={p.id} value={p.id}>{p.title}</option>
+                      ))}
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="category">الفئة</Label>
+                    <Select id="category" value={expCategory} onChange={(e) => setExpCategory(e.target.value as ExpenseCategory)}>
+                      {CATEGORIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="date">التاريخ</Label>
+                    <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="vendor">المورّد (اختياري)</Label>
+                    <Input id="vendor" value={vendorName} onChange={(e) => setVendorName(e.target.value)} />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="category">الفئة</Label>
-                  <Select id="category" value={expCategory} onChange={(e) => setExpCategory(e.target.value as ExpenseCategory)}>
-                    {CATEGORIES.map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </Select>
+
+                <div className="flex flex-col gap-2.5">
+                  <Label>تفصيل المبلغ (بند لكل تكلفة فرعية)</Label>
+                  {items.map((item, idx) => (
+                    <div key={idx} className="grid grid-cols-[1fr_140px_36px] gap-2 items-center">
+                      <Input
+                        placeholder="مثال: دهانات، خلاطات، أجرة عمل"
+                        value={item.description}
+                        onChange={(e) => updateItem(idx, { description: e.target.value })}
+                      />
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="المبلغ (﷼)"
+                        value={item.amount || ""}
+                        onChange={(e) => updateItem(idx, { amount: Number(e.target.value) })}
+                      />
+                      <button type="button" onClick={() => removeItem(idx)} className="text-danger-500 hover:text-danger-700 p-2">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                  <Button type="button" variant="outline" size="sm" onClick={addItem} className="self-start">
+                    <Plus size={14} /> إضافة بند
+                  </Button>
                 </div>
-                <div>
-                  <Label htmlFor="amount">المبلغ (﷼)</Label>
-                  <Input id="amount" type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} required />
-                </div>
-                <div>
-                  <Label htmlFor="date">التاريخ</Label>
-                  <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-                </div>
-                <div>
-                  <Label htmlFor="vendor">المورّد (اختياري)</Label>
-                  <Input id="vendor" value={vendorName} onChange={(e) => setVendorName(e.target.value)} />
-                </div>
+
                 <div>
                   <Label htmlFor="notes">ملاحظات</Label>
-                  <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+                  <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="اختياري" />
                 </div>
-                <Button type="submit" disabled={submitting} className="sm:col-span-3 self-start">
-                  {submitting ? "جارِ الحفظ..." : "حفظ المصروف"}
-                </Button>
+
+                <div className="flex items-center justify-between border-t border-border pt-4">
+                  <p className="text-sm text-muted">
+                    إجمالي المصروف: <span className="font-bold text-foreground">{currency(itemsTotal(items))}</span>
+                  </p>
+                  <Button type="submit" disabled={submitting}>{submitting ? "جارِ الحفظ..." : "حفظ المصروف"}</Button>
+                </div>
               </form>
             </CardContent>
           </Card>
