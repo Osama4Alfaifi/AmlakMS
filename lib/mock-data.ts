@@ -1,7 +1,9 @@
 import type {
   AccountManager,
+  Building,
   Client,
   Contract,
+  DocumentLink,
   Expense,
   Invoice,
   MaintenanceRequest,
@@ -13,6 +15,9 @@ import type {
   SystemUser,
   Technician,
   Tenant,
+  Unit,
+  Vendor,
+  Viewing,
 } from "./types";
 
 // Per Saudi VAT regulations: residential rentals/sales are VAT-exempt;
@@ -86,9 +91,44 @@ export const contracts: Contract[] = [
 export const clients: Client[] = [
   ...owners.map((o): Client => ({ id: o.id, name: o.name, phone: o.phone, email: o.email, type: "مالك", joinedAt: o.joinedAt })),
   ...tenants.map((t, i): Client => ({ id: t.id, name: t.name, phone: t.phone, email: t.email, type: "مستأجر", joinedAt: contracts[i]?.startDate ?? "2026-01-01" })),
-  { id: "lead-1", name: "عمر الشمري", phone: "0511223344", email: "omar.sh@mail.com", type: "عميل محتمل", joinedAt: "2026-07-01" },
-  { id: "lead-2", name: "دانة العصيمي", phone: "0512233445", email: "dana.a@mail.com", type: "عميل محتمل", joinedAt: "2026-07-18" },
-  { id: "lead-3", name: "ماجد القحطاني", phone: "0513344556", email: "majed.q@mail.com", type: "عميل محتمل", joinedAt: "2026-08-02" },
+  { id: "lead-1", name: "عمر الشمري", phone: "0511223344", email: "omar.sh@mail.com", type: "عميل محتمل", joinedAt: "2026-07-01", stage: "تواصل أولي", interestedPropertyId: "prop-2" },
+  { id: "lead-2", name: "دانة العصيمي", phone: "0512233445", email: "dana.a@mail.com", type: "عميل محتمل", joinedAt: "2026-07-18", stage: "معاينة مجدولة", interestedPropertyId: "prop-10" },
+  { id: "lead-3", name: "ماجد القحطاني", phone: "0513344556", email: "majed.q@mail.com", type: "عميل محتمل", joinedAt: "2026-08-02", stage: "عرض مقدم", interestedPropertyId: "prop-8" },
+];
+
+export const buildings: Building[] = [
+  { id: "bld-1", name: "برج الياسمين السكني", city: "الرياض", district: "الياسمين", address: "شارع أنس بن مالك، الياسمين", ownerId: "own-5", notes: "مبنى سكني من 4 طوابق", createdAt: "2026-01-15" },
+  { id: "bld-2", name: "مجمع الروضة التجاري", city: "جدة", district: "الروضة", address: "شارع فلسطين، الروضة", ownerId: "own-3", notes: "محلات ومكاتب على واجهة رئيسية", createdAt: "2026-02-10" },
+];
+
+export const units: Unit[] = [
+  { id: "unit-1", buildingId: "bld-1", ownerId: "own-5", unitNumber: "101", floor: 1, type: "شقة", area: 120, bedrooms: 2, bathrooms: 2, price: 42000, listingType: "إيجار", status: "مؤجرة", createdAt: "2026-01-15" },
+  { id: "unit-2", buildingId: "bld-1", ownerId: "own-5", unitNumber: "102", floor: 1, type: "شقة", area: 130, bedrooms: 3, bathrooms: 2, price: 48000, listingType: "إيجار", status: "متاحة", createdAt: "2026-01-15" },
+  { id: "unit-3", buildingId: "bld-1", ownerId: "own-5", unitNumber: "201", floor: 2, type: "شقة", area: 125, bedrooms: 2, bathrooms: 2, price: 45000, listingType: "إيجار", status: "تحت الصيانة", createdAt: "2026-01-15" },
+  { id: "unit-4", buildingId: "bld-2", ownerId: "own-3", unitNumber: "G1", floor: 0, type: "محل تجاري", area: 60, bedrooms: 0, bathrooms: 1, price: 35000, listingType: "إيجار", status: "مؤجرة", createdAt: "2026-02-10" },
+  { id: "unit-5", buildingId: "bld-2", ownerId: "own-3", unitNumber: "G2", floor: 0, type: "محل تجاري", area: 55, bedrooms: 0, bathrooms: 1, price: 32000, listingType: "إيجار", status: "متاحة", createdAt: "2026-02-10" },
+  { id: "unit-6", buildingId: "bld-2", ownerId: "own-3", unitNumber: "M1", floor: 1, type: "مكتب", area: 80, bedrooms: 0, bathrooms: 1, price: 40000, listingType: "إيجار", status: "متاحة", createdAt: "2026-02-10" },
+];
+
+export const vendors: Vendor[] = [
+  { id: "vnd-1", name: "مؤسسة النجم للسباكة", category: "سباكة", phone: "0541002001", email: "info@alnajm-plumbing.example.com", notes: "تعاقد سنوي لأعمال السباكة الطارئة", createdAt: "2025-11-01" },
+  { id: "vnd-2", name: "شركة الأفق للكهرباء", category: "كهرباء", phone: "0541002002", createdAt: "2025-12-05" },
+  { id: "vnd-3", name: "مجموعة السلامة للأمن", category: "أمن", phone: "0541002003", email: "ops@safety-group.example.com", createdAt: "2026-01-10" },
+  { id: "vnd-4", name: "مؤسسة التميز للتكييف", category: "تكييف", phone: "0541002004", notes: "صيانة دورية للمكيفات المركزية", createdAt: "2026-03-01" },
+];
+
+export const viewings: Viewing[] = [
+  { id: "view-1", leadId: "lead-2", propertyId: "prop-10", scheduledAt: "2026-08-14", status: "مجدولة", notes: "معاينة أولى بعد الظهر", createdAt: "2026-08-08" },
+  { id: "view-2", leadId: "lead-1", propertyId: "prop-2", scheduledAt: "2026-07-25", status: "مكتملة", notes: "أبدى اهتمامًا بالفيلا", createdAt: "2026-07-20" },
+  { id: "view-3", leadId: "lead-3", propertyId: "prop-8", scheduledAt: "2026-08-05", status: "مكتملة", notes: "تفاوض على السعر جارٍ", createdAt: "2026-08-01" },
+];
+
+// Placeholder URLs (example.com) — real usage has the admin paste a link to
+// an actually-hosted file (Drive, email, etc.) via app/admin/documents.
+export const documentLinks: DocumentLink[] = [
+  { id: "doc-1", title: "عقد إيجار شقة الملقا", category: "عقد", entityType: "عقد", entityId: "con-1", entityLabel: "CON-1", url: "https://drive.example.com/docs/con-1-lease.pdf", createdAt: "2026-02-01" },
+  { id: "doc-2", title: "صك ملكية فيلا النرجس", category: "صك ملكية", entityType: "عقار", entityId: "prop-2", entityLabel: "فيلا دورين بحي النرجس", url: "https://drive.example.com/docs/prop-2-deed.pdf", createdAt: "2026-02-20" },
+  { id: "doc-3", title: "وثيقة تأمين مبنى الياسمين", category: "تأمين", entityType: "مبنى", entityId: "bld-1", entityLabel: "برج الياسمين السكني", url: "https://drive.example.com/docs/bld-1-insurance.pdf", createdAt: "2026-01-20" },
 ];
 
 export const expenses: Expense[] = [

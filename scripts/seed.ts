@@ -20,8 +20,10 @@ if (useEmulator) {
 import { getAdminAuth, getAdminDb } from "../lib/firebase/admin";
 import {
   accountManagers,
+  buildings,
   clients,
   contracts,
+  documentLinks,
   expenses,
   invoices,
   maintenanceRequests,
@@ -32,6 +34,9 @@ import {
   systemUsers,
   technicians,
   tenants,
+  units,
+  vendors,
+  viewings,
 } from "../lib/mock-data";
 import type { Role } from "../lib/types";
 
@@ -88,6 +93,11 @@ async function main() {
   await seedCollection("expenses", expenses);
   await seedCollection("accountManagers", accountManagers);
   await seedCollection("systemUsers", systemUsers);
+  await seedCollection("buildings", buildings);
+  await seedCollection("units", units);
+  await seedCollection("vendors", vendors);
+  await seedCollection("viewings", viewings);
+  await seedCollection("documentLinks", documentLinks);
 
   const personas: Persona[] = [
     { id: "admin", role: "admin", name: "مدير النظام", email: "admin@amlakms.sa", linkedId: null },

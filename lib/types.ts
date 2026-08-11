@@ -78,6 +78,9 @@ export interface Client {
   email: string;
   type: ClientType;
   joinedAt: string;
+  // CRM pipeline fields — only meaningful when type === "عميل محتمل".
+  stage?: LeadStage;
+  interestedPropertyId?: string;
 }
 
 export type InvoiceStatus = "مدفوعة" | "معلقة" | "متأخرة";
@@ -163,6 +166,9 @@ export interface MaintenanceRequest {
   tenantName: string;
   createdByUid?: string;
   technicianId: string | null;
+  // External vendor (Vendor.id) a request can be handed off to instead of
+  // (or alongside) an internal technician — see app/admin/maintenance.
+  vendorId?: string | null;
   title: string;
   description: string;
   priority: Priority;
@@ -179,6 +185,98 @@ export interface Technician {
   specialty: TechnicianSpecialty;
   phone: string;
   rating: number;
+}
+
+// External maintenance/service company — same shape as Technician, but not
+// an in-house staff member, so it isn't tied to a Firebase Auth account.
+export interface Vendor {
+  id: string;
+  name: string;
+  category: string;
+  phone: string;
+  email?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+// A building groups multiple rentable/sellable units under one address —
+// additive to the existing single-level `Property` catalog, which continues
+// to represent standalone listings unchanged.
+export interface Building {
+  id: string;
+  name: string;
+  city: string;
+  district: string;
+  address: string;
+  ownerId: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface Unit {
+  id: string;
+  buildingId: string;
+  // Denormalized from the building — same list-provability reason as
+  // Expense.ownerId (see firestore.rules).
+  ownerId: string;
+  unitNumber: string;
+  floor: number;
+  type: PropertyType;
+  area: number;
+  bedrooms: number;
+  bathrooms: number;
+  price: number;
+  listingType: "إيجار" | "بيع";
+  status: PropertyStatus;
+  createdAt: string;
+}
+
+// CRM pipeline stage for Client records of type "عميل محتمل" — see
+// app/admin/leads/page.tsx.
+export type LeadStage = "جديد" | "تواصل أولي" | "معاينة مجدولة" | "عرض مقدم" | "تم التحويل لمستأجر" | "مرفوض";
+
+export type ViewingStatus = "مجدولة" | "مكتملة" | "ملغاة";
+
+export interface Viewing {
+  id: string;
+  leadId: string;
+  propertyId: string;
+  scheduledAt: string;
+  status: ViewingStatus;
+  notes?: string;
+  createdAt: string;
+}
+
+// Link-based document catalog — stores metadata + an externally-hosted URL
+// (Google Drive, email attachment, etc.) rather than an uploaded file. Real
+// in-app file upload needs Firebase Storage, which requires upgrading the
+// Firebase project to the Blaze plan; deferred until that's decided (see
+// the same call on expense receipts).
+export type DocumentCategory = "عقد" | "فاتورة" | "هوية" | "صك ملكية" | "تأمين" | "أخرى";
+export type DocumentEntityType = "عقار" | "عقد" | "مالك" | "مستأجر" | "مبنى";
+
+export interface DocumentLink {
+  id: string;
+  title: string;
+  category: DocumentCategory;
+  entityType: DocumentEntityType;
+  entityId: string;
+  entityLabel: string;
+  url: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export type AuditAction = "create" | "update";
+
+export interface AuditLog {
+  id: string;
+  actorUid: string;
+  action: AuditAction;
+  entityType: string;
+  entityId: string;
+  label?: string;
+  timestamp: string;
 }
 
 export type TicketCategory = "خدمة العملاء" | "الدعم الفني";

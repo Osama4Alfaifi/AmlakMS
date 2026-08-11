@@ -63,6 +63,20 @@ service cloud.firestore {
     match /invoices/{id} { allow read: if signedIn(); }
     match /accountManagers/{id} { allow read: if signedIn(); }
     match /systemUsers/{id} { allow read: if signedIn(); }
+    match /buildings/{id} { allow read: if signedIn(); }
+    match /units/{id} { allow read: if signedIn(); }
+    match /vendors/{id} { allow read: if signedIn(); }
+
+    // Viewings and document links are internal admin/CRM tooling — no
+    // owner/tenant use case in this phase, so no explicit rule: they fall
+    // through to default-deny for everyone except admin (wildcard above).
+
+    // Append-only audit trail: anyone signed in can log their own action
+    // (so a tenant filing a maintenance request can log it too), but only
+    // admin can read (wildcard above) — no update/delete for anyone.
+    match /auditLogs/{id} {
+      allow create: if signedIn() && request.resource.data.actorUid == request.auth.uid;
+    }
 
     // Expenses: owners only see expenses on their own properties (ownerId
     // is denormalized onto each expense at creation time, same

@@ -1,11 +1,49 @@
 "use client";
 
 import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
-import { getDb } from "@/lib/firebase/client";
-import type { Expense, MaintenanceRequest, MaintenanceStatus, Quote, SupportTicket, TicketStatus } from "@/lib/types";
+import { getDb, getFirebaseAuth } from "@/lib/firebase/client";
+import type {
+  AuditAction,
+  Building,
+  DocumentLink,
+  Expense,
+  LeadStage,
+  MaintenanceRequest,
+  MaintenanceStatus,
+  Quote,
+  SupportTicket,
+  TicketStatus,
+  Unit,
+  Vendor,
+  Viewing,
+  ViewingStatus,
+} from "@/lib/types";
+
+// Records who did what for the admin-only audit log (app/admin/audit-log).
+// Fire-and-forget from the caller's perspective — a logging failure must
+// never block the primary write it's describing, so callers don't await
+// rejections from this; it resolves once the log entry lands or logs its
+// own error to the console.
+async function logAudit(entityType: string, entityId: string, action: AuditAction, label?: string) {
+  const uid = getFirebaseAuth().currentUser?.uid;
+  if (!uid) return;
+  try {
+    await addDoc(collection(getDb(), "auditLogs"), {
+      actorUid: uid,
+      action,
+      entityType,
+      entityId,
+      label: label ?? null,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err) {
+    console.error("Audit log write failed:", err);
+  }
+}
 
 export async function createQuote(quote: Omit<Quote, "id">) {
   const ref = await addDoc(collection(getDb(), "quotes"), quote);
+  void logAudit("quotes", ref.id, "create", quote.number);
   return ref.id;
 }
 
@@ -13,30 +51,82 @@ export async function createQuote(quote: Omit<Quote, "id">) {
 // admin wildcard rule; there's no client-side create path for other roles).
 export async function createExpense(expense: Omit<Expense, "id">) {
   const ref = await addDoc(collection(getDb(), "expenses"), expense);
+  void logAudit("expenses", ref.id, "create", expense.category);
   return ref.id;
 }
 
 export async function createSupportTicket(ticket: Omit<SupportTicket, "id">) {
   const ref = await addDoc(collection(getDb(), "supportTickets"), ticket);
+  void logAudit("supportTickets", ref.id, "create", ticket.subject);
   return ref.id;
 }
 
 export async function updateSupportTicketStatus(id: string, status: TicketStatus) {
   await updateDoc(doc(getDb(), "supportTickets", id), { status });
+  void logAudit("supportTickets", id, "update", `status → ${status}`);
 }
 
 export async function createMaintenanceRequest(request: Omit<MaintenanceRequest, "id">) {
   const ref = await addDoc(collection(getDb(), "maintenanceRequests"), request);
+  void logAudit("maintenanceRequests", ref.id, "create", request.title);
   return ref.id;
 }
 
 export async function updateMaintenanceRequest(
   id: string,
-  patch: Partial<Pick<MaintenanceRequest, "status" | "technicianId" | "scheduledDate">>
+  patch: Partial<Pick<MaintenanceRequest, "status" | "technicianId" | "vendorId" | "scheduledDate">>
 ) {
   await updateDoc(doc(getDb(), "maintenanceRequests", id), patch);
+  void logAudit("maintenanceRequests", id, "update");
 }
 
 export async function claimMaintenanceRequest(id: string, technicianId: string) {
   await updateMaintenanceRequest(id, { technicianId, status: "قيد التنفيذ" as MaintenanceStatus });
+}
+
+export async function assignVendorToMaintenanceRequest(id: string, vendorId: string) {
+  await updateMaintenanceRequest(id, { vendorId });
+}
+
+// Admin-only writes (buildings/units/vendors are reference data, same
+// pattern as properties — see firestore.rules).
+export async function createBuilding(building: Omit<Building, "id">) {
+  const ref = await addDoc(collection(getDb(), "buildings"), building);
+  void logAudit("buildings", ref.id, "create", building.name);
+  return ref.id;
+}
+
+export async function createUnit(unit: Omit<Unit, "id">) {
+  const ref = await addDoc(collection(getDb(), "units"), unit);
+  void logAudit("units", ref.id, "create", unit.unitNumber);
+  return ref.id;
+}
+
+export async function createVendor(vendor: Omit<Vendor, "id">) {
+  const ref = await addDoc(collection(getDb(), "vendors"), vendor);
+  void logAudit("vendors", ref.id, "create", vendor.name);
+  return ref.id;
+}
+
+// CRM: lead stage lives on the existing Client doc (type === "عميل محتمل").
+export async function updateLeadStage(clientId: string, stage: LeadStage) {
+  await updateDoc(doc(getDb(), "clients", clientId), { stage });
+  void logAudit("clients", clientId, "update", `stage → ${stage}`);
+}
+
+export async function createViewing(viewing: Omit<Viewing, "id">) {
+  const ref = await addDoc(collection(getDb(), "viewings"), viewing);
+  void logAudit("viewings", ref.id, "create");
+  return ref.id;
+}
+
+export async function updateViewingStatus(id: string, status: ViewingStatus) {
+  await updateDoc(doc(getDb(), "viewings", id), { status });
+  void logAudit("viewings", id, "update", `status → ${status}`);
+}
+
+export async function createDocumentLink(documentLink: Omit<DocumentLink, "id">) {
+  const ref = await addDoc(collection(getDb(), "documentLinks"), documentLink);
+  void logAudit("documentLinks", ref.id, "create", documentLink.title);
+  return ref.id;
 }

@@ -6,8 +6,11 @@ import { onAuthStateChanged } from "firebase/auth";
 import { getDb, getFirebaseAuth } from "@/lib/firebase/client";
 import type {
   AccountManager,
+  AuditLog,
+  Building,
   Client,
   Contract,
+  DocumentLink,
   Expense,
   Invoice,
   MaintenanceRequest,
@@ -18,6 +21,10 @@ import type {
   SystemUser,
   Technician,
   Tenant,
+  Unit,
+  UserProfile,
+  Vendor,
+  Viewing,
 } from "@/lib/types";
 
 // Firestore rules require an authenticated request. On a fresh page load,
@@ -126,6 +133,35 @@ export function useSupportTickets() {
 // Unconstrained — admin only (owner must use useOwnerExpenses below).
 export function useExpenses() {
   return useFirestoreCollection<Expense>("expenses");
+}
+
+// Reference data — readable by any signed-in account, same as properties.
+export function useBuildings() {
+  return useFirestoreCollection<Building>("buildings");
+}
+export function useUnits() {
+  return useFirestoreCollection<Unit>("units");
+}
+export function useVendors() {
+  return useFirestoreCollection<Vendor>("vendors");
+}
+
+// Admin-only tooling (see firestore.rules — no explicit rule, falls through
+// to the admin wildcard; a non-admin session simply gets a permission error
+// in this hook's error state, which no non-admin page calls into).
+export function useViewings() {
+  return useFirestoreCollection<Viewing>("viewings");
+}
+export function useDocumentLinks() {
+  return useFirestoreCollection<DocumentLink>("documentLinks");
+}
+export function useAuditLogs() {
+  return useFirestoreCollection<AuditLog>("auditLogs");
+}
+// Resolves an actor's uid to their name/role for the audit log — admin-only
+// (wildcard), used only from app/admin/audit-log.
+export function useAllUserProfiles() {
+  return useFirestoreCollection<UserProfile>("users");
 }
 
 function fieldConstraint(
