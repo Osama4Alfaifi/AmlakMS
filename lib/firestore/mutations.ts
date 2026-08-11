@@ -147,9 +147,12 @@ export async function createDocumentLink(documentLink: Omit<DocumentLink, "id">)
 // Accountant/admin only (see firestore.rules). The payment schedule is
 // generated here, not passed in, so every creation path gets it — see
 // lib/contracts/schedule.ts.
-export async function createContract(contract: Omit<Contract, "id" | "payments">) {
-  const payments = generatePaymentSchedule(contract.startDate, contract.endDate, contract.value, contract.paymentCycle);
-  const ref = await addDoc(collection(getDb(), "contracts"), { ...contract, payments });
+// payments: pass the real schedule extracted from an Ejar contract file
+// when available (it can be non-uniform — see lib/rega/parseEjarContract);
+// omitted, it falls back to generatePaymentSchedule's even split.
+export async function createContract(contract: Omit<Contract, "id" | "payments">, payments?: ContractPayment[]) {
+  const finalPayments = payments ?? generatePaymentSchedule(contract.startDate, contract.endDate, contract.value, contract.paymentCycle);
+  const ref = await addDoc(collection(getDb(), "contracts"), { ...contract, payments: finalPayments });
   void logAudit("contracts", ref.id, "create", `عقد جديد بقيمة ${contract.value.toLocaleString("ar-SA")} ﷼`);
   return ref.id;
 }

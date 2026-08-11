@@ -81,6 +81,8 @@ export interface Contract {
   status: ContractStatus;
   // رابط خارجي لنسخة العقد (Drive وغيره) — لا رفع حقيقي داخل التطبيق؛ نفس نهج DocumentLink.
   documentUrl?: string;
+  // رقم سجل العقد في منصة إيجار — يُملأ تلقائيًا عند الاستيراد من ملف Ejar (انظر lib/rega).
+  externalContractNo?: string;
   // مُولَّد تلقائيًا عند الإنشاء من (المدة ÷ دورة الدفع) — انظر lib/contracts/schedule.ts.
   payments: ContractPayment[];
 }

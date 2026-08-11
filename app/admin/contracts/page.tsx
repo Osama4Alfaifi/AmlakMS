@@ -14,6 +14,7 @@ import { downloadExcel } from "@/lib/excel";
 import { generatePaymentSchedule } from "@/lib/contracts/schedule";
 import { useContracts, useOwners, useProperties, useTenants } from "@/lib/firestore/hooks";
 import { createContract, createTenant, endContract, updateContractPayments, updateTenantContract } from "@/lib/firestore/mutations";
+import { parseEjarPdf } from "@/lib/rega/parseEjarContract";
 import type { ContractPayment, PaymentCycle } from "@/lib/types";
 import {
   CheckCircle2,
@@ -25,6 +26,7 @@ import {
   Plus,
   Receipt,
   Search,
+  Upload,
   XCircle,
 } from "lucide-react";
 
@@ -46,6 +48,7 @@ function emptyForm() {
     endDate: "",
     paymentCycle: "سنوي" as PaymentCycle,
     documentUrl: "",
+    externalContractNo: "",
   };
 }
 
@@ -62,6 +65,9 @@ export default function AdminContractsPage() {
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyForm());
+  const [importing, setImporting] = useState(false);
+  const [importNotice, setImportNotice] = useState<{ tone: "success" | "danger"; text: string } | null>(null);
+  const [importedPayments, setImportedPayments] = useState<ContractPayment[] | null>(null);
 
   const propertyTitleById = useMemo(() => new Map(properties.map((p) => [p.id, p.title])), [properties]);
   const tenantNameById = useMemo(() => new Map(tenants.map((t) => [t.id, t.name])), [tenants]);
@@ -101,9 +107,52 @@ export default function AdminContractsPage() {
     }));
 
   const previewSchedule: ContractPayment[] =
-    form.startDate && form.endDate && Number(form.value) > 0
+    importedPayments ??
+    (form.startDate && form.endDate && Number(form.value) > 0
       ? generatePaymentSchedule(form.startDate, form.endDate, Number(form.value), form.paymentCycle)
-      : [];
+      : []);
+
+  // Clears a stale imported schedule once the accountant edits a field it
+  // was computed from — it stays valid across edits to unrelated fields
+  // (tenant, document link, etc).
+  function clearImportedScheduleOnEdit() {
+    setImportedPayments(null);
+  }
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setImporting(true);
+    setImportNotice(null);
+    const parsed = await parseEjarPdf(file);
+    setImporting(false);
+
+    if (!parsed) {
+      setImportNotice({ tone: "danger", text: "تعذّر الاستخراج من هذا الملف — يرجى تعبئة بيانات العقد يدويًا." });
+      return;
+    }
+
+    const matchedTenant = parsed.tenantPhone ? tenants.find((t) => t.phone === parsed.tenantPhone) : undefined;
+
+    setForm((f) => ({
+      ...f,
+      signedAt: parsed.signedAt ?? f.signedAt,
+      startDate: parsed.startDate ?? f.startDate,
+      endDate: parsed.endDate ?? f.endDate,
+      value: parsed.totalValue != null ? String(parsed.totalValue) : f.value,
+      paymentCycle: parsed.paymentCycle ?? f.paymentCycle,
+      externalContractNo: parsed.externalContractNo ?? f.externalContractNo,
+      tenantMode: matchedTenant ? "existing" : "new",
+      tenantId: matchedTenant?.id ?? f.tenantId,
+      newTenantName: matchedTenant ? f.newTenantName : parsed.tenantName ?? f.newTenantName,
+      newTenantPhone: matchedTenant ? f.newTenantPhone : parsed.tenantPhone ?? f.newTenantPhone,
+      newTenantEmail: matchedTenant ? f.newTenantEmail : parsed.tenantEmail ?? f.newTenantEmail,
+    }));
+    setImportedPayments(parsed.payments ?? null);
+    setImportNotice({ tone: "success", text: "تم الاستخراج تلقائيًا من ملف إيجار — يرجى مراجعة الحقول قبل الحفظ." });
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -124,19 +173,23 @@ export default function AdminContractsPage() {
       });
     }
 
-    const contractId = await createContract({
-      propertyId: property.id,
-      ownerId: property.ownerId,
-      tenantId,
-      type: form.type,
-      signedAt: form.signedAt || undefined,
-      startDate: form.startDate,
-      endDate: form.endDate,
-      value: Number(form.value),
-      paymentCycle: form.paymentCycle,
-      status: "نشط",
-      documentUrl: form.documentUrl || undefined,
-    });
+    const contractId = await createContract(
+      {
+        propertyId: property.id,
+        ownerId: property.ownerId,
+        tenantId,
+        type: form.type,
+        signedAt: form.signedAt || undefined,
+        startDate: form.startDate,
+        endDate: form.endDate,
+        value: Number(form.value),
+        paymentCycle: form.paymentCycle,
+        status: "نشط",
+        documentUrl: form.documentUrl || undefined,
+        externalContractNo: form.externalContractNo || undefined,
+      },
+      importedPayments ?? undefined
+    );
 
     if (form.tenantMode === "new") {
       await updateTenantContract(tenantId, contractId);
@@ -145,6 +198,8 @@ export default function AdminContractsPage() {
     setSubmitting(false);
     setShowForm(false);
     setForm(emptyForm());
+    setImportedPayments(null);
+    setImportNotice(null);
   }
 
   async function handleSettlePayment(contractId: string, payments: ContractPayment[], paymentId: string) {
@@ -305,6 +360,19 @@ export default function AdminContractsPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                <div className="flex flex-col gap-2">
+                  <label className="inline-flex items-center gap-2 self-start rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted hover:text-brand-700 hover:border-brand-300 cursor-pointer">
+                    <Upload size={14} />
+                    {importing ? "جارِ الاستخراج..." : "استيراد من ملف عقد إيجار (Ejar/REGA)"}
+                    <input type="file" accept="application/pdf" className="hidden" disabled={importing} onChange={handleFileUpload} />
+                  </label>
+                  {importNotice && (
+                    <p className={`text-xs font-semibold ${importNotice.tone === "success" ? "text-success-600" : "text-danger-500"}`}>
+                      {importNotice.text}
+                    </p>
+                  )}
+                </div>
+
                 <div className="grid sm:grid-cols-4 gap-4">
                   <div>
                     <Label htmlFor="ctype">نوع العقد</Label>
@@ -322,11 +390,28 @@ export default function AdminContractsPage() {
                   </div>
                   <div>
                     <Label htmlFor="cvalue">القيمة (﷼)</Label>
-                    <Input id="cvalue" type="number" min={0} value={form.value} onChange={(e) => setForm((f) => ({ ...f, value: e.target.value }))} required />
+                    <Input
+                      id="cvalue"
+                      type="number"
+                      min={0}
+                      value={form.value}
+                      onChange={(e) => {
+                        clearImportedScheduleOnEdit();
+                        setForm((f) => ({ ...f, value: e.target.value }));
+                      }}
+                      required
+                    />
                   </div>
                   <div>
                     <Label htmlFor="ccycle">دورة الدفع</Label>
-                    <Select id="ccycle" value={form.paymentCycle} onChange={(e) => setForm((f) => ({ ...f, paymentCycle: e.target.value as PaymentCycle }))}>
+                    <Select
+                      id="ccycle"
+                      value={form.paymentCycle}
+                      onChange={(e) => {
+                        clearImportedScheduleOnEdit();
+                        setForm((f) => ({ ...f, paymentCycle: e.target.value as PaymentCycle }));
+                      }}
+                    >
                       {PAYMENT_CYCLES.map((c) => <option key={c} value={c}>{c}</option>)}
                     </Select>
                   </div>
@@ -365,11 +450,29 @@ export default function AdminContractsPage() {
                   </div>
                   <div>
                     <Label htmlFor="cstart">تاريخ بداية العقد</Label>
-                    <Input id="cstart" type="date" value={form.startDate} onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))} required />
+                    <Input
+                      id="cstart"
+                      type="date"
+                      value={form.startDate}
+                      onChange={(e) => {
+                        clearImportedScheduleOnEdit();
+                        setForm((f) => ({ ...f, startDate: e.target.value }));
+                      }}
+                      required
+                    />
                   </div>
                   <div>
                     <Label htmlFor="cend">تاريخ نهاية العقد</Label>
-                    <Input id="cend" type="date" value={form.endDate} onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))} required />
+                    <Input
+                      id="cend"
+                      type="date"
+                      value={form.endDate}
+                      onChange={(e) => {
+                        clearImportedScheduleOnEdit();
+                        setForm((f) => ({ ...f, endDate: e.target.value }));
+                      }}
+                      required
+                    />
                   </div>
                 </div>
 
@@ -381,7 +484,9 @@ export default function AdminContractsPage() {
                 {previewSchedule.length > 0 && (
                   <div className="rounded-xl border border-brand-200 bg-brand-50 p-4 text-sm">
                     <p className="font-semibold text-brand-700 mb-2">
-                      سيتم إنشاء {previewSchedule.length} {previewSchedule.length === 1 ? "دفعة" : "دفعات"} تلقائيًا:
+                      {importedPayments
+                        ? `جدول الدفعات المستخرَج من الملف (${previewSchedule.length} ${previewSchedule.length === 1 ? "دفعة" : "دفعات"}):`
+                        : `سيتم إنشاء ${previewSchedule.length} ${previewSchedule.length === 1 ? "دفعة" : "دفعات"} تلقائيًا:`}
                     </p>
                     <ul className="flex flex-col gap-1 text-xs text-muted">
                       {previewSchedule.map((p) => (
