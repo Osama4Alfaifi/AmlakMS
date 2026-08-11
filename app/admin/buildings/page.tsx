@@ -128,6 +128,11 @@ export default function AdminBuildingsPage() {
                 {buildings.map((b) => {
                   const isOpen = expandedId === b.id;
                   const buildingUnits = unitsByBuilding.get(b.id) ?? [];
+                  // Units don't carry real contracts/payments (unlike Property) — this
+                  // is a listed-rent estimate (annual price ÷ 12), not collected income.
+                  const rentedUnits = buildingUnits.filter((u) => u.listingType === "إيجار" && u.status === "مؤجرة");
+                  const annualIncome = rentedUnits.reduce((s, u) => s + u.price, 0);
+                  const monthlyIncome = annualIncome / 12;
                   return (
                     <Fragment key={b.id}>
                       <Tr className="cursor-pointer" onClick={() => setExpandedId(isOpen ? null : b.id)}>
@@ -141,6 +146,22 @@ export default function AdminBuildingsPage() {
                         <Tr className="bg-background">
                           <Td colSpan={5} className="py-4 whitespace-normal align-top">
                             <div className="pr-8 flex flex-col gap-4">
+                              {buildingUnits.length > 0 && (
+                                <div className="grid sm:grid-cols-3 gap-3 max-w-2xl">
+                                  <div className="rounded-xl border border-border p-3">
+                                    <p className="text-xs text-muted mb-1">الوحدات المؤجرة</p>
+                                    <p className="text-lg font-bold">{rentedUnits.length} <span className="text-sm font-normal text-muted">من {buildingUnits.length}</span></p>
+                                  </div>
+                                  <div className="rounded-xl border border-brand-200 bg-brand-50 p-3">
+                                    <p className="text-xs text-brand-700 mb-1">الدخل الشهري المتوقع</p>
+                                    <p className="text-lg font-bold text-brand-700">{currency(monthlyIncome)}</p>
+                                  </div>
+                                  <div className="rounded-xl border border-border p-3">
+                                    <p className="text-xs text-muted mb-1">الدخل السنوي المتوقع</p>
+                                    <p className="text-lg font-bold">{currency(annualIncome)}</p>
+                                  </div>
+                                </div>
+                              )}
                               {buildingUnits.length > 0 && (
                                 <Table>
                                   <THead>

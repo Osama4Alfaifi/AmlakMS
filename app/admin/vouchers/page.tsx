@@ -49,7 +49,9 @@ function VouchersPageInner() {
       personName: searchParams.get("personName") ?? f.personName,
       amount: searchParams.get("amount") ?? f.amount,
       contractId: searchParams.get("contractId") ?? f.contractId,
-      statement: searchParams.get("contractId") ? `دفعة عقد ${searchParams.get("contractId")}` : f.statement,
+      statement: searchParams.get("contractId")
+        ? `دفعة عقد ${searchParams.get("contractLabel") ?? searchParams.get("contractId")}`
+        : f.statement,
     }));
     setShowForm(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -11,9 +11,10 @@ import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { currency } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
 import { downloadExcel } from "@/lib/excel";
+import { contractDisplayNumber } from "@/lib/contracts/display";
 import { generatePaymentSchedule } from "@/lib/contracts/schedule";
 import { useContracts, useOwners, useProperties, useTenants } from "@/lib/firestore/hooks";
-import { createContract, createTenant, endContract, updateContractPayments, updateTenantContract } from "@/lib/firestore/mutations";
+import { createContract, createTenant, updateContractPayments, updateTenantContract } from "@/lib/firestore/mutations";
 import { parseEjarPdf } from "@/lib/rega/parseEjarContract";
 import type { ContractPayment, PaymentCycle } from "@/lib/types";
 import {
@@ -27,7 +28,6 @@ import {
   Receipt,
   Search,
   Upload,
-  XCircle,
 } from "lucide-react";
 
 const PAYMENT_CYCLES: PaymentCycle[] = ["شهري", "ربع سنوي", "نصف سنوي", "سنوي"];
@@ -95,7 +95,7 @@ export default function AdminContractsPage() {
 
   const exportRows = () =>
     filtered.map(({ contract: c, propertyTitle, ownerName, tenantName }) => ({
-      "رقم العقد": c.id.toUpperCase(),
+      "رقم العقد": contractDisplayNumber(c),
       العقار: propertyTitle,
       المالك: ownerName,
       المستأجر: tenantName,
@@ -261,7 +261,7 @@ export default function AdminContractsPage() {
                         <Td className="w-8 text-muted">{isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</Td>
                         <Td className="font-semibold text-brand-700">
                           <span className="inline-flex items-center gap-1.5">
-                            {c.id.toUpperCase()}
+                            {contractDisplayNumber(c)}
                             {c.documentUrl && (
                               <a
                                 href={c.documentUrl}
@@ -310,7 +310,11 @@ export default function AdminContractsPage() {
                                           {p.status === "مستحقة" ? (
                                             <div className="flex items-center gap-2">
                                               <button
-                                                onClick={() => handleSettlePayment(c.id, c.payments, p.id)}
+                                                onClick={() => {
+                                                  if (confirm(`هل تريد تأكيد تسديد دفعة بقيمة ${p.amount.toLocaleString("ar-SA")} ﷼؟`)) {
+                                                    handleSettlePayment(c.id, c.payments, p.id);
+                                                  }
+                                                }}
                                                 className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
                                               >
                                                 <CheckCircle2 size={13} /> تسديد
@@ -318,7 +322,7 @@ export default function AdminContractsPage() {
                                             </div>
                                           ) : (
                                             <Link
-                                              href={`/admin/vouchers?type=${encodeURIComponent("قبض")}&personName=${encodeURIComponent(tenantName)}&amount=${p.amount}&contractId=${c.id}`}
+                                              href={`/admin/vouchers?type=${encodeURIComponent("قبض")}&personName=${encodeURIComponent(tenantName)}&amount=${p.amount}&contractId=${c.id}&contractLabel=${encodeURIComponent(contractDisplayNumber(c))}`}
                                               className="inline-flex items-center gap-1 text-xs font-semibold text-muted hover:text-brand-700"
                                             >
                                               <Receipt size={13} /> إصدار سند قبض
@@ -330,16 +334,6 @@ export default function AdminContractsPage() {
                                   </tbody>
                                 </table>
                               </div>
-                              {c.status === "نشط" && (
-                                <button
-                                  onClick={() => {
-                                    if (confirm("هل تريد إنهاء هذا العقد؟")) endContract(c.id);
-                                  }}
-                                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-danger-500 hover:text-danger-700 self-start"
-                                >
-                                  <XCircle size={14} /> إنهاء العقد
-                                </button>
-                              )}
                             </div>
                           </Td>
                         </Tr>

@@ -15,6 +15,7 @@ import {
   useProperties,
   useTenants,
 } from "@/lib/firestore/hooks";
+import { contractDisplayNumber } from "@/lib/contracts/display";
 import { createDocumentLink } from "@/lib/firestore/mutations";
 import type { DocumentCategory, DocumentEntityType } from "@/lib/types";
 import { ExternalLink, Plus, Search } from "lucide-react";
@@ -47,7 +48,7 @@ export default function AdminDocumentsPage() {
       case "عقار":
         return properties.map((p) => ({ id: p.id, label: p.title }));
       case "عقد":
-        return contracts.map((c) => ({ id: c.id, label: c.id.toUpperCase() }));
+        return contracts.map((c) => ({ id: c.id, label: contractDisplayNumber(c) }));
       case "مالك":
         return owners.map((o) => ({ id: o.id, label: o.name }));
       case "مستأجر":

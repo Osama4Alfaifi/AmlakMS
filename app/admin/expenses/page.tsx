@@ -151,7 +151,11 @@ export default function AdminExpensesPage() {
                         <Td onClick={(ev) => ev.stopPropagation()}>
                           {e.status === "معلقة" ? (
                             <button
-                              onClick={() => updateExpenseStatus(e.id, "مدفوعة")}
+                              onClick={() => {
+                                if (confirm(`هل تريد تأكيد اعتماد دفع مصروف بقيمة ${e.amount.toLocaleString("ar-SA")} ﷼؟`)) {
+                                  updateExpenseStatus(e.id, "مدفوعة");
+                                }
+                              }}
                               className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
                             >
                               <CheckCircle2 size={13} /> اعتماد الدفع

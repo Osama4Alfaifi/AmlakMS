@@ -165,10 +165,6 @@ export async function updateContractPayments(contractId: string, payments: Contr
   void logAudit("contracts", contractId, "update", label);
 }
 
-export async function endContract(contractId: string) {
-  await updateDoc(doc(getDb(), "contracts", contractId), { status: "منتهي" });
-  void logAudit("contracts", contractId, "update", "تم إنهاء العقد");
-}
 
 export async function createTenant(tenant: Omit<Tenant, "id">) {
   const ref = await addDoc(collection(getDb(), "tenants"), tenant);

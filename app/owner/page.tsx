@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { BarChartCard } from "@/components/charts/Charts";
+import { contractDisplayNumber } from "@/lib/contracts/display";
 import { currency, DEFAULT_MANAGEMENT_FEE_RATE } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -150,7 +151,7 @@ export default function OwnerDashboardPage() {
               <TBody>
                 {myContracts.map((c) => (
                   <Tr key={c.id}>
-                    <Td className="font-semibold text-brand-700">{c.id.toUpperCase()}</Td>
+                    <Td className="font-semibold text-brand-700">{contractDisplayNumber(c)}</Td>
                     <Td className="font-semibold">{currency(c.value)}</Td>
                     <Td className="text-muted">{c.startDate}</Td>
                     <Td className="text-muted">{c.endDate}</Td>
