@@ -1,12 +1,21 @@
-// Seeds the Firestore emulator with the same demo dataset the prototype
-// used to read from lib/mock-data.ts, AND creates a real Firebase Auth
-// account (Auth emulator) for every persona — admin, and every seeded
-// owner/tenant/technician — so the app can be tested with real sign-in
-// instead of the old mock role picker. Run with: npm run seed (both the
-// Firestore and Auth emulators must already be running via npm run emulators).
-process.env.FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST || "127.0.0.1:8080";
-process.env.FIREBASE_AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST || "127.0.0.1:9099";
-process.env.FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "amlakms-dev";
+// Seeds Firestore with the same demo dataset the prototype used to read
+// from lib/mock-data.ts, AND creates a real Firebase Auth account for every
+// persona — admin, and every seeded owner/tenant/technician — so the app
+// can be tested with real sign-in instead of the old mock role picker.
+//
+// Targets the local emulator by default (npm run seed — both emulators
+// must already be running via npm run emulators). To target a real Firebase
+// project instead, set GOOGLE_APPLICATION_CREDENTIALS to a service account
+// key file path before running, e.g. (PowerShell):
+//   $env:GOOGLE_APPLICATION_CREDENTIALS="C:\path\to\key.json"; npm run seed
+const useEmulator = !process.env.GOOGLE_APPLICATION_CREDENTIALS;
+if (useEmulator) {
+  process.env.FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST || "127.0.0.1:8080";
+  process.env.FIREBASE_AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST || "127.0.0.1:9099";
+  process.env.FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "amlakms-dev";
+} else {
+  process.env.FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || "amlakms";
+}
 
 import { getAdminAuth, getAdminDb } from "../lib/firebase/admin";
 import {
@@ -61,7 +70,11 @@ async function upsertAuthUser(persona: Persona): Promise<string> {
 }
 
 async function main() {
-  console.log(`Seeding Firestore emulator at ${process.env.FIRESTORE_EMULATOR_HOST} ...`);
+  console.log(
+    useEmulator
+      ? `Seeding Firestore emulator at ${process.env.FIRESTORE_EMULATOR_HOST} ...`
+      : `Seeding REAL Firebase project "${process.env.FIREBASE_PROJECT_ID}" ...`
+  );
 
   await seedCollection("owners", owners);
   await seedCollection("properties", properties);

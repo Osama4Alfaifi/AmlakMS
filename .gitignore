@@ -42,6 +42,12 @@ ui-debug.log
 firebase-export-*/
 .firebase-emulator-data/
 
+# service account keys — never commit these (full admin access to the
+# Firebase/GCP project). Keep them outside the repo if possible.
+*firebase-adminsdk*.json
+serviceAccountKey.json
+service-account*.json
+
 # vercel
 .vercel
 

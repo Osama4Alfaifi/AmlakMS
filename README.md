@@ -8,27 +8,40 @@
 
 ## التشغيل محليًا
 
-يحتاج المشروع تشغيل **محاكيات Firebase المحلية (Firestore + Authentication)** — لا حاجة لإنشاء حساب أو
-مشروع Firebase حقيقي في هذه المرحلة. يتطلب المحاكي **Java 21+** مثبتًا على الجهاز.
+المشروع متصل الآن بمشروع Firebase حقيقي على السحابة (**`amlakms`**) — لا حاجة لتشغيل أي محاكي محلي.
+`.env.local` (غير مرفوع على Git) يحتوي على بيانات الاتصال بهذا المشروع.
 
 ```bash
 npm install
-
-# طرفية 1: شغّل المحاكيات (تبقى تعمل في الخلفية)
-npm run emulators
-
-# طرفية 2: أنشئ حسابات Firebase Auth التجريبية + عبّئ قاعدة البيانات
-npm run seed
-
-# طرفية 3: شغّل التطبيق
 npm run dev
 ```
 
-افتح [http://localhost:3000](http://localhost:3000). يمكنك أيضًا متابعة بيانات Firestore وحسابات
-Authentication مباشرة عبر واجهة المحاكي على [http://localhost:4000](http://localhost:4000).
+افتح [http://localhost:3000](http://localhost:3000). البيانات والحسابات موجودة فعليًا على
+[Firebase Console](https://console.firebase.google.com/project/amlakms/overview).
 
-> بيانات المحاكي تُحفظ تلقائيًا عند الإيقاف وتُستعاد عند التشغيل التالي (`.firebase-emulator-data/`، غير
-> مرفوعة على Git). لإعادة الضبط لحالتها الأصلية، احذف هذا المجلد ثم شغّل `npm run seed` من جديد.
+### إعادة التعبئة أو إنشاء حسابات جديدة على المشروع الحقيقي
+
+يحتاج هذا صلاحيات إدارية عبر مفتاح Service Account (Firebase Console → إعدادات المشروع → Service
+accounts → Generate new private key؛ **لا تضف هذا الملف لـ Git إطلاقًا** — راجع `.gitignore`):
+
+```bash
+# PowerShell
+$env:GOOGLE_APPLICATION_CREDENTIALS="C:\path\to\key.json"; npm run seed
+```
+
+### وضع المحاكي المحلي (اختياري)
+
+لا يزال بإمكانك العمل بدون اتصال إنترنت عبر محاكي Firebase المحلي إذا احتجت ذلك — يتطلب **Java 21+**:
+
+```bash
+# غيّر NEXT_PUBLIC_USE_FIREBASE_EMULATOR=true في .env.local أولًا، ثم:
+npm run emulators   # طرفية منفصلة، تبقى تعمل في الخلفية
+npm run seed         # بدون GOOGLE_APPLICATION_CREDENTIALS، يعبّئ المحاكي بدل المشروع الحقيقي
+npm run dev
+```
+
+بيانات المحاكي تُحفظ تلقائيًا عند الإيقاف وتُستعاد عند التشغيل التالي (`.firebase-emulator-data/`، غير
+مرفوعة على Git).
 
 ### حسابات الدخول التجريبية
 
@@ -88,5 +101,5 @@ Authentication مباشرة عبر واجهة المحاكي على [http://loca
 - **لا يوجد تسجيل حساب ذاتي (Sign-up)** — كل الحسابات تُنشأ حاليًا عبر `scripts/seed.ts` فقط.
 - **توليد PDF** يعتمد على طباعة المتصفح، لا خادم مخصص (Puppeteer مثلًا) لتنسيق موحّد قابل للأرشفة.
 - **تكامل PowerBI** الحالي هو رسوم بيانية محلية (Recharts) وليس Power BI Embedded الفعلي.
-- عند الانتقال لمشروع Firebase حقيقي: انسخ القيم من Firebase Console إلى `.env.local` (راجع
-  `.env.local.example`) وعيّن `NEXT_PUBLIC_USE_FIREBASE_EMULATOR=false`.
+- **لا يوجد نشر (Deploy) فعلي للتطبيق نفسه بعد** — قاعدة البيانات والمصادقة على Firebase الحقيقي، لكن
+  تطبيق Next.js لا يزال يعمل محليًا فقط (`npm run dev`). للنشر: استضافة مثل Vercel (الأسهل مع Next.js).
