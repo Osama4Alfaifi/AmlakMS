@@ -39,6 +39,10 @@ export interface Owner {
   phone: string;
   email: string;
   joinedAt: string;
+  // Fraction of net rental income retained as a management fee when
+  // computing the owner statement (e.g. 0.1 = 10%). Defaults to 0.1 in
+  // app/owner/page.tsx when not set.
+  managementFeeRate?: number;
 }
 
 export interface Tenant {
@@ -96,6 +100,33 @@ export interface Invoice {
   issueDate: string;
   dueDate: string;
   status: InvoiceStatus;
+}
+
+export type ExpenseCategory =
+  | "صيانة"
+  | "كهرباء"
+  | "مياه"
+  | "تنظيف"
+  | "أمن"
+  | "تأمين"
+  | "رسوم حكومية"
+  | "أخرى";
+export type ExpenseStatus = "مدفوعة" | "معلقة";
+
+export interface Expense {
+  id: string;
+  propertyId: string;
+  // Denormalized from the property at creation time — same
+  // list-provability reason as MaintenanceRequest.ownerId (see
+  // firestore.rules): an owner-scoped `list` query needs this field
+  // directly on the document, not resolved via a cross-collection get().
+  ownerId: string;
+  category: ExpenseCategory;
+  amount: number;
+  date: string;
+  vendorName?: string;
+  notes?: string;
+  status: ExpenseStatus;
 }
 
 export type QuoteStatus = "مسودة" | "مرسل" | "مقبول" | "مرفوض";

@@ -9,11 +9,12 @@ import { Button } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { currency } from "@/lib/mock-data";
+import { downloadCsv } from "@/lib/csv";
 import { useAuth } from "@/lib/auth-context";
 import { useFirestoreDoc, useProperties, useQuotes } from "@/lib/firestore/hooks";
 import { createQuote } from "@/lib/firestore/mutations";
 import type { InvoiceItem, Owner } from "@/lib/types";
-import { Eye, Plus, Trash2 } from "lucide-react";
+import { Download, Eye, Plus, Search, Trash2 } from "lucide-react";
 
 function totalOf(items: InvoiceItem[], taxRate: number) {
   const subtotal = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
@@ -36,6 +37,19 @@ export default function QuotesPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("الكل");
+  const quoteStatuses = ["الكل", "مسودة", "مرسل", "مقبول", "مرفوض"];
+
+  const filteredQuotes = useMemo(
+    () =>
+      quotesList.filter(
+        (q) =>
+          (statusFilter === "الكل" || q.status === statusFilter) &&
+          (q.number.includes(query) || q.clientName.includes(query) || q.propertyTitle.includes(query))
+      ),
+    [quotesList, query, statusFilter]
+  );
 
   const [clientName, setClientName] = useState("");
   const [propertyTitle, setPropertyTitle] = useState("");
@@ -91,12 +105,39 @@ export default function QuotesPage() {
             <div>
               <CardTitle>عروض الأسعار</CardTitle>
               <CardSubtitle>
-                {quotesList.length} عرض سعر {user?.role === "owner" ? "لعقاراتك" : "— قابلة للتصدير كملف PDF"}
+                {filteredQuotes.length} من {quotesList.length} عرض سعر {user?.role === "owner" ? "لعقاراتك" : "— قابلة للتصدير كملف PDF"}
               </CardSubtitle>
             </div>
-            <Button size="sm" onClick={() => setShowForm((v) => !v)}>
-              <Plus size={15} /> عرض سعر جديد
-            </Button>
+            <div className="flex items-center gap-2">
+              <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-32">
+                {quoteStatuses.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </Select>
+              <div className="relative w-48">
+                <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
+                <Input placeholder="بحث..." value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  downloadCsv("عروض الأسعار", filteredQuotes.map((q) => ({
+                    الرقم: q.number,
+                    العميل: q.clientName,
+                    "العقار / الخدمة": q.propertyTitle,
+                    الإجمالي: totalOf(q.items, q.taxRate),
+                    "صالح حتى": q.validUntil,
+                    الحالة: q.status,
+                  })))
+                }
+              >
+                <Download size={15} /> تصدير CSV
+              </Button>
+              <Button size="sm" onClick={() => setShowForm((v) => !v)}>
+                <Plus size={15} /> عرض سعر جديد
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
@@ -112,7 +153,7 @@ export default function QuotesPage() {
                 </Tr>
               </THead>
               <TBody>
-                {quotesList.map((q) => (
+                {filteredQuotes.map((q) => (
                   <Tr key={q.id}>
                     <Td className="font-semibold text-brand-700">{q.number}</Td>
                     <Td>{q.clientName}</Td>

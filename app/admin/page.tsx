@@ -6,15 +6,16 @@ import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/compon
 import { Badge } from "@/components/ui/Badge";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { BarChartCard, PieChartCard, RevenueAreaChart } from "@/components/charts/Charts";
-import { monthlyRevenue } from "@/lib/mock-data";
+import { currency, monthlyRevenue } from "@/lib/mock-data";
 import {
   useClients,
   useContracts,
+  useExpenses,
   useProperties,
   useSupportTickets,
   useSystemUsers,
 } from "@/lib/firestore/hooks";
-import { Building2, Contact, FileText, Users } from "lucide-react";
+import { Building2, Contact, FileText, Users, Wallet } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminOverviewPage() {
@@ -23,6 +24,8 @@ export default function AdminOverviewPage() {
   const { data: clients } = useClients();
   const { data: systemUsers } = useSystemUsers();
   const { data: supportTickets } = useSupportTickets();
+  const { data: expenses } = useExpenses();
+  const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
 
   const activeContracts = contracts.filter((c) => c.status === "نشط").length;
   const openTickets = supportTickets.filter((t) => t.status !== "مغلقة").length;
@@ -43,7 +46,7 @@ export default function AdminOverviewPage() {
   return (
     <DashboardShell allow={["admin"]}>
       <div className="flex flex-col gap-6">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <Link href="/admin/users">
             <StatCard label="عدد المستخدمين" value={String(systemUsers.length)} icon={Users} tone="brand" trend={{ value: "6%", positive: true }} />
           </Link>
@@ -55,6 +58,9 @@ export default function AdminOverviewPage() {
           </Link>
           <Link href="/admin/clients">
             <StatCard label="عدد العملاء" value={String(clients.length)} icon={Contact} tone="accent" trend={{ value: "9%", positive: true }} />
+          </Link>
+          <Link href="/admin/expenses">
+            <StatCard label="إجمالي المصروفات" value={currency(totalExpenses)} icon={Wallet} tone="warning" />
           </Link>
         </div>
 

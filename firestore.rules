@@ -64,6 +64,14 @@ service cloud.firestore {
     match /accountManagers/{id} { allow read: if signedIn(); }
     match /systemUsers/{id} { allow read: if signedIn(); }
 
+    // Expenses: owners only see expenses on their own properties (ownerId
+    // is denormalized onto each expense at creation time, same
+    // list-provability reason as maintenanceRequests.ownerId above). Admin
+    // is covered by the wildcard rule; writes go through it too.
+    match /expenses/{id} {
+      allow read: if signedIn() && myRole() == "owner" && resource.data.ownerId == myProfile().linkedId;
+    }
+
     // Quotes: admin/owner can create. Any signed-in account can read at the
     // rules level — the UI narrows an owner's view to quotes tied to their
     // own properties (app/quotes/page.tsx), but quotes don't carry a

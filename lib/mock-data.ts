@@ -2,6 +2,7 @@ import type {
   AccountManager,
   Client,
   Contract,
+  Expense,
   Invoice,
   MaintenanceRequest,
   Owner,
@@ -27,6 +28,10 @@ export function taxRateForPropertyType(type: PropertyType): number {
 // invoices/quotes when VAT applies (required on any ZATCA-compliant
 // invoice that includes VAT).
 export const COMPANY_VAT_NUMBER = "310650016400003";
+
+// Used for the owner statement calculation when an owner doesn't have an
+// explicit managementFeeRate set.
+export const DEFAULT_MANAGEMENT_FEE_RATE = 0.1;
 
 export const owners: Owner[] = [
   { id: "own-1", name: "عبدالله السبيعي", phone: "0551234567", email: "abdullah.s@mail.com", joinedAt: "2021-03-14" },
@@ -84,6 +89,23 @@ export const clients: Client[] = [
   { id: "lead-1", name: "عمر الشمري", phone: "0511223344", email: "omar.sh@mail.com", type: "عميل محتمل", joinedAt: "2026-07-01" },
   { id: "lead-2", name: "دانة العصيمي", phone: "0512233445", email: "dana.a@mail.com", type: "عميل محتمل", joinedAt: "2026-07-18" },
   { id: "lead-3", name: "ماجد القحطاني", phone: "0513344556", email: "majed.q@mail.com", type: "عميل محتمل", joinedAt: "2026-08-02" },
+];
+
+export const expenses: Expense[] = [
+  { id: "exp-1", propertyId: "prop-1", ownerId: "own-1", category: "صيانة", amount: 800, date: "2026-03-05", vendorName: "فريق الصيانة الداخلي", status: "مدفوعة" },
+  { id: "exp-2", propertyId: "prop-1", ownerId: "own-1", category: "تأمين", amount: 1200, date: "2026-02-15", status: "معلقة" },
+  { id: "exp-3", propertyId: "prop-3", ownerId: "own-3", category: "كهرباء", amount: 450, date: "2026-04-01", status: "مدفوعة" },
+  { id: "exp-4", propertyId: "prop-3", ownerId: "own-3", category: "صيانة", amount: 600, date: "2026-05-10", vendorName: "مؤسسة الفا للصيانة", status: "معلقة" },
+  { id: "exp-5", propertyId: "prop-5", ownerId: "own-4", category: "أمن", amount: 900, date: "2026-01-20", vendorName: "شركة الحارس الأمنية", status: "مدفوعة" },
+  { id: "exp-6", propertyId: "prop-5", ownerId: "own-4", category: "رسوم حكومية", amount: 350, date: "2026-06-01", status: "مدفوعة" },
+  { id: "exp-7", propertyId: "prop-7", ownerId: "own-2", category: "صيانة", amount: 500, date: "2026-03-20", status: "معلقة" },
+  { id: "exp-8", propertyId: "prop-7", ownerId: "own-2", category: "تنظيف", amount: 300, date: "2026-07-01", vendorName: "مؤسسة النظافة الشاملة", status: "مدفوعة" },
+  { id: "exp-9", propertyId: "prop-11", ownerId: "own-1", category: "كهرباء", amount: 700, date: "2026-02-10", status: "مدفوعة" },
+  { id: "exp-10", propertyId: "prop-11", ownerId: "own-1", category: "صيانة", amount: 1100, date: "2026-04-15", vendorName: "مؤسسة الفا للصيانة", status: "معلقة" },
+  { id: "exp-11", propertyId: "prop-13", ownerId: "own-3", category: "تأمين", amount: 950, date: "2026-05-01", status: "مدفوعة" },
+  { id: "exp-12", propertyId: "prop-13", ownerId: "own-3", category: "مياه", amount: 200, date: "2026-06-20", status: "مدفوعة" },
+  { id: "exp-13", propertyId: "prop-17", ownerId: "own-2", category: "صيانة", amount: 400, date: "2026-03-15", status: "مدفوعة" },
+  { id: "exp-14", propertyId: "prop-17", ownerId: "own-2", category: "رسوم حكومية", amount: 250, date: "2026-07-10", status: "معلقة" },
 ];
 
 export const invoices: Invoice[] = [

@@ -4,11 +4,13 @@ import { useMemo, useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { currency } from "@/lib/mock-data";
+import { downloadCsv } from "@/lib/csv";
 import { useOwners, useProperties } from "@/lib/firestore/hooks";
-import { Search } from "lucide-react";
+import { Download, Search } from "lucide-react";
 
 export default function AdminPropertiesPage() {
   const { data: properties } = useProperties();
@@ -43,6 +45,24 @@ export default function AdminPropertiesPage() {
               <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
               <Input placeholder="بحث..." value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />
             </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                downloadCsv("العقارات", filtered.map((p) => ({
+                  العقار: p.title,
+                  النوع: p.type,
+                  المدينة: p.city,
+                  الحي: p.district,
+                  المساحة: p.area,
+                  السعر: p.price,
+                  المالك: owners.find((o) => o.id === p.ownerId)?.name ?? "",
+                  الحالة: p.status,
+                })))
+              }
+            >
+              <Download size={15} /> تصدير CSV
+            </Button>
           </div>
         </CardHeader>
         <CardContent>

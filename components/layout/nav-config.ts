@@ -8,9 +8,11 @@ import {
   LayoutDashboard,
   LifeBuoy,
   MapPin,
+  PieChart,
   Receipt,
   UserCog,
   Users,
+  Wallet,
   Wrench,
 } from "lucide-react";
 
@@ -34,6 +36,8 @@ export const navByRole: Record<Role, NavItem[]> = {
     { label: "العقارات", href: "/admin/properties", icon: Building2 },
     { label: "العقود", href: "/admin/contracts", icon: FileText },
     { label: "العملاء", href: "/admin/clients", icon: Contact },
+    { label: "المصروفات", href: "/admin/expenses", icon: Wallet },
+    { label: "الإشغال والشغور", href: "/admin/occupancy", icon: PieChart },
     { label: "عروض الأسعار", href: "/quotes", icon: Receipt },
     { label: "التقارير والفواتير", href: "/reports", icon: BarChart3 },
     { label: "الخريطة التفاعلية", href: "/map", icon: MapPin },

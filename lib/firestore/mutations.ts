@@ -2,10 +2,17 @@
 
 import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
 import { getDb } from "@/lib/firebase/client";
-import type { MaintenanceRequest, MaintenanceStatus, Quote, SupportTicket, TicketStatus } from "@/lib/types";
+import type { Expense, MaintenanceRequest, MaintenanceStatus, Quote, SupportTicket, TicketStatus } from "@/lib/types";
 
 export async function createQuote(quote: Omit<Quote, "id">) {
   const ref = await addDoc(collection(getDb(), "quotes"), quote);
+  return ref.id;
+}
+
+// Admin-only (see firestore.rules — writes to expenses go through the
+// admin wildcard rule; there's no client-side create path for other roles).
+export async function createExpense(expense: Omit<Expense, "id">) {
+  const ref = await addDoc(collection(getDb(), "expenses"), expense);
   return ref.id;
 }
 

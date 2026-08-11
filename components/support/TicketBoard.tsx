@@ -12,7 +12,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useMySupportTickets, useSupportTicketsByCategory } from "@/lib/firestore/hooks";
 import { createSupportTicket, updateSupportTicketStatus } from "@/lib/firestore/mutations";
 import type { Priority, Role, TicketCategory, TicketStatus } from "@/lib/types";
-import { CheckCircle2, CircleDot, Loader2, Plus } from "lucide-react";
+import { CheckCircle2, CircleDot, Loader2, Plus, Search } from "lucide-react";
 
 export function TicketBoard({
   category,
@@ -47,10 +47,22 @@ export function TicketBoard({
   const [from, setFrom] = useState("");
   const [priority, setPriority] = useState<Priority>("متوسط");
   const [description, setDescription] = useState("");
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("الكل");
 
   const open = tickets.filter((t) => t.status === "مفتوحة").length;
   const inProgress = tickets.filter((t) => t.status === "قيد المعالجة").length;
   const closed = tickets.filter((t) => t.status === "مغلقة").length;
+
+  const filteredTickets = useMemo(
+    () =>
+      tickets.filter(
+        (t) =>
+          (statusFilter === "الكل" || t.status === statusFilter) &&
+          (t.subject.includes(query) || t.from.includes(query) || t.number.includes(query))
+      ),
+    [tickets, query, statusFilter]
+  );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -92,13 +104,24 @@ export function TicketBoard({
               <CardTitle>{title}</CardTitle>
               <CardSubtitle>
                 {isStaff
-                  ? `${tickets.length} تذكرة إجمالية — كموظف مسؤول، تظهر لك كل التذاكر`
-                  : `${tickets.length} تذكرة أرسلتها أنت فقط`}
+                  ? `${filteredTickets.length} من ${tickets.length} تذكرة — كموظف مسؤول، تظهر لك كل التذاكر`
+                  : `${filteredTickets.length} من ${tickets.length} تذكرة أرسلتها أنت فقط`}
               </CardSubtitle>
             </div>
-            <Button size="sm" onClick={() => setShowForm((v) => !v)}>
-              <Plus size={15} /> تذكرة جديدة
-            </Button>
+            <div className="flex items-center gap-2">
+              <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-32">
+                {["الكل", "مفتوحة", "قيد المعالجة", "مغلقة"].map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </Select>
+              <div className="relative w-48">
+                <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
+                <Input placeholder="بحث..." value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />
+              </div>
+              <Button size="sm" onClick={() => setShowForm((v) => !v)}>
+                <Plus size={15} /> تذكرة جديدة
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <Table>
@@ -113,12 +136,12 @@ export function TicketBoard({
                 </Tr>
               </THead>
               <TBody>
-                {tickets.length === 0 && (
+                {filteredTickets.length === 0 && (
                   <Tr>
-                    <Td colSpan={6} className="text-center text-muted py-6">لا توجد تذاكر حاليًا</Td>
+                    <Td colSpan={6} className="text-center text-muted py-6">لا توجد تذاكر مطابقة</Td>
                   </Tr>
                 )}
-                {tickets.map((t) => (
+                {filteredTickets.map((t) => (
                   <Tr key={t.id}>
                     <Td className="font-semibold text-brand-700">{t.number}</Td>
                     <Td className="max-w-[220px]">

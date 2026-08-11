@@ -1,29 +1,41 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Select } from "@/components/ui/Input";
+import { Input, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { useAuth } from "@/lib/auth-context";
 import { useFirestoreDoc, useMaintenanceRequests, useProperties } from "@/lib/firestore/hooks";
 import { claimMaintenanceRequest, updateMaintenanceRequest } from "@/lib/firestore/mutations";
 import type { MaintenanceStatus, Technician } from "@/lib/types";
-import { CheckCircle2, ClipboardList, Star, Wrench } from "lucide-react";
+import { CheckCircle2, ClipboardList, Search, Star, Wrench } from "lucide-react";
 
 export default function TechnicianDashboardPage() {
   const { user } = useAuth();
   const currentTechnician = useFirestoreDoc<Technician>("technicians", user?.linkedId ?? undefined);
   const { data: requests } = useMaintenanceRequests();
   const { data: properties } = useProperties();
+  const [query, setQuery] = useState("");
+  const [priority, setPriority] = useState("الكل");
 
   const myTasks = useMemo(
     () => (currentTechnician ? requests.filter((r) => r.technicianId === currentTechnician.id) : []),
     [requests, currentTechnician]
   );
   const unassigned = useMemo(() => requests.filter((r) => r.technicianId === null), [requests]);
+
+  const filteredTasks = useMemo(
+    () =>
+      myTasks.filter(
+        (r) =>
+          (priority === "الكل" || r.priority === priority) &&
+          (r.title.includes(query) || r.description.includes(query))
+      ),
+    [myTasks, query, priority]
+  );
 
   if (!currentTechnician) return null;
 
@@ -44,7 +56,18 @@ export default function TechnicianDashboardPage() {
           <CardHeader>
             <div>
               <CardTitle>أوامر العمل المسندة إليّ</CardTitle>
-              <CardSubtitle>{myTasks.length} أمر عمل — تخصص {currentTechnician.specialty}</CardSubtitle>
+              <CardSubtitle>{filteredTasks.length} من {myTasks.length} أمر عمل — تخصص {currentTechnician.specialty}</CardSubtitle>
+            </div>
+            <div className="flex items-center gap-2">
+              <Select value={priority} onChange={(e) => setPriority(e.target.value)} className="w-32">
+                {["الكل", "منخفض", "متوسط", "عاجل"].map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </Select>
+              <div className="relative w-48">
+                <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
+                <Input placeholder="بحث..." value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -59,12 +82,12 @@ export default function TechnicianDashboardPage() {
                 </Tr>
               </THead>
               <TBody>
-                {myTasks.length === 0 && (
+                {filteredTasks.length === 0 && (
                   <Tr>
-                    <Td colSpan={5} className="text-center text-muted py-6">لا توجد مهام مسندة حاليًا</Td>
+                    <Td colSpan={5} className="text-center text-muted py-6">لا توجد مهام مطابقة</Td>
                   </Tr>
                 )}
-                {myTasks.map((r) => (
+                {filteredTasks.map((r) => (
                   <Tr key={r.id}>
                     <Td className="font-semibold max-w-[200px]">
                       <span className="block truncate">{r.title}</span>

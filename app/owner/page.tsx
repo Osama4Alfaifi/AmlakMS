@@ -1,16 +1,25 @@
 "use client";
 
+import Link from "next/link";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { BarChartCard } from "@/components/charts/Charts";
-import { currency } from "@/lib/mock-data";
+import { currency, DEFAULT_MANAGEMENT_FEE_RATE } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth-context";
-import { useContracts, useFirestoreDoc, useOwnerMaintenanceRequests, useProperties, useTechnicians } from "@/lib/firestore/hooks";
+import {
+  useContracts,
+  useFirestoreDoc,
+  useOwnerExpenses,
+  useOwnerMaintenanceRequests,
+  useProperties,
+  useTechnicians,
+} from "@/lib/firestore/hooks";
 import type { Owner } from "@/lib/types";
-import { Building2, FileText, TrendingUp, Wrench } from "lucide-react";
+import { Building2, FileScan, FileText, TrendingDown, TrendingUp, Wallet, Wrench } from "lucide-react";
 
 export default function OwnerDashboardPage() {
   const { user } = useAuth();
@@ -18,6 +27,7 @@ export default function OwnerDashboardPage() {
   const { data: properties } = useProperties();
   const { data: contracts } = useContracts();
   const { data: myMaintenance } = useOwnerMaintenanceRequests(user?.linkedId);
+  const { data: myExpenses } = useOwnerExpenses(user?.linkedId);
   const { data: technicians } = useTechnicians();
 
   if (!currentOwner) return null;
@@ -27,6 +37,11 @@ export default function OwnerDashboardPage() {
   const activeContracts = myContracts.filter((c) => c.status === "نشط");
   const annualIncome = activeContracts.reduce((sum, c) => sum + c.value, 0);
   const openMaintenance = myMaintenance.filter((m) => m.status !== "مكتمل");
+
+  const totalExpenses = myExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const feeRate = currentOwner.managementFeeRate ?? DEFAULT_MANAGEMENT_FEE_RATE;
+  const managementFee = Math.max(0, annualIncome - totalExpenses) * feeRate;
+  const netIncome = annualIncome - totalExpenses - managementFee;
 
   const incomeByProperty = myProperties.map((p) => ({
     name: p.title.split(" ").slice(0, 2).join(" "),
@@ -42,6 +57,40 @@ export default function OwnerDashboardPage() {
           <StatCard label="الدخل السنوي المتوقع" value={currency(annualIncome)} icon={TrendingUp} tone="accent" />
           <StatCard label="طلبات صيانة مفتوحة" value={String(openMaintenance.length)} icon={Wrench} tone="warning" />
         </div>
+
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>كشف حسابي</CardTitle>
+              <CardSubtitle>صافي الدخل بعد المصروفات وعمولة الإدارة ({Math.round(feeRate * 100)}%)</CardSubtitle>
+            </div>
+            <Link href="/owner/statement/print" target="_blank">
+              <Button size="sm" variant="outline">
+                <FileScan size={15} /> طباعة كشف الحساب
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="rounded-xl border border-border p-4">
+                <p className="text-xs text-muted mb-1.5">الدخل الإجمالي</p>
+                <p className="text-lg font-extrabold">{currency(annualIncome)}</p>
+              </div>
+              <div className="rounded-xl border border-border p-4">
+                <p className="text-xs text-muted mb-1.5 flex items-center gap-1"><TrendingDown size={13} /> المصروفات</p>
+                <p className="text-lg font-extrabold text-danger-700">-{currency(totalExpenses)}</p>
+              </div>
+              <div className="rounded-xl border border-border p-4">
+                <p className="text-xs text-muted mb-1.5 flex items-center gap-1"><Wallet size={13} /> عمولة الإدارة</p>
+                <p className="text-lg font-extrabold text-warning-700">-{currency(managementFee)}</p>
+              </div>
+              <div className="rounded-xl border border-brand-200 bg-brand-50 p-4">
+                <p className="text-xs text-brand-700 mb-1.5">صافي الدخل</p>
+                <p className="text-lg font-extrabold text-brand-700">{currency(netIncome)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <BarChartCard data={incomeByProperty} title="الدخل السنوي حسب العقار" dataKey="الدخل السنوي" color="#1c3ab3" />
 
@@ -140,6 +189,44 @@ export default function OwnerDashboardPage() {
                     <Td><Badge>{m.priority}</Badge></Td>
                     <Td className="text-muted">{technicians.find((t) => t.id === m.technicianId)?.name ?? "غير معيّن"}</Td>
                     <Td><Badge>{m.status}</Badge></Td>
+                  </Tr>
+                ))}
+              </TBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>المصروفات على عقاراتي</CardTitle>
+              <CardSubtitle>{myExpenses.length} مصروف</CardSubtitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <THead>
+                <Tr>
+                  <Th>الفئة</Th>
+                  <Th>المورّد</Th>
+                  <Th>المبلغ</Th>
+                  <Th>التاريخ</Th>
+                  <Th>الحالة</Th>
+                </Tr>
+              </THead>
+              <TBody>
+                {myExpenses.length === 0 && (
+                  <Tr>
+                    <Td colSpan={5} className="text-center text-muted py-6">لا توجد مصروفات مسجّلة</Td>
+                  </Tr>
+                )}
+                {myExpenses.map((e) => (
+                  <Tr key={e.id}>
+                    <Td className="font-semibold">{e.category}</Td>
+                    <Td className="text-muted">{e.vendorName ?? "—"}</Td>
+                    <Td className="font-semibold">{currency(e.amount)}</Td>
+                    <Td className="text-muted">{e.date}</Td>
+                    <Td><Badge>{e.status}</Badge></Td>
                   </Tr>
                 ))}
               </TBody>

@@ -6,18 +6,21 @@ import { DashboardShell } from "@/components/layout/DashboardShell";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Select } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { Input, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { PieChartCard, RevenueAreaChart } from "@/components/charts/Charts";
 import { useAuth } from "@/lib/auth-context";
 import { currency, monthlyRevenue } from "@/lib/mock-data";
+import { downloadCsv } from "@/lib/csv";
 import { useFirestoreDoc, useInvoices, useProperties } from "@/lib/firestore/hooks";
 import type { Owner, Tenant } from "@/lib/types";
-import { Eye, FileWarning, ReceiptText, Wallet } from "lucide-react";
+import { Download, Eye, FileWarning, ReceiptText, Search, Wallet } from "lucide-react";
 
 export default function ReportsPage() {
   const { user } = useAuth();
   const [status, setStatus] = useState("الكل");
+  const [query, setQuery] = useState("");
   const { data: invoices } = useInvoices();
   const { data: properties } = useProperties();
   const currentOwner = useFirestoreDoc<Owner>("owners", user?.role === "owner" ? user.linkedId ?? undefined : undefined);
@@ -34,7 +37,15 @@ export default function ReportsPage() {
     return invoices;
   }, [user?.role, currentOwner, currentTenant, properties, invoices]);
 
-  const filtered = status === "الكل" ? scopedInvoices : scopedInvoices.filter((i) => i.status === status);
+  const filtered = useMemo(
+    () =>
+      scopedInvoices.filter(
+        (i) =>
+          (status === "الكل" || i.status === status) &&
+          (i.number.includes(query) || i.clientName.includes(query) || i.propertyTitle.includes(query))
+      ),
+    [scopedInvoices, status, query]
+  );
 
   const totalCollected = scopedInvoices.filter((i) => i.status === "مدفوعة").reduce((s, i) => s + i.items.reduce((a, it) => a + it.quantity * it.unitPrice, 0), 0);
   const totalPending = scopedInvoices.filter((i) => i.status !== "مدفوعة").reduce((s, i) => s + i.items.reduce((a, it) => a + it.quantity * it.unitPrice, 0), 0);
@@ -88,11 +99,33 @@ export default function ReportsPage() {
               <CardTitle>الفواتير</CardTitle>
               <CardSubtitle>{scopedInvoices.length} فاتورة</CardSubtitle>
             </div>
-            <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-40">
-              {["الكل", "مدفوعة", "معلقة", "متأخرة"].map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </Select>
+            <div className="flex items-center gap-2">
+              <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-40">
+                {["الكل", "مدفوعة", "معلقة", "متأخرة"].map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </Select>
+              <div className="relative w-52">
+                <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
+                <Input placeholder="بحث..." value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  downloadCsv("الفواتير", filtered.map((inv) => ({
+                    الرقم: inv.number,
+                    العميل: inv.clientName,
+                    العقار: inv.propertyTitle,
+                    المبلغ: inv.items.reduce((s, i) => s + i.quantity * i.unitPrice, 0),
+                    "تاريخ الاستحقاق": inv.dueDate,
+                    الحالة: inv.status,
+                  })))
+                }
+              >
+                <Download size={15} /> تصدير CSV
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <Table>

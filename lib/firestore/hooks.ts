@@ -8,6 +8,7 @@ import type {
   AccountManager,
   Client,
   Contract,
+  Expense,
   Invoice,
   MaintenanceRequest,
   Owner,
@@ -122,6 +123,10 @@ export function useMaintenanceRequests() {
 export function useSupportTickets() {
   return useFirestoreCollection<SupportTicket>("supportTickets");
 }
+// Unconstrained — admin only (owner must use useOwnerExpenses below).
+export function useExpenses() {
+  return useFirestoreCollection<Expense>("expenses");
+}
 
 function fieldConstraint(
   field: string,
@@ -142,6 +147,9 @@ export function useMySupportTickets(uid: string | null | undefined) {
 // Scoped to properties an owner owns.
 export function useOwnerMaintenanceRequests(ownerId: string | null | undefined) {
   return useFirestoreQuery<MaintenanceRequest>("maintenanceRequests", fieldConstraint("ownerId", ownerId));
+}
+export function useOwnerExpenses(ownerId: string | null | undefined) {
+  return useFirestoreQuery<Expense>("expenses", fieldConstraint("ownerId", ownerId));
 }
 
 // Scoped to one ticket category — safe for technicians reading "الدعم الفني".

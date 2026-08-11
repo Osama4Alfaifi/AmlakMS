@@ -22,6 +22,7 @@ import {
   accountManagers,
   clients,
   contracts,
+  expenses,
   invoices,
   maintenanceRequests,
   owners,
@@ -84,6 +85,7 @@ async function main() {
   await seedCollection("invoices", invoices);
   await seedCollection("quotes", quotes);
   await seedCollection("technicians", technicians);
+  await seedCollection("expenses", expenses);
   await seedCollection("accountManagers", accountManagers);
   await seedCollection("systemUsers", systemUsers);
 
