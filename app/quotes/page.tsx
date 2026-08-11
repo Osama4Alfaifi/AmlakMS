@@ -6,7 +6,7 @@ import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Input, Label } from "@/components/ui/Input";
+import { Input, Label, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { currency } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth-context";
@@ -39,9 +39,11 @@ export default function QuotesPage() {
 
   const [clientName, setClientName] = useState("");
   const [propertyTitle, setPropertyTitle] = useState("");
+  const [propertyCategory, setPropertyCategory] = useState<"سكني" | "تجاري">("سكني");
   const [validUntil, setValidUntil] = useState("");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<InvoiceItem[]>([{ description: "", quantity: 1, unitPrice: 0 }]);
+  const taxRate = propertyCategory === "تجاري" ? 0.15 : 0;
 
   function updateItem(index: number, patch: Partial<InvoiceItem>) {
     setItems((prev) => prev.map((it, i) => (i === index ? { ...it, ...patch } : it)));
@@ -65,7 +67,7 @@ export default function QuotesPage() {
       clientName,
       propertyTitle,
       items: items.filter((i) => i.description.trim()),
-      taxRate: 0.15,
+      taxRate,
       status: "مسودة",
       createdAt: new Date().toISOString().slice(0, 10),
       validUntil: validUntil || new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
@@ -75,6 +77,7 @@ export default function QuotesPage() {
     setShowForm(false);
     setClientName("");
     setPropertyTitle("");
+    setPropertyCategory("سكني");
     setValidUntil("");
     setNotes("");
     setItems([{ description: "", quantity: 1, unitPrice: 0 }]);
@@ -139,7 +142,7 @@ export default function QuotesPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-                <div className="grid sm:grid-cols-3 gap-4">
+                <div className="grid sm:grid-cols-4 gap-4">
                   <div>
                     <Label htmlFor="clientName">اسم العميل</Label>
                     <Input id="clientName" value={clientName} onChange={(e) => setClientName(e.target.value)} required />
@@ -147,6 +150,17 @@ export default function QuotesPage() {
                   <div>
                     <Label htmlFor="propertyTitle">العقار / الخدمة</Label>
                     <Input id="propertyTitle" value={propertyTitle} onChange={(e) => setPropertyTitle(e.target.value)} required />
+                  </div>
+                  <div>
+                    <Label htmlFor="propertyCategory">نوع العقار</Label>
+                    <Select
+                      id="propertyCategory"
+                      value={propertyCategory}
+                      onChange={(e) => setPropertyCategory(e.target.value as "سكني" | "تجاري")}
+                    >
+                      <option value="سكني">سكني (معفى من الضريبة)</option>
+                      <option value="تجاري">تجاري (+15% ضريبة)</option>
+                    </Select>
                   </div>
                   <div>
                     <Label htmlFor="validUntil">صالح حتى</Label>
@@ -194,8 +208,8 @@ export default function QuotesPage() {
 
                 <div className="flex items-center justify-between border-t border-border pt-4">
                   <p className="text-sm text-muted">
-                    الإجمالي شامل الضريبة (15%):{" "}
-                    <span className="font-bold text-foreground">{currency(totalOf(items, 0.15))}</span>
+                    {taxRate > 0 ? "الإجمالي شامل الضريبة (15%)" : "الإجمالي (معفى من الضريبة)"}:{" "}
+                    <span className="font-bold text-foreground">{currency(totalOf(items, taxRate))}</span>
                   </p>
                   <Button type="submit" disabled={submitting}>{submitting ? "جارِ الحفظ..." : "حفظ عرض السعر"}</Button>
                 </div>

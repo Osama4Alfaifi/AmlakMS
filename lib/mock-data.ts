@@ -6,12 +6,27 @@ import type {
   MaintenanceRequest,
   Owner,
   Property,
+  PropertyType,
   Quote,
   SupportTicket,
   SystemUser,
   Technician,
   Tenant,
 } from "./types";
+
+// Per Saudi VAT regulations: residential rentals/sales are VAT-exempt;
+// commercial ones carry 15% VAT — confirmed against real Ejar (REGA)
+// tenancy contracts, which show a VAT line only on the commercial contract.
+const COMMERCIAL_PROPERTY_TYPES: PropertyType[] = ["محل تجاري", "مكتب"];
+
+export function taxRateForPropertyType(type: PropertyType): number {
+  return COMMERCIAL_PROPERTY_TYPES.includes(type) ? 0.15 : 0;
+}
+
+// The platform operator's own VAT registration number, shown on generated
+// invoices/quotes when VAT applies (required on any ZATCA-compliant
+// invoice that includes VAT).
+export const COMPANY_VAT_NUMBER = "310650016400003";
 
 export const owners: Owner[] = [
   { id: "own-1", name: "عبدالله السبيعي", phone: "0551234567", email: "abdullah.s@mail.com", joinedAt: "2021-03-14" },
@@ -72,20 +87,20 @@ export const clients: Client[] = [
 ];
 
 export const invoices: Invoice[] = [
-  { id: "inv-1", number: "INV-2026-101", clientName: "خالد المطيري", propertyTitle: "شقة فاخرة بحي الملقا", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 65000 }], issueDate: "2026-02-01", dueDate: "2026-02-10", status: "مدفوعة" },
-  { id: "inv-2", number: "INV-2026-102", clientName: "نورة الحربي", propertyTitle: "شقة عوائل بحي الروضة", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 42000 }], issueDate: "2026-03-15", dueDate: "2026-03-25", status: "مدفوعة" },
-  { id: "inv-3", number: "INV-2026-103", clientName: "تركي الغامدي", propertyTitle: "محل تجاري بواجهة رئيسية", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 38000 }], issueDate: "2025-12-01", dueDate: "2025-12-10", status: "مدفوعة" },
-  { id: "inv-4", number: "INV-2026-104", clientName: "ريم الزهراني", propertyTitle: "شقة استثمارية بحي العزيزية", items: [{ description: "إيجار ربع سنوي", quantity: 1, unitPrice: 8000 }], issueDate: "2026-08-01", dueDate: "2026-08-10", status: "معلقة" },
-  { id: "inv-5", number: "INV-2026-105", clientName: "لمى القرني", propertyTitle: "شقة قريبة من الحرم", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 45000 }], issueDate: "2026-04-01", dueDate: "2026-04-10", status: "مدفوعة" },
-  { id: "inv-6", number: "INV-2026-106", clientName: "سعود الرشيد", propertyTitle: "شقة اقتصادية بحي السلي", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 27000 }], issueDate: "2026-03-01", dueDate: "2026-03-10", status: "متأخرة" },
-  { id: "inv-7", number: "INV-2026-107", clientName: "بندر العنزي", propertyTitle: "مكتب مشترك بحي الورود", items: [{ description: "إيجار شهري", quantity: 1, unitPrice: 2833 }], issueDate: "2026-07-01", dueDate: "2026-07-05", status: "معلقة" },
-  { id: "inv-8", number: "INV-2026-108", clientName: "خالد المطيري", propertyTitle: "فيلا مودرن بحي الياسمين", items: [{ description: "دفعة شراء", quantity: 1, unitPrice: 1650000 }], issueDate: "2025-10-20", dueDate: "2025-10-25", status: "مدفوعة" },
+  { id: "inv-1", number: "INV-2026-101", clientName: "خالد المطيري", propertyTitle: "شقة فاخرة بحي الملقا", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 65000 }], taxRate: 0, issueDate: "2026-02-01", dueDate: "2026-02-10", status: "مدفوعة" },
+  { id: "inv-2", number: "INV-2026-102", clientName: "نورة الحربي", propertyTitle: "شقة عوائل بحي الروضة", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 42000 }], taxRate: 0, issueDate: "2026-03-15", dueDate: "2026-03-25", status: "مدفوعة" },
+  { id: "inv-3", number: "INV-2026-103", clientName: "تركي الغامدي", propertyTitle: "محل تجاري بواجهة رئيسية", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 38000 }], taxRate: 0.15, issueDate: "2025-12-01", dueDate: "2025-12-10", status: "مدفوعة" },
+  { id: "inv-4", number: "INV-2026-104", clientName: "ريم الزهراني", propertyTitle: "شقة استثمارية بحي العزيزية", items: [{ description: "إيجار ربع سنوي", quantity: 1, unitPrice: 8000 }], taxRate: 0, issueDate: "2026-08-01", dueDate: "2026-08-10", status: "معلقة" },
+  { id: "inv-5", number: "INV-2026-105", clientName: "لمى القرني", propertyTitle: "شقة قريبة من الحرم", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 45000 }], taxRate: 0, issueDate: "2026-04-01", dueDate: "2026-04-10", status: "مدفوعة" },
+  { id: "inv-6", number: "INV-2026-106", clientName: "سعود الرشيد", propertyTitle: "شقة اقتصادية بحي السلي", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 27000 }], taxRate: 0, issueDate: "2026-03-01", dueDate: "2026-03-10", status: "متأخرة" },
+  { id: "inv-7", number: "INV-2026-107", clientName: "بندر العنزي", propertyTitle: "مكتب مشترك بحي الورود", items: [{ description: "إيجار شهري", quantity: 1, unitPrice: 2833 }], taxRate: 0.15, issueDate: "2026-07-01", dueDate: "2026-07-05", status: "معلقة" },
+  { id: "inv-8", number: "INV-2026-108", clientName: "خالد المطيري", propertyTitle: "فيلا مودرن بحي الياسمين", items: [{ description: "دفعة شراء", quantity: 1, unitPrice: 1650000 }], taxRate: 0, issueDate: "2025-10-20", dueDate: "2025-10-25", status: "مدفوعة" },
 ];
 
 export const quotes: Quote[] = [
-  { id: "q-1", number: "QT-2026-201", clientName: "عمر الشمري", propertyTitle: "فيلا دورين بحي النرجس", items: [{ description: "سعر الفيلا", quantity: 1, unitPrice: 1850000 }, { description: "رسوم خدمات الوساطة", quantity: 1, unitPrice: 18500 }], taxRate: 0.15, status: "مرسل", createdAt: "2026-08-01", validUntil: "2026-08-15", notes: "السعر شامل رسوم النقل الأساسية." },
-  { id: "q-2", number: "QT-2026-202", clientName: "دانة العصيمي", propertyTitle: "شقة عصرية بحي الياسمين", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 58000 }, { description: "تأمين استرجاعي", quantity: 1, unitPrice: 5800 }], taxRate: 0.15, status: "مسودة", createdAt: "2026-08-05", validUntil: "2026-08-20" },
-  { id: "q-3", number: "QT-2026-203", clientName: "ماجد القحطاني", propertyTitle: "أرض سكنية بحي القيروان", items: [{ description: "سعر الأرض", quantity: 1, unitPrice: 980000 }], taxRate: 0.15, status: "مقبول", createdAt: "2026-07-20", validUntil: "2026-08-05" },
+  { id: "q-1", number: "QT-2026-201", clientName: "عمر الشمري", propertyTitle: "فيلا دورين بحي النرجس", items: [{ description: "سعر الفيلا", quantity: 1, unitPrice: 1850000 }, { description: "رسوم خدمات الوساطة", quantity: 1, unitPrice: 18500 }], taxRate: 0, status: "مرسل", createdAt: "2026-08-01", validUntil: "2026-08-15", notes: "السعر شامل رسوم النقل الأساسية." },
+  { id: "q-2", number: "QT-2026-202", clientName: "دانة العصيمي", propertyTitle: "شقة عصرية بحي الياسمين", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 58000 }, { description: "تأمين استرجاعي", quantity: 1, unitPrice: 5800 }], taxRate: 0, status: "مسودة", createdAt: "2026-08-05", validUntil: "2026-08-20" },
+  { id: "q-3", number: "QT-2026-203", clientName: "ماجد القحطاني", propertyTitle: "أرض سكنية بحي القيروان", items: [{ description: "سعر الأرض", quantity: 1, unitPrice: 980000 }], taxRate: 0, status: "مقبول", createdAt: "2026-07-20", validUntil: "2026-08-05" },
   { id: "q-4", number: "QT-2026-204", clientName: "خالد المطيري", propertyTitle: "مكتب إداري ببرج الأعمال", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 55000 }], taxRate: 0.15, status: "مرفوض", createdAt: "2026-06-10", validUntil: "2026-06-25" },
 ];
 

@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ArrowRight, Building2, Printer } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { currency } from "@/lib/mock-data";
+import { COMPANY_VAT_NUMBER, currency } from "@/lib/mock-data";
 import { useFirestoreDoc } from "@/lib/firestore/hooks";
 import type { Invoice } from "@/lib/types";
 
@@ -27,7 +27,8 @@ export default function InvoicePrintPage() {
   }
 
   const subtotal = invoice.items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
-  const tax = subtotal * 0.15;
+  const taxRate = invoice.taxRate ?? 0.15;
+  const tax = subtotal * taxRate;
   const total = subtotal + tax;
 
   return (
@@ -50,6 +51,7 @@ export default function InvoicePrintPage() {
             <div>
               <p className="font-extrabold text-lg">أملاك MS</p>
               <p className="text-xs text-muted">نظام إدارة الأملاك · الرياض، المملكة العربية السعودية</p>
+              {taxRate > 0 && <p className="text-xs text-muted mt-0.5">الرقم الضريبي: {COMPANY_VAT_NUMBER}</p>}
             </div>
           </div>
           <div className="text-left">
@@ -100,10 +102,17 @@ export default function InvoicePrintPage() {
               <span>المجموع الفرعي</span>
               <span>{currency(subtotal)}</span>
             </div>
-            <div className="flex justify-between text-muted">
-              <span>ضريبة القيمة المضافة (15%)</span>
-              <span>{currency(tax)}</span>
-            </div>
+            {taxRate > 0 ? (
+              <div className="flex justify-between text-muted">
+                <span>ضريبة القيمة المضافة ({Math.round(taxRate * 100)}%)</span>
+                <span>{currency(tax)}</span>
+              </div>
+            ) : (
+              <div className="flex justify-between text-muted">
+                <span>ضريبة القيمة المضافة</span>
+                <span>معفى (عقار سكني)</span>
+              </div>
+            )}
             <div className="flex justify-between font-extrabold text-base border-t border-border pt-2">
               <span>الإجمالي المستحق</span>
               <span className="text-brand-700">{currency(total)}</span>

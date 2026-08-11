@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { Building2, ArrowRight, Printer } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { currency } from "@/lib/mock-data";
+import { COMPANY_VAT_NUMBER, currency } from "@/lib/mock-data";
 import { useFirestoreDoc } from "@/lib/firestore/hooks";
 import type { Quote } from "@/lib/types";
 
@@ -49,6 +49,7 @@ export default function QuotePrintPage() {
             <div>
               <p className="font-extrabold text-lg">أملاك MS</p>
               <p className="text-xs text-muted">نظام إدارة الأملاك · الرياض، المملكة العربية السعودية</p>
+              {quote.taxRate > 0 && <p className="text-xs text-muted mt-0.5">الرقم الضريبي: {COMPANY_VAT_NUMBER}</p>}
             </div>
           </div>
           <div className="text-left">
@@ -98,10 +99,17 @@ export default function QuotePrintPage() {
               <span>المجموع الفرعي</span>
               <span>{currency(subtotal)}</span>
             </div>
-            <div className="flex justify-between text-muted">
-              <span>ضريبة القيمة المضافة ({Math.round(quote.taxRate * 100)}%)</span>
-              <span>{currency(tax)}</span>
-            </div>
+            {quote.taxRate > 0 ? (
+              <div className="flex justify-between text-muted">
+                <span>ضريبة القيمة المضافة ({Math.round(quote.taxRate * 100)}%)</span>
+                <span>{currency(tax)}</span>
+              </div>
+            ) : (
+              <div className="flex justify-between text-muted">
+                <span>ضريبة القيمة المضافة</span>
+                <span>معفى (عقار سكني)</span>
+              </div>
+            )}
             <div className="flex justify-between font-extrabold text-base border-t border-border pt-2">
               <span>الإجمالي</span>
               <span className="text-brand-700">{currency(total)}</span>

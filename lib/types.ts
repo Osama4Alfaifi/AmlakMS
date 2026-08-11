@@ -90,6 +90,9 @@ export interface Invoice {
   clientName: string;
   propertyTitle: string;
   items: InvoiceItem[];
+  // Residential rentals are VAT-exempt in Saudi Arabia; only commercial
+  // rentals carry the 15% VAT — see taxRateForPropertyType() in mock-data.ts.
+  taxRate: number;
   issueDate: string;
   dueDate: string;
   status: InvoiceStatus;
