@@ -11,6 +11,8 @@
     "seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.6.0",
+    "exceljs": "^4.4.0",
     "firebase": "^12.17.1",
     "firebase-admin": "^14.2.0",
     "leaflet": "^1.9.4",

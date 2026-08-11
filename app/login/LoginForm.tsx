@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Building2, KeyRound, ShieldCheck, UserCog, Wrench } from "lucide-react";
+import { Building2, Calculator, KeyRound, ShieldCheck, UserCog, UserPlus, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input, Label } from "@/components/ui/Input";
 import { useAuth } from "@/lib/auth-context";
@@ -18,6 +18,9 @@ const roleOptions: { role: Role; icon: typeof ShieldCheck; demoEmail: string }[]
   { role: "owner", icon: ShieldCheck, demoEmail: owners[0].email },
   { role: "tenant", icon: KeyRound, demoEmail: tenants[0].email },
   { role: "technician", icon: Wrench, demoEmail: `${technicians[0].id}@amlakms.sa` },
+  { role: "accountant", icon: Calculator, demoEmail: "accountant@amlakms.sa" },
+  { role: "leasingAgent", icon: UserPlus, demoEmail: "agent@amlakms.sa" },
+  { role: "maintenanceStaff", icon: Wrench, demoEmail: "maintenance-lead@amlakms.sa" },
 ];
 
 export function LoginForm() {

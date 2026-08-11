@@ -10,9 +10,9 @@ import { Input, Label, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { currency } from "@/lib/mock-data";
 import { useExpenses, useProperties } from "@/lib/firestore/hooks";
-import { createExpense } from "@/lib/firestore/mutations";
+import { createExpense, updateExpenseStatus } from "@/lib/firestore/mutations";
 import type { ExpenseCategory, ExpenseItem } from "@/lib/types";
-import { ChevronDown, ChevronUp, Plus, Receipt, TrendingDown, Trash2, Wallet } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronUp, Plus, Receipt, TrendingDown, Trash2, Wallet } from "lucide-react";
 
 const CATEGORIES: ExpenseCategory[] = ["صيانة", "كهرباء", "مياه", "تنظيف", "أمن", "تأمين", "رسوم حكومية", "أخرى"];
 
@@ -92,7 +92,7 @@ export default function AdminExpensesPage() {
   }
 
   return (
-    <DashboardShell allow={["admin"]} title="المصروفات">
+    <DashboardShell allow={["admin", "accountant"]} title="المصروفات">
       <div className="flex flex-col gap-6">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard label="إجمالي المصروفات" value={currency(total)} icon={Wallet} tone="brand" />
@@ -148,7 +148,18 @@ export default function AdminExpensesPage() {
                         <Td className="text-muted">{e.vendorName ?? "—"}</Td>
                         <Td className="font-semibold">{currency(e.amount)}</Td>
                         <Td className="text-muted">{e.date}</Td>
-                        <Td><Badge>{e.status}</Badge></Td>
+                        <Td onClick={(ev) => ev.stopPropagation()}>
+                          {e.status === "معلقة" ? (
+                            <button
+                              onClick={() => updateExpenseStatus(e.id, "مدفوعة")}
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
+                            >
+                              <CheckCircle2 size={13} /> اعتماد الدفع
+                            </button>
+                          ) : (
+                            <Badge>{e.status}</Badge>
+                          )}
+                        </Td>
                       </Tr>
                       {isOpen && (
                         <Tr className="bg-background">

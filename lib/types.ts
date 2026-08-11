@@ -1,4 +1,4 @@
-export type Role = "admin" | "owner" | "tenant" | "technician";
+export type Role = "admin" | "owner" | "tenant" | "technician" | "accountant" | "leasingAgent" | "maintenanceStaff";
 
 // linkedId points to the owners/tenants/technicians record this account
 // represents (null for admin, who isn't tied to a single record).

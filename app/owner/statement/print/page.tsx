@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Building2, Printer } from "lucide-react";
+import { ArrowRight, Building2, Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/lib/auth-context";
 import { currency, DEFAULT_MANAGEMENT_FEE_RATE } from "@/lib/mock-data";
@@ -11,6 +12,7 @@ import {
   useOwnerExpenses,
   useProperties,
 } from "@/lib/firestore/hooks";
+import { downloadPdf } from "@/lib/pdf/download";
 import type { Owner } from "@/lib/types";
 
 export default function OwnerStatementPrintPage() {
@@ -20,6 +22,7 @@ export default function OwnerStatementPrintPage() {
   const { data: properties } = useProperties();
   const { data: contracts } = useContracts();
   const { data: expenses } = useOwnerExpenses(user?.linkedId);
+  const [downloading, setDownloading] = useState(false);
 
   if (!currentOwner) return null;
 
@@ -37,9 +40,23 @@ export default function OwnerStatementPrintPage() {
         <button onClick={() => router.push("/owner")} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
           <ArrowRight size={16} /> رجوع
         </button>
-        <Button onClick={() => window.print()}>
-          <Printer size={16} /> طباعة / تصدير PDF
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" disabled={downloading} onClick={async () => {
+            setDownloading(true);
+            try {
+              await downloadPdf(`/api/pdf/owner-statement?ownerId=${currentOwner.id}`, `owner-statement-${currentOwner.id}`);
+            } catch {
+              alert("تعذّر تحميل PDF");
+            } finally {
+              setDownloading(false);
+            }
+          }}>
+            <Download size={16} /> {downloading ? "جارِ التحميل..." : "تحميل PDF"}
+          </Button>
+          <Button onClick={() => window.print()}>
+            <Printer size={16} /> طباعة / تصدير PDF
+          </Button>
+        </div>
       </div>
 
       <div className="print-sheet max-w-3xl mx-auto bg-surface border border-border rounded-2xl shadow-sm shadow-black/[0.03] p-8 lg:p-10">

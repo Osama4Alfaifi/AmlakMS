@@ -106,6 +106,9 @@ async function main() {
     ...technicians.map(
       (t): Persona => ({ id: t.id, role: "technician", name: t.name, email: `${t.id}@amlakms.sa`, linkedId: t.id })
     ),
+    { id: "accountant-1", role: "accountant", name: "عبير الحارثي", email: "accountant@amlakms.sa", linkedId: null },
+    { id: "agent-1", role: "leasingAgent", name: "نايف السلمي", email: "agent@amlakms.sa", linkedId: null },
+    { id: "maint-lead-1", role: "maintenanceStaff", name: "رائد الزهراني", email: "maintenance-lead@amlakms.sa", linkedId: null },
   ];
 
   console.log(`Creating ${personas.length} demo auth accounts (password: ${DEMO_PASSWORD}) ...`);
@@ -145,6 +148,9 @@ async function main() {
   owners.forEach((o) => console.log(`  ${o.email}  — مالك: ${o.name}`));
   tenants.forEach((t) => console.log(`  ${t.email}  — مستأجر: ${t.name}`));
   technicians.forEach((t) => console.log(`  ${t.id}@amlakms.sa  — فني: ${t.name}`));
+  console.log(`  accountant@amlakms.sa  — محاسب`);
+  console.log(`  agent@amlakms.sa  — مندوب تأجير`);
+  console.log(`  maintenance-lead@amlakms.sa  — فريق صيانة`);
   process.exit(0);
 }
 

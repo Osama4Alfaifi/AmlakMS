@@ -41,6 +41,18 @@ service cloud.firestore {
       return signedIn() && myRole() == "technician";
     }
 
+    function isAccountant() {
+      return signedIn() && myRole() == "accountant";
+    }
+
+    function isLeasingAgent() {
+      return signedIn() && myRole() == "leasingAgent";
+    }
+
+    function isMaintenanceStaff() {
+      return signedIn() && myRole() == "maintenanceStaff";
+    }
+
     // Admin manages everything.
     match /{document=**} {
       allow read, write: if isAdmin();
@@ -59,17 +71,33 @@ service cloud.firestore {
     match /tenants/{id} { allow read: if signedIn(); }
     match /technicians/{id} { allow read: if signedIn(); }
     match /contracts/{id} { allow read: if signedIn(); }
-    match /clients/{id} { allow read: if signedIn(); }
+    // Clients: reference data readable by anyone signed in; leasing agents
+    // additionally manage the CRM fields (stage/interestedPropertyId) on
+    // lead records, and can add new leads.
+    match /clients/{id} {
+      allow read: if signedIn();
+      allow create, update: if isLeasingAgent();
+    }
     match /invoices/{id} { allow read: if signedIn(); }
     match /accountManagers/{id} { allow read: if signedIn(); }
     match /systemUsers/{id} { allow read: if signedIn(); }
     match /buildings/{id} { allow read: if signedIn(); }
     match /units/{id} { allow read: if signedIn(); }
-    match /vendors/{id} { allow read: if signedIn(); }
+    // Maintenance staff manage the vendor directory day to day.
+    match /vendors/{id} {
+      allow read: if signedIn();
+      allow create, update: if isMaintenanceStaff();
+    }
 
-    // Viewings and document links are internal admin/CRM tooling — no
-    // owner/tenant use case in this phase, so no explicit rule: they fall
-    // through to default-deny for everyone except admin (wildcard above).
+    // Viewings: internal CRM tooling. Leasing agents run the pipeline day to
+    // day (read/create/update); everyone else falls through to
+    // default-deny except admin (wildcard above).
+    match /viewings/{id} {
+      allow read, create, update: if isLeasingAgent();
+    }
+
+    // Document links are internal admin tooling only — no explicit rule:
+    // falls through to default-deny for everyone except admin (wildcard).
 
     // Append-only audit trail: anyone signed in can log their own action
     // (so a tenant filing a maintenance request can log it too), but only
@@ -80,10 +108,16 @@ service cloud.firestore {
 
     // Expenses: owners only see expenses on their own properties (ownerId
     // is denormalized onto each expense at creation time, same
-    // list-provability reason as maintenanceRequests.ownerId above). Admin
-    // is covered by the wildcard rule; writes go through it too.
+    // list-provability reason as maintenanceRequests.ownerId above).
+    // Accountants see and manage all expenses (constant per-user fact, safe
+    // for the unconstrained admin-style list query) — including approving
+    // payment (status update). Admin is covered by the wildcard rule.
     match /expenses/{id} {
-      allow read: if signedIn() && myRole() == "owner" && resource.data.ownerId == myProfile().linkedId;
+      allow read: if signedIn() && (
+        isAccountant() ||
+        (myRole() == "owner" && resource.data.ownerId == myProfile().linkedId)
+      );
+      allow create, update: if isAccountant();
     }
 
     // Quotes: admin/owner can create. Any signed-in account can read at the
@@ -113,21 +147,23 @@ service cloud.firestore {
     }
 
     // Maintenance requests: tenants file their own (as themselves only).
-    // Visible to the tenant who filed it, technicians (staff — constant
-    // per-user fact, safe for an unconstrained list), and the owner of the
-    // property it's on (ownerId is copied onto the request at creation
-    // time so this rule doesn't need a cross-collection get() keyed by a
-    // per-document field, which has the same list-provability problem).
-    // Only technicians can update status — matches the UI, where only
-    // /technician exposes the status control.
+    // Visible to the tenant who filed it, technicians and maintenance staff
+    // (staff — constant per-user fact, safe for an unconstrained list), and
+    // the owner of the property it's on (ownerId is copied onto the request
+    // at creation time so this rule doesn't need a cross-collection get()
+    // keyed by a per-document field, which has the same list-provability
+    // problem). Technicians and maintenance staff can both update status —
+    // maintenance staff also assigns technician/vendor from
+    // app/admin/maintenance.
     match /maintenanceRequests/{id} {
       allow create: if signedIn() && request.resource.data.createdByUid == request.auth.uid;
       allow read: if signedIn() && (
         resource.data.createdByUid == request.auth.uid ||
         isTechnician() ||
+        isMaintenanceStaff() ||
         (myRole() == "owner" && resource.data.ownerId == myProfile().linkedId)
       );
-      allow update: if isTechnician();
+      allow update: if isTechnician() || isMaintenanceStaff();
     }
   }
 }

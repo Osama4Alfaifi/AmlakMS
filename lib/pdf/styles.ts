@@ -1,0 +1,42 @@
+import { StyleSheet } from "@react-pdf/renderer";
+
+// Manual RTL: react-pdf's automatic bidi handling is inconsistent across
+// versions, so layout direction is set explicitly (row-reverse, textAlign
+// right) rather than relied on implicitly.
+export const pdfStyles = StyleSheet.create({
+  page: { fontFamily: "Cairo", padding: 40, fontSize: 10, color: "#1f2937" },
+  headerRow: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "flex-start", borderBottomWidth: 1, borderBottomColor: "#e5e7eb", paddingBottom: 18, marginBottom: 18 },
+  brandRow: { flexDirection: "row-reverse", alignItems: "center" },
+  logoBox: { width: 34, height: 34, borderRadius: 8, backgroundColor: "#1c3ab3", marginLeft: 10, alignItems: "center", justifyContent: "center" },
+  logoText: { color: "#ffffff", fontSize: 14, fontWeight: "bold" },
+  brandName: { fontSize: 13, fontWeight: "bold", textAlign: "right" },
+  brandSub: { fontSize: 8, color: "#6b7280", marginTop: 2, textAlign: "right" },
+  docTitleBlock: { alignItems: "flex-end" },
+  docTitle: { fontSize: 15, fontWeight: "bold", color: "#1c3ab3", textAlign: "right" },
+  docSub: { fontSize: 8, color: "#6b7280", marginTop: 3, textAlign: "right" },
+  partiesRow: { flexDirection: "row-reverse", justifyContent: "space-between", marginBottom: 22 },
+  partyBlock: { width: "48%" },
+  partyLabel: { fontSize: 8, color: "#6b7280", marginBottom: 3, textAlign: "right" },
+  partyValue: { fontSize: 10.5, fontWeight: "bold", textAlign: "right" },
+  partySub: { fontSize: 9, color: "#6b7280", marginTop: 3, textAlign: "right" },
+  table: { marginBottom: 16 },
+  tableHeadRow: { flexDirection: "row-reverse", borderBottomWidth: 1, borderBottomColor: "#e5e7eb", paddingBottom: 6, marginBottom: 4 },
+  tableRow: { flexDirection: "row-reverse", borderBottomWidth: 0.5, borderBottomColor: "#e5e7eb", paddingVertical: 6 },
+  colDesc: { width: "46%", textAlign: "right" },
+  colQty: { width: "14%", textAlign: "center" },
+  colPrice: { width: "20%", textAlign: "left" },
+  colTotal: { width: "20%", textAlign: "left", fontWeight: "bold" },
+  headCellText: { fontSize: 8, color: "#6b7280" },
+  totalsWrap: { alignItems: "flex-start", marginBottom: 20 },
+  totalsBox: { width: "45%" },
+  totalRow: { flexDirection: "row-reverse", justifyContent: "space-between", marginBottom: 5 },
+  totalLabel: { fontSize: 9.5, color: "#6b7280", textAlign: "right" },
+  totalValue: { fontSize: 9.5, textAlign: "left" },
+  grandRow: { flexDirection: "row-reverse", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#e5e7eb", paddingTop: 6, marginTop: 2 },
+  grandLabel: { fontSize: 11, fontWeight: "bold", textAlign: "right" },
+  grandValue: { fontSize: 11, fontWeight: "bold", color: "#1c3ab3", textAlign: "left" },
+  notesBlock: { borderTopWidth: 1, borderTopColor: "#e5e7eb", paddingTop: 10, marginBottom: 20 },
+  notesLabel: { fontSize: 8, color: "#6b7280", marginBottom: 3, textAlign: "right" },
+  notesText: { fontSize: 9.5, textAlign: "right" },
+  footer: { borderTopWidth: 1, borderTopColor: "#e5e7eb", paddingTop: 12, textAlign: "center", fontSize: 8, color: "#9ca3af" },
+});

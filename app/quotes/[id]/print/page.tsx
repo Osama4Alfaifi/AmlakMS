@@ -1,16 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Building2, ArrowRight, Printer } from "lucide-react";
+import { Building2, ArrowRight, Download, Printer } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { COMPANY_VAT_NUMBER, currency } from "@/lib/mock-data";
 import { useFirestoreDoc } from "@/lib/firestore/hooks";
+import { downloadPdf } from "@/lib/pdf/download";
 import type { Quote } from "@/lib/types";
 
 export default function QuotePrintPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const quote = useFirestoreDoc<Quote>("quotes", params.id);
+  const [downloading, setDownloading] = useState(false);
 
   if (quote === undefined) return null;
 
@@ -35,9 +38,23 @@ export default function QuotePrintPage() {
         <button onClick={() => router.push("/quotes")} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
           <ArrowRight size={16} /> رجوع
         </button>
-        <Button onClick={() => window.print()}>
-          <Printer size={16} /> طباعة / تصدير PDF
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" disabled={downloading} onClick={async () => {
+            setDownloading(true);
+            try {
+              await downloadPdf(`/api/pdf/quote/${quote.id}`, quote.number);
+            } catch {
+              alert("تعذّر تحميل PDF");
+            } finally {
+              setDownloading(false);
+            }
+          }}>
+            <Download size={16} /> {downloading ? "جارِ التحميل..." : "تحميل PDF"}
+          </Button>
+          <Button onClick={() => window.print()}>
+            <Printer size={16} /> طباعة / تصدير PDF
+          </Button>
+        </div>
       </div>
 
       <div className="print-sheet max-w-3xl mx-auto bg-surface border border-border rounded-2xl shadow-sm shadow-black/[0.03] p-8 lg:p-10">

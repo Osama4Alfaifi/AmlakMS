@@ -30,6 +30,9 @@ export const roleMeta: Record<Role, { title: string; homeHref: string }> = {
   owner: { title: "بوابة الملاك", homeHref: "/owner" },
   tenant: { title: "بوابة المستأجرين", homeHref: "/tenant" },
   technician: { title: "بوابة فنيي الصيانة", homeHref: "/technician" },
+  accountant: { title: "بوابة المحاسب", homeHref: "/accountant" },
+  leasingAgent: { title: "بوابة مندوب التأجير", homeHref: "/leasing-agent" },
+  maintenanceStaff: { title: "بوابة فريق الصيانة", homeHref: "/admin/maintenance" },
 };
 
 export const navByRole: Record<Role, NavItem[]> = {
@@ -49,6 +52,7 @@ export const navByRole: Record<Role, NavItem[]> = {
     { label: "سجل التدقيق", href: "/admin/audit-log", icon: History },
     { label: "عروض الأسعار", href: "/quotes", icon: Receipt },
     { label: "التقارير والفواتير", href: "/reports", icon: BarChart3 },
+    { label: "التقارير المالية", href: "/admin/reports/financial", icon: BarChart3 },
     { label: "الخريطة التفاعلية", href: "/map", icon: MapPin },
     { label: "خدمة العملاء", href: "/support/customer", icon: Headset },
     { label: "الدعم الفني", href: "/support/technical", icon: LifeBuoy },
@@ -72,5 +76,22 @@ export const navByRole: Record<Role, NavItem[]> = {
   technician: [
     { label: "أوامر العمل", href: "/technician", icon: Wrench },
     { label: "الدعم الفني", href: "/support/technical", icon: LifeBuoy },
+  ],
+  accountant: [
+    { label: "لوحة التحكم", href: "/accountant", icon: LayoutDashboard },
+    { label: "المصروفات", href: "/admin/expenses", icon: Wallet },
+    { label: "التقارير والفواتير", href: "/reports", icon: BarChart3 },
+    { label: "التقارير المالية", href: "/admin/reports/financial", icon: BarChart3 },
+    { label: "العقود", href: "/admin/contracts", icon: FileText },
+  ],
+  leasingAgent: [
+    { label: "لوحة التحكم", href: "/leasing-agent", icon: LayoutDashboard },
+    { label: "العملاء المحتملون", href: "/admin/leads", icon: UserPlus },
+    { label: "العقارات", href: "/admin/properties", icon: Building2 },
+    { label: "الخريطة التفاعلية", href: "/map", icon: MapPin },
+  ],
+  maintenanceStaff: [
+    { label: "طلبات الصيانة", href: "/admin/maintenance", icon: Wrench },
+    { label: "المورّدون", href: "/admin/vendors", icon: Wrench },
   ],
 };

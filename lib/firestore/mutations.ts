@@ -7,6 +7,7 @@ import type {
   Building,
   DocumentLink,
   Expense,
+  ExpenseStatus,
   LeadStage,
   MaintenanceRequest,
   MaintenanceStatus,
@@ -53,6 +54,13 @@ export async function createExpense(expense: Omit<Expense, "id">) {
   const ref = await addDoc(collection(getDb(), "expenses"), expense);
   void logAudit("expenses", ref.id, "create", expense.category);
   return ref.id;
+}
+
+// Accountant/admin only (see firestore.rules) — e.g. approving payment
+// (معلقة → مدفوعة).
+export async function updateExpenseStatus(id: string, status: ExpenseStatus) {
+  await updateDoc(doc(getDb(), "expenses", id), { status });
+  void logAudit("expenses", id, "update", `status → ${status}`);
 }
 
 export async function createSupportTicket(ticket: Omit<SupportTicket, "id">) {

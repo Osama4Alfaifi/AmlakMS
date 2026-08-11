@@ -9,8 +9,9 @@ import { Input, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { currency } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
+import { downloadExcel } from "@/lib/excel";
 import { useOwners, useProperties } from "@/lib/firestore/hooks";
-import { Download, Search } from "lucide-react";
+import { Download, FileSpreadsheet, Search } from "lucide-react";
 
 export default function AdminPropertiesPage() {
   const { data: properties } = useProperties();
@@ -27,8 +28,20 @@ export default function AdminPropertiesPage() {
     [properties, query, city]
   );
 
+  const exportRows = () =>
+    filtered.map((p) => ({
+      العقار: p.title,
+      النوع: p.type,
+      المدينة: p.city,
+      الحي: p.district,
+      المساحة: p.area,
+      السعر: p.price,
+      المالك: owners.find((o) => o.id === p.ownerId)?.name ?? "",
+      الحالة: p.status,
+    }));
+
   return (
-    <DashboardShell allow={["admin"]} title="العقارات">
+    <DashboardShell allow={["admin", "leasingAgent"]} title="العقارات">
       <Card>
         <CardHeader>
           <div>
@@ -45,23 +58,11 @@ export default function AdminPropertiesPage() {
               <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
               <Input placeholder="بحث..." value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                downloadCsv("العقارات", filtered.map((p) => ({
-                  العقار: p.title,
-                  النوع: p.type,
-                  المدينة: p.city,
-                  الحي: p.district,
-                  المساحة: p.area,
-                  السعر: p.price,
-                  المالك: owners.find((o) => o.id === p.ownerId)?.name ?? "",
-                  الحالة: p.status,
-                })))
-              }
-            >
+            <Button size="sm" variant="outline" onClick={() => downloadCsv("العقارات", exportRows())}>
               <Download size={15} /> تصدير CSV
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => downloadExcel("العقارات", "العقارات", exportRows())}>
+              <FileSpreadsheet size={15} /> تصدير Excel
             </Button>
           </div>
         </CardHeader>

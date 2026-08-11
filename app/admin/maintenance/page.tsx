@@ -40,7 +40,7 @@ export default function AdminMaintenancePage() {
   const completed = requests.filter((r) => r.status === "مكتمل").length;
 
   return (
-    <DashboardShell allow={["admin"]} title="طلبات الصيانة">
+    <DashboardShell allow={["admin", "maintenanceStaff"]} title="طلبات الصيانة">
       <div className="flex flex-col gap-6">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="إجمالي الطلبات" value={String(requests.length)} icon={ClipboardList} tone="brand" />

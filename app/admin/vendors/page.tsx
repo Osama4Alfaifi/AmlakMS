@@ -49,7 +49,7 @@ export default function AdminVendorsPage() {
   }
 
   return (
-    <DashboardShell allow={["admin"]} title="المورّدون">
+    <DashboardShell allow={["admin", "maintenanceStaff"]} title="المورّدون">
       <div className="flex flex-col gap-6">
         <Card>
           <CardHeader>

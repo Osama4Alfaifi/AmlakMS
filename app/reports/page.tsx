@@ -13,9 +13,10 @@ import { PieChartCard, RevenueAreaChart } from "@/components/charts/Charts";
 import { useAuth } from "@/lib/auth-context";
 import { currency, monthlyRevenue } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
+import { downloadExcel } from "@/lib/excel";
 import { useFirestoreDoc, useInvoices, useProperties } from "@/lib/firestore/hooks";
 import type { Owner, Tenant } from "@/lib/types";
-import { Download, Eye, FileWarning, ReceiptText, Search, Wallet } from "lucide-react";
+import { Download, Eye, FileSpreadsheet, FileWarning, ReceiptText, Search, Wallet } from "lucide-react";
 
 export default function ReportsPage() {
   const { user } = useAuth();
@@ -47,6 +48,16 @@ export default function ReportsPage() {
     [scopedInvoices, status, query]
   );
 
+  const exportRows = () =>
+    filtered.map((inv) => ({
+      الرقم: inv.number,
+      العميل: inv.clientName,
+      العقار: inv.propertyTitle,
+      المبلغ: inv.items.reduce((s, i) => s + i.quantity * i.unitPrice, 0),
+      "تاريخ الاستحقاق": inv.dueDate,
+      الحالة: inv.status,
+    }));
+
   const totalCollected = scopedInvoices.filter((i) => i.status === "مدفوعة").reduce((s, i) => s + i.items.reduce((a, it) => a + it.quantity * it.unitPrice, 0), 0);
   const totalPending = scopedInvoices.filter((i) => i.status !== "مدفوعة").reduce((s, i) => s + i.items.reduce((a, it) => a + it.quantity * it.unitPrice, 0), 0);
   const overdue = scopedInvoices.filter((i) => i.status === "متأخرة").length;
@@ -56,10 +67,10 @@ export default function ReportsPage() {
     value: scopedInvoices.filter((i) => i.status === s).length,
   })).filter((d) => d.value > 0);
 
-  const showBI = user?.role === "admin" || user?.role === "owner";
+  const showBI = user?.role === "admin" || user?.role === "owner" || user?.role === "accountant";
 
   return (
-    <DashboardShell allow={["admin", "owner", "tenant"]} title="التقارير والفواتير">
+    <DashboardShell allow={["admin", "owner", "tenant", "accountant"]} title="التقارير والفواتير">
       <div className="flex flex-col gap-6">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard label="إجمالي المحصّل" value={currency(totalCollected)} icon={Wallet} tone="success" />
@@ -109,21 +120,11 @@ export default function ReportsPage() {
                 <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
                 <Input placeholder="بحث..." value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  downloadCsv("الفواتير", filtered.map((inv) => ({
-                    الرقم: inv.number,
-                    العميل: inv.clientName,
-                    العقار: inv.propertyTitle,
-                    المبلغ: inv.items.reduce((s, i) => s + i.quantity * i.unitPrice, 0),
-                    "تاريخ الاستحقاق": inv.dueDate,
-                    الحالة: inv.status,
-                  })))
-                }
-              >
+              <Button size="sm" variant="outline" onClick={() => downloadCsv("الفواتير", exportRows())}>
                 <Download size={15} /> تصدير CSV
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => downloadExcel("الفواتير", "الفواتير", exportRows())}>
+                <FileSpreadsheet size={15} /> تصدير Excel
               </Button>
             </div>
           </CardHeader>

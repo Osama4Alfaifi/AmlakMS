@@ -55,7 +55,7 @@ export default function AdminLeadsPage() {
   }
 
   return (
-    <DashboardShell allow={["admin"]} title="العملاء المحتملون">
+    <DashboardShell allow={["admin", "leasingAgent"]} title="العملاء المحتملون">
       <div className="flex flex-col gap-6">
         <div className="grid sm:grid-cols-3 gap-4">
           <StatCard label="عملاء محتملون" value={String(leads.length)} icon={UserPlus} tone="brand" />

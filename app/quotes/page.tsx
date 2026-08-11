@@ -10,11 +10,12 @@ import { Input, Label, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { currency } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
+import { downloadExcel } from "@/lib/excel";
 import { useAuth } from "@/lib/auth-context";
 import { useFirestoreDoc, useProperties, useQuotes } from "@/lib/firestore/hooks";
 import { createQuote } from "@/lib/firestore/mutations";
 import type { InvoiceItem, Owner } from "@/lib/types";
-import { Download, Eye, Plus, Search, Trash2 } from "lucide-react";
+import { Download, Eye, FileSpreadsheet, Plus, Search, Trash2 } from "lucide-react";
 
 function totalOf(items: InvoiceItem[], taxRate: number) {
   const subtotal = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
@@ -50,6 +51,16 @@ export default function QuotesPage() {
       ),
     [quotesList, query, statusFilter]
   );
+
+  const exportRows = () =>
+    filteredQuotes.map((q) => ({
+      الرقم: q.number,
+      العميل: q.clientName,
+      "العقار / الخدمة": q.propertyTitle,
+      الإجمالي: totalOf(q.items, q.taxRate),
+      "صالح حتى": q.validUntil,
+      الحالة: q.status,
+    }));
 
   const [clientName, setClientName] = useState("");
   const [propertyTitle, setPropertyTitle] = useState("");
@@ -118,21 +129,11 @@ export default function QuotesPage() {
                 <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
                 <Input placeholder="بحث..." value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  downloadCsv("عروض الأسعار", filteredQuotes.map((q) => ({
-                    الرقم: q.number,
-                    العميل: q.clientName,
-                    "العقار / الخدمة": q.propertyTitle,
-                    الإجمالي: totalOf(q.items, q.taxRate),
-                    "صالح حتى": q.validUntil,
-                    الحالة: q.status,
-                  })))
-                }
-              >
+              <Button size="sm" variant="outline" onClick={() => downloadCsv("عروض الأسعار", exportRows())}>
                 <Download size={15} /> تصدير CSV
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => downloadExcel("عروض الأسعار", "عروض الأسعار", exportRows())}>
+                <FileSpreadsheet size={15} /> تصدير Excel
               </Button>
               <Button size="sm" onClick={() => setShowForm((v) => !v)}>
                 <Plus size={15} /> عرض سعر جديد

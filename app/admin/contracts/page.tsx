@@ -9,8 +9,9 @@ import { Input, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { currency } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
+import { downloadExcel } from "@/lib/excel";
 import { useContracts, useOwners, useProperties, useTenants } from "@/lib/firestore/hooks";
-import { Download, Search } from "lucide-react";
+import { Download, FileSpreadsheet, Search } from "lucide-react";
 
 export default function AdminContractsPage() {
   const { data: contracts } = useContracts();
@@ -42,8 +43,21 @@ export default function AdminContractsPage() {
     [enriched, query, status]
   );
 
+  const exportRows = () =>
+    filtered.map(({ contract: c, propertyTitle, ownerName, tenantName }) => ({
+      "رقم العقد": c.id.toUpperCase(),
+      العقار: propertyTitle,
+      المالك: ownerName,
+      المستأجر: tenantName,
+      النوع: c.type,
+      القيمة: c.value,
+      البداية: c.startDate,
+      النهاية: c.endDate,
+      الحالة: c.status,
+    }));
+
   return (
-    <DashboardShell allow={["admin"]} title="العقود">
+    <DashboardShell allow={["admin", "accountant"]} title="العقود">
       <Card>
         <CardHeader>
           <div>
@@ -60,24 +74,11 @@ export default function AdminContractsPage() {
               <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
               <Input placeholder="بحث..." value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() =>
-                downloadCsv("العقود", filtered.map(({ contract: c, propertyTitle, ownerName, tenantName }) => ({
-                  "رقم العقد": c.id.toUpperCase(),
-                  العقار: propertyTitle,
-                  المالك: ownerName,
-                  المستأجر: tenantName,
-                  النوع: c.type,
-                  القيمة: c.value,
-                  البداية: c.startDate,
-                  النهاية: c.endDate,
-                  الحالة: c.status,
-                })))
-              }
-            >
+            <Button size="sm" variant="outline" onClick={() => downloadCsv("العقود", exportRows())}>
               <Download size={15} /> تصدير CSV
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => downloadExcel("العقود", "العقود", exportRows())}>
+              <FileSpreadsheet size={15} /> تصدير Excel
             </Button>
           </div>
         </CardHeader>
