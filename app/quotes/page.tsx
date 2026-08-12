@@ -212,6 +212,12 @@ export default function QuotesPage() {
 
                 <div className="flex flex-col gap-2.5">
                   <Label>بنود العرض</Label>
+                  <div className="grid grid-cols-[1fr_90px_120px_36px] gap-2 text-xs font-semibold text-muted">
+                    <span>الوصف</span>
+                    <span>الكمية</span>
+                    <span>سعر الوحدة</span>
+                    <span></span>
+                  </div>
                   {items.map((item, idx) => (
                     <div key={idx} className="grid grid-cols-[1fr_90px_120px_36px] gap-2 items-center">
                       <Input
