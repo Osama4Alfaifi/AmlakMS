@@ -142,11 +142,12 @@ service cloud.firestore {
 
     // Append-only audit trail: anyone signed in can log their own action
     // (so a tenant filing a maintenance request can log it too). Read is
-    // admin (wildcard above) plus accountant explicitly, since the
-    // accountant's activity log (app/admin/audit-log) needs it too.
+    // admin (wildcard above, sees every actor) plus accountant narrowed to
+    // their own entries only (app/admin/audit-log) — an accountant with
+    // several owners still isn't meant to see other accountants' actions.
     match /auditLogs/{id} {
       allow create: if signedIn() && request.resource.data.actorUid == request.auth.uid;
-      allow read: if isAccountant();
+      allow read: if isAccountant() && resource.data.actorUid == request.auth.uid;
     }
 
     // Expenses: owners only see expenses on their own properties (ownerId

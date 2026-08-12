@@ -2,7 +2,6 @@
 
 import { Fragment, useMemo, useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
-import { OwnerScopeBanner } from "@/components/accountant/OwnerScopeBanner";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -97,7 +96,6 @@ export default function AdminExpensesPage() {
   return (
     <DashboardShell allow={["admin", "accountant"]} title="المصروفات">
       <div className="flex flex-col gap-6">
-        <OwnerScopeBanner scope={scope} />
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard label="إجمالي المصروفات" value={currency(total)} icon={Wallet} tone="brand" />
           <StatCard label="مدفوعة" value={currency(paid)} icon={Receipt} tone="success" />

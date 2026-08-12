@@ -3,7 +3,6 @@
 import { Fragment, useMemo, useState } from "react";
 import Link from "next/link";
 import { DashboardShell } from "@/components/layout/DashboardShell";
-import { OwnerScopeBanner } from "@/components/accountant/OwnerScopeBanner";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -214,7 +213,6 @@ export default function AdminContractsPage() {
   return (
     <DashboardShell allow={["admin", "accountant"]} title="العقود">
       <div className="flex flex-col gap-6">
-        <OwnerScopeBanner scope={scope} />
         <Card>
           <CardHeader>
             <div>

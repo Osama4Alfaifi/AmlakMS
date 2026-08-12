@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
+import { AccountantScopeProvider } from "@/lib/accountant-scope";
 
 const cairo = Cairo({
   variable: "--font-cairo",
@@ -18,7 +19,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ar" dir="rtl" className={`${cairo.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <AccountantScopeProvider>{children}</AccountantScopeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

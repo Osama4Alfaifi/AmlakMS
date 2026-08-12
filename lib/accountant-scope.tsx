@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { useOwners } from "@/lib/firestore/hooks";
 import type { Owner } from "@/lib/types";
@@ -19,11 +19,7 @@ export interface AccountantOwnerScope {
   myOwners: Owner[];
 }
 
-// Shared by every accountant-facing list page (contracts/expenses/
-// properties/buildings/the dashboard/audit-log's reminders) so an
-// accountant always browses exactly one assigned owner's data at a time —
-// see components/accountant/OwnerScopeBanner.tsx for the matching UI.
-export function useAccountantOwnerScope(): AccountantOwnerScope {
+function computeScope(): AccountantOwnerScope {
   const { user } = useAuth();
   const { data: owners } = useOwners();
   const isAccountant = user?.role === "accountant";
@@ -56,4 +52,21 @@ export function useAccountantOwnerScope(): AccountantOwnerScope {
   const myOwners = isAccountant ? owners.filter((o) => ownerIds.includes(o.id)) : [];
 
   return { isAccountant, queryOwnerId, selectedOwnerId, selectOwner, myOwners };
+}
+
+const AccountantScopeContext = createContext<AccountantOwnerScope | null>(null);
+
+// Computed once in DashboardShell (which also renders the single
+// OwnerScopeBanner instance) and shared from there — every page that reads
+// scope.queryOwnerId needs the SAME selection the banner's dropdown drives,
+// not an independent copy, or switching owners wouldn't update page data.
+export function AccountantScopeProvider({ children }: { children: React.ReactNode }) {
+  const scope = computeScope();
+  return <AccountantScopeContext.Provider value={scope}>{children}</AccountantScopeContext.Provider>;
+}
+
+export function useAccountantOwnerScope(): AccountantOwnerScope {
+  const ctx = useContext(AccountantScopeContext);
+  if (!ctx) throw new Error("useAccountantOwnerScope must be used within AccountantScopeProvider (see DashboardShell)");
+  return ctx;
 }

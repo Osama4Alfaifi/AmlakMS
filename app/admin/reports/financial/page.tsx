@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
-import { OwnerScopeBanner } from "@/components/accountant/OwnerScopeBanner";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
@@ -73,7 +72,6 @@ export default function FinancialReportsPage() {
   return (
     <DashboardShell allow={["admin", "accountant"]} title="التقارير المالية">
       <div className="flex flex-col gap-6">
-        <OwnerScopeBanner scope={scope} />
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="الإيرادات المحصّلة" value={currency(totalCollected)} icon={Wallet} tone="success" />
           <StatCard label="إجمالي المصروفات" value={currency(totalExpenses)} icon={TrendingDown} tone="warning" />

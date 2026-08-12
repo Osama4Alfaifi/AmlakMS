@@ -2,14 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
-import { OwnerScopeBanner } from "@/components/accountant/OwnerScopeBanner";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Input, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { useAccountantOwnerScope } from "@/lib/accountant-scope";
+import { useAuth } from "@/lib/auth-context";
 import { computeNotifications } from "@/lib/notifications";
-import { useAllUserProfiles, useAuditLogs, useOwnerContracts, useOwnerProperties } from "@/lib/firestore/hooks";
+import { useAllUserProfiles, useMyAuditLogs, useOwnerContracts, useOwnerProperties } from "@/lib/firestore/hooks";
 import type { AuditAction } from "@/lib/types";
 import { Search } from "lucide-react";
 
@@ -43,8 +43,11 @@ interface Row {
 }
 
 export default function AdminAuditLogPage() {
+  const { user } = useAuth();
   const scope = useAccountantOwnerScope();
-  const { data: logs } = useAuditLogs();
+  // Admin sees every actor's entries (pass null → unconstrained); anyone
+  // else sees only their own (see firestore.rules).
+  const { data: logs } = useMyAuditLogs(user?.role === "admin" ? null : user?.uid);
   const { data: profiles } = useAllUserProfiles();
   const { data: contracts } = useOwnerContracts(scope.queryOwnerId);
   const { data: properties } = useOwnerProperties(scope.queryOwnerId);
@@ -93,12 +96,14 @@ export default function AdminAuditLogPage() {
   return (
     <DashboardShell allow={["admin", "accountant"]} title="سجل العمليات">
       <div className="flex flex-col gap-6">
-        <OwnerScopeBanner scope={scope} />
         <Card>
         <CardHeader>
           <div>
             <CardTitle>سجل العمليات</CardTitle>
-            <CardSubtitle>{filtered.length} من {rows.length} عملية — يشمل التذكيرات المحسوبة (عقود قرب الانتهاء ودفعات مستحقة)</CardSubtitle>
+            <CardSubtitle>
+              {filtered.length} من {rows.length} عملية — يشمل التذكيرات المحسوبة (عقود قرب الانتهاء ودفعات مستحقة)
+              {user?.role !== "admin" && " — العمليات المعروضة هي عملياتك فقط"}
+            </CardSubtitle>
           </div>
           <div className="flex items-center gap-2">
             <Select value={entityType} onChange={(e) => setEntityType(e.target.value)} className="w-44">

@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
-import { OwnerScopeBanner } from "@/components/accountant/OwnerScopeBanner";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -46,7 +45,6 @@ export default function AdminPropertiesPage() {
   return (
     <DashboardShell allow={["admin", "leasingAgent", "accountant"]} title="العقارات">
       <div className="flex flex-col gap-6">
-        <OwnerScopeBanner scope={scope} />
         <Card>
         <CardHeader>
           <div>

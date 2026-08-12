@@ -185,6 +185,12 @@ export function useMyMaintenanceRequests(uid: string | null | undefined) {
 export function useMySupportTickets(uid: string | null | undefined) {
   return useFirestoreQuery<SupportTicket>("supportTickets", fieldConstraint("createdByUid", uid));
 }
+// Pass `null` for an unconstrained fetch (admin — sees every actor's
+// entries) or a uid to scope to that actor's own entries only (accountant —
+// see firestore.rules and app/admin/audit-log).
+export function useMyAuditLogs(uid: string | null | undefined) {
+  return useFirestoreQuery<AuditLog>("auditLogs", fieldConstraint("actorUid", uid));
+}
 
 // Scoped to properties an owner owns. Passing `null` (not `undefined`)
 // deliberately falls through to an unconstrained fetch — see

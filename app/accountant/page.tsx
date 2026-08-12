@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { DashboardShell } from "@/components/layout/DashboardShell";
-import { OwnerScopeBanner } from "@/components/accountant/OwnerScopeBanner";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -32,7 +31,6 @@ export default function AccountantDashboardPage() {
   return (
     <DashboardShell allow={["accountant"]} title={`أهلًا، ${user?.name ?? ""}`}>
       <div className="flex flex-col gap-6">
-        <OwnerScopeBanner scope={scope} />
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="الإيرادات المحصّلة" value={currency(collected)} icon={Wallet} tone="success" />
           <StatCard label="مستحقات معلقة" value={currency(pendingRevenue)} icon={FileWarning} tone="warning" />
