@@ -2,19 +2,22 @@
 
 import { useMemo, useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
+import { OwnerScopeBanner } from "@/components/accountant/OwnerScopeBanner";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
+import { useAccountantOwnerScope } from "@/lib/accountant-scope";
 import { currency } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
 import { downloadExcel } from "@/lib/excel";
-import { useOwners, useProperties } from "@/lib/firestore/hooks";
+import { useOwnerProperties, useOwners } from "@/lib/firestore/hooks";
 import { Download, FileSpreadsheet, Search } from "lucide-react";
 
 export default function AdminPropertiesPage() {
-  const { data: properties } = useProperties();
+  const scope = useAccountantOwnerScope();
+  const { data: properties } = useOwnerProperties(scope.queryOwnerId);
   const { data: owners } = useOwners();
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("الكل");
@@ -41,8 +44,10 @@ export default function AdminPropertiesPage() {
     }));
 
   return (
-    <DashboardShell allow={["admin", "leasingAgent"]} title="العقارات">
-      <Card>
+    <DashboardShell allow={["admin", "leasingAgent", "accountant"]} title="العقارات">
+      <div className="flex flex-col gap-6">
+        <OwnerScopeBanner scope={scope} />
+        <Card>
         <CardHeader>
           <div>
             <CardTitle>جميع العقارات</CardTitle>
@@ -95,6 +100,7 @@ export default function AdminPropertiesPage() {
           </Table>
         </CardContent>
       </Card>
+      </div>
     </DashboardShell>
   );
 }

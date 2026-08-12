@@ -47,7 +47,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const user: SessionUser | null =
     firebaseUser && profile
-      ? { uid: firebaseUser.uid, role: profile.role, name: profile.name, email: profile.email, linkedId: profile.linkedId }
+      ? {
+          uid: firebaseUser.uid,
+          role: profile.role,
+          name: profile.name,
+          email: profile.email,
+          linkedId: profile.linkedId,
+          ownerIds: profile.ownerIds ?? [],
+        }
       : null;
 
   const value = useMemo<AuthContextValue>(
@@ -62,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user?.uid, user?.role, user?.name, ready]
+    [user?.uid, user?.role, user?.name, user?.ownerIds?.join(","), ready]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

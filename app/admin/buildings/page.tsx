@@ -2,14 +2,16 @@
 
 import { Fragment, useMemo, useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
+import { OwnerScopeBanner } from "@/components/accountant/OwnerScopeBanner";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
+import { useAccountantOwnerScope } from "@/lib/accountant-scope";
 import { currency } from "@/lib/mock-data";
-import { useBuildings, useOwners, useUnits } from "@/lib/firestore/hooks";
+import { useOwnerBuildings, useOwnerUnits, useOwners } from "@/lib/firestore/hooks";
 import { createBuilding, createUnit } from "@/lib/firestore/mutations";
 import type { PropertyStatus, PropertyType, Unit } from "@/lib/types";
 import { Building2, ChevronDown, ChevronUp, DoorClosed, Plus } from "lucide-react";
@@ -32,8 +34,9 @@ function emptyUnitForm() {
 }
 
 export default function AdminBuildingsPage() {
-  const { data: buildings } = useBuildings();
-  const { data: units } = useUnits();
+  const scope = useAccountantOwnerScope();
+  const { data: buildings } = useOwnerBuildings(scope.queryOwnerId);
+  const { data: units } = useOwnerUnits(scope.queryOwnerId);
   const { data: owners } = useOwners();
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -91,8 +94,9 @@ export default function AdminBuildingsPage() {
   }
 
   return (
-    <DashboardShell allow={["admin"]} title="المباني والوحدات">
+    <DashboardShell allow={["admin", "accountant"]} title="المباني والوحدات">
       <div className="flex flex-col gap-6">
+        <OwnerScopeBanner scope={scope} />
         <div className="grid sm:grid-cols-2 gap-4">
           <StatCard label="عدد المباني" value={String(buildings.length)} icon={Building2} tone="brand" />
           <StatCard label="عدد الوحدات" value={String(units.length)} icon={DoorClosed} tone="info" />
@@ -102,11 +106,17 @@ export default function AdminBuildingsPage() {
           <CardHeader>
             <div>
               <CardTitle>المباني</CardTitle>
-              <CardSubtitle>{buildings.length} مبنى — اضغط على أي صف لعرض وحداته وإضافة وحدة جديدة</CardSubtitle>
+              <CardSubtitle>
+                {buildings.length} مبنى
+                {!scope.isAccountant && " — اضغط على أي صف لعرض وحداته وإضافة وحدة جديدة"}
+                {scope.isAccountant && " — اضغط على أي صف لعرض وحداته"}
+              </CardSubtitle>
             </div>
-            <Button size="sm" onClick={() => setShowBuildingForm((v) => !v)}>
-              <Plus size={15} /> مبنى جديد
-            </Button>
+            {!scope.isAccountant && (
+              <Button size="sm" onClick={() => setShowBuildingForm((v) => !v)}>
+                <Plus size={15} /> مبنى جديد
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             <Table>
@@ -188,27 +198,29 @@ export default function AdminBuildingsPage() {
                                   </TBody>
                                 </Table>
                               )}
-                              <form onSubmit={(e) => handleCreateUnit(e, b.id, b.ownerId)} className="grid sm:grid-cols-4 gap-3 max-w-3xl">
-                                <Input placeholder="رقم الوحدة" value={unitForm.unitNumber} onChange={(e) => setUnitForm((f) => ({ ...f, unitNumber: e.target.value }))} required />
-                                <Input type="number" placeholder="الطابق" value={unitForm.floor} onChange={(e) => setUnitForm((f) => ({ ...f, floor: e.target.value }))} />
-                                <Select value={unitForm.type} onChange={(e) => setUnitForm((f) => ({ ...f, type: e.target.value as PropertyType }))}>
-                                  {UNIT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                                </Select>
-                                <Input type="number" placeholder="المساحة (م²)" value={unitForm.area} onChange={(e) => setUnitForm((f) => ({ ...f, area: e.target.value }))} />
-                                <Input type="number" placeholder="غرف النوم" value={unitForm.bedrooms} onChange={(e) => setUnitForm((f) => ({ ...f, bedrooms: e.target.value }))} />
-                                <Input type="number" placeholder="دورات المياه" value={unitForm.bathrooms} onChange={(e) => setUnitForm((f) => ({ ...f, bathrooms: e.target.value }))} />
-                                <Input type="number" placeholder="السعر (﷼)" value={unitForm.price} onChange={(e) => setUnitForm((f) => ({ ...f, price: e.target.value }))} required />
-                                <Select value={unitForm.listingType} onChange={(e) => setUnitForm((f) => ({ ...f, listingType: e.target.value as "إيجار" | "بيع" }))}>
-                                  <option value="إيجار">إيجار</option>
-                                  <option value="بيع">بيع</option>
-                                </Select>
-                                <Select value={unitForm.status} onChange={(e) => setUnitForm((f) => ({ ...f, status: e.target.value as PropertyStatus }))}>
-                                  {UNIT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                                </Select>
-                                <Button type="submit" size="sm" disabled={submittingUnit} className="self-start">
-                                  <Plus size={14} /> {submittingUnit ? "جارِ الحفظ..." : "إضافة وحدة"}
-                                </Button>
-                              </form>
+                              {!scope.isAccountant && (
+                                <form onSubmit={(e) => handleCreateUnit(e, b.id, b.ownerId)} className="grid sm:grid-cols-4 gap-3 max-w-3xl">
+                                  <Input placeholder="رقم الوحدة" value={unitForm.unitNumber} onChange={(e) => setUnitForm((f) => ({ ...f, unitNumber: e.target.value }))} required />
+                                  <Input type="number" placeholder="الطابق" value={unitForm.floor} onChange={(e) => setUnitForm((f) => ({ ...f, floor: e.target.value }))} />
+                                  <Select value={unitForm.type} onChange={(e) => setUnitForm((f) => ({ ...f, type: e.target.value as PropertyType }))}>
+                                    {UNIT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                                  </Select>
+                                  <Input type="number" placeholder="المساحة (م²)" value={unitForm.area} onChange={(e) => setUnitForm((f) => ({ ...f, area: e.target.value }))} />
+                                  <Input type="number" placeholder="غرف النوم" value={unitForm.bedrooms} onChange={(e) => setUnitForm((f) => ({ ...f, bedrooms: e.target.value }))} />
+                                  <Input type="number" placeholder="دورات المياه" value={unitForm.bathrooms} onChange={(e) => setUnitForm((f) => ({ ...f, bathrooms: e.target.value }))} />
+                                  <Input type="number" placeholder="السعر (﷼)" value={unitForm.price} onChange={(e) => setUnitForm((f) => ({ ...f, price: e.target.value }))} required />
+                                  <Select value={unitForm.listingType} onChange={(e) => setUnitForm((f) => ({ ...f, listingType: e.target.value as "إيجار" | "بيع" }))}>
+                                    <option value="إيجار">إيجار</option>
+                                    <option value="بيع">بيع</option>
+                                  </Select>
+                                  <Select value={unitForm.status} onChange={(e) => setUnitForm((f) => ({ ...f, status: e.target.value as PropertyStatus }))}>
+                                    {UNIT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                                  </Select>
+                                  <Button type="submit" size="sm" disabled={submittingUnit} className="self-start">
+                                    <Plus size={14} /> {submittingUnit ? "جارِ الحفظ..." : "إضافة وحدة"}
+                                  </Button>
+                                </form>
+                              )}
                             </div>
                           </Td>
                         </Tr>

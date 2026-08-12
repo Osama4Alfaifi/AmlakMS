@@ -3,17 +3,19 @@
 import { Fragment, useMemo, useState } from "react";
 import Link from "next/link";
 import { DashboardShell } from "@/components/layout/DashboardShell";
+import { OwnerScopeBanner } from "@/components/accountant/OwnerScopeBanner";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
+import { useAccountantOwnerScope } from "@/lib/accountant-scope";
 import { currency } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
 import { downloadExcel } from "@/lib/excel";
 import { contractDisplayNumber } from "@/lib/contracts/display";
 import { generatePaymentSchedule } from "@/lib/contracts/schedule";
-import { useContracts, useOwners, useProperties, useTenants } from "@/lib/firestore/hooks";
+import { useOwnerContracts, useOwnerProperties, useOwners, useTenants } from "@/lib/firestore/hooks";
 import { createContract, createTenant, updateContractPayments, updateTenantContract } from "@/lib/firestore/mutations";
 import { parseEjarPdf } from "@/lib/rega/parseEjarContract";
 import type { ContractPayment, PaymentCycle } from "@/lib/types";
@@ -53,8 +55,9 @@ function emptyForm() {
 }
 
 export default function AdminContractsPage() {
-  const { data: contracts } = useContracts();
-  const { data: properties } = useProperties();
+  const scope = useAccountantOwnerScope();
+  const { data: contracts } = useOwnerContracts(scope.queryOwnerId);
+  const { data: properties } = useOwnerProperties(scope.queryOwnerId);
   const { data: owners } = useOwners();
   const { data: tenants } = useTenants();
 
@@ -211,6 +214,7 @@ export default function AdminContractsPage() {
   return (
     <DashboardShell allow={["admin", "accountant"]} title="العقود">
       <div className="flex flex-col gap-6">
+        <OwnerScopeBanner scope={scope} />
         <Card>
           <CardHeader>
             <div>

@@ -45,6 +45,16 @@ service cloud.firestore {
       return signedIn() && myRole() == "accountant";
     }
 
+    // An accountant only manages the owners assigned to them (see
+    // app/admin/users) — this proves ownership scope for a specific
+    // document's ownerId. Safe to call even when myProfile().ownerIds is
+    // absent (non-accountant profiles): every caller guards this behind
+    // myRole() == "accountant" first, and `&&`/`||` short-circuit here, so
+    // the missing-field access never happens for other roles.
+    function isMyOwner(ownerId) {
+      return isAccountant() && ownerId in myProfile().ownerIds;
+    }
+
     function isLeasingAgent() {
       return signedIn() && myRole() == "leasingAgent";
     }
@@ -68,8 +78,12 @@ service cloud.firestore {
     }
 
     // Reference/catalog data: any signed-in account can read it; writes go
-    // through the admin rule above.
-    match /properties/{id} { allow read: if signedIn(); }
+    // through the admin rule above. Accountants are narrowed to properties
+    // whose owner is assigned to them (myRole() != "accountant" short-
+    // circuits this for every other role, leaving their access unchanged).
+    match /properties/{id} {
+      allow read: if signedIn() && (myRole() != "accountant" || isMyOwner(resource.data.ownerId));
+    }
     match /owners/{id} { allow read: if signedIn(); }
     // Accountants register a new tenant inline when writing a contract for
     // someone not yet in the system (update covers back-filling the new
@@ -80,10 +94,13 @@ service cloud.firestore {
     }
     match /technicians/{id} { allow read: if signedIn(); }
     // Accountants create/manage contracts (and their payment schedules) —
-    // see app/admin/contracts and lib/contracts/schedule.ts.
+    // see app/admin/contracts and lib/contracts/schedule.ts — narrowed to
+    // the owners assigned to them (myRole() != "accountant" preserves
+    // every other role's existing unrestricted read).
     match /contracts/{id} {
-      allow read: if signedIn();
-      allow create, update: if isAccountant();
+      allow read: if signedIn() && (myRole() != "accountant" || isMyOwner(resource.data.ownerId));
+      allow create: if isMyOwner(request.resource.data.ownerId);
+      allow update: if isMyOwner(resource.data.ownerId);
     }
     // Clients: reference data readable by anyone signed in; leasing agents
     // additionally manage the CRM fields (stage/interestedPropertyId) on
@@ -95,8 +112,13 @@ service cloud.firestore {
     match /invoices/{id} { allow read: if signedIn(); }
     match /accountManagers/{id} { allow read: if signedIn(); }
     match /systemUsers/{id} { allow read: if signedIn(); }
-    match /buildings/{id} { allow read: if signedIn(); }
-    match /units/{id} { allow read: if signedIn(); }
+    // Same accountant narrowing as properties above.
+    match /buildings/{id} {
+      allow read: if signedIn() && (myRole() != "accountant" || isMyOwner(resource.data.ownerId));
+    }
+    match /units/{id} {
+      allow read: if signedIn() && (myRole() != "accountant" || isMyOwner(resource.data.ownerId));
+    }
     // Maintenance staff manage the vendor directory day to day.
     match /vendors/{id} {
       allow read: if signedIn();
@@ -130,15 +152,16 @@ service cloud.firestore {
     // Expenses: owners only see expenses on their own properties (ownerId
     // is denormalized onto each expense at creation time, same
     // list-provability reason as maintenanceRequests.ownerId above).
-    // Accountants see and manage all expenses (constant per-user fact, safe
-    // for the unconstrained admin-style list query) — including approving
-    // payment (status update). Admin is covered by the wildcard rule.
+    // Accountants see and manage expenses on the owners assigned to them
+    // (including approving payment/status update). Admin is covered by the
+    // wildcard rule.
     match /expenses/{id} {
       allow read: if signedIn() && (
-        isAccountant() ||
+        isMyOwner(resource.data.ownerId) ||
         (myRole() == "owner" && resource.data.ownerId == myProfile().linkedId)
       );
-      allow create, update: if isAccountant();
+      allow create: if isMyOwner(request.resource.data.ownerId);
+      allow update: if isMyOwner(resource.data.ownerId);
     }
 
     // Quotes: admin/owner can create. Any signed-in account can read at the

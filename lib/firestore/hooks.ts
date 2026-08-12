@@ -186,12 +186,27 @@ export function useMySupportTickets(uid: string | null | undefined) {
   return useFirestoreQuery<SupportTicket>("supportTickets", fieldConstraint("createdByUid", uid));
 }
 
-// Scoped to properties an owner owns.
+// Scoped to properties an owner owns. Passing `null` (not `undefined`)
+// deliberately falls through to an unconstrained fetch — see
+// useFirestoreQuery above — which is what lets the accountant pages reuse
+// these same hooks for admin sessions (see lib/accountant-scope.ts).
 export function useOwnerMaintenanceRequests(ownerId: string | null | undefined) {
   return useFirestoreQuery<MaintenanceRequest>("maintenanceRequests", fieldConstraint("ownerId", ownerId));
 }
 export function useOwnerExpenses(ownerId: string | null | undefined) {
   return useFirestoreQuery<Expense>("expenses", fieldConstraint("ownerId", ownerId));
+}
+export function useOwnerContracts(ownerId: string | null | undefined) {
+  return useFirestoreQuery<Contract>("contracts", fieldConstraint("ownerId", ownerId));
+}
+export function useOwnerProperties(ownerId: string | null | undefined) {
+  return useFirestoreQuery<Property>("properties", fieldConstraint("ownerId", ownerId));
+}
+export function useOwnerBuildings(ownerId: string | null | undefined) {
+  return useFirestoreQuery<Building>("buildings", fieldConstraint("ownerId", ownerId));
+}
+export function useOwnerUnits(ownerId: string | null | undefined) {
+  return useFirestoreQuery<Unit>("units", fieldConstraint("ownerId", ownerId));
 }
 
 // Scoped to one ticket category — safe for technicians reading "الدعم الفني".

@@ -2,22 +2,25 @@
 
 import Link from "next/link";
 import { DashboardShell } from "@/components/layout/DashboardShell";
+import { OwnerScopeBanner } from "@/components/accountant/OwnerScopeBanner";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { useAccountantOwnerScope } from "@/lib/accountant-scope";
 import { currency } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth-context";
 import { computeNotifications } from "@/lib/notifications";
-import { useContracts, useExpenses, useInvoices, useProperties } from "@/lib/firestore/hooks";
+import { useInvoices, useOwnerContracts, useOwnerExpenses, useOwnerProperties } from "@/lib/firestore/hooks";
 import { ArrowLeft, BarChart3, Bell, FileWarning, Receipt, TrendingDown, Wallet } from "lucide-react";
 
 export default function AccountantDashboardPage() {
   const { user } = useAuth();
-  const { data: expenses } = useExpenses();
+  const scope = useAccountantOwnerScope();
+  const { data: expenses } = useOwnerExpenses(scope.queryOwnerId);
   const { data: invoices } = useInvoices();
-  const { data: contracts } = useContracts();
-  const { data: properties } = useProperties();
+  const { data: contracts } = useOwnerContracts(scope.queryOwnerId);
+  const { data: properties } = useOwnerProperties(scope.queryOwnerId);
 
   const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
   const pendingExpenses = expenses.filter((e) => e.status === "معلقة").reduce((s, e) => s + e.amount, 0);
@@ -29,6 +32,7 @@ export default function AccountantDashboardPage() {
   return (
     <DashboardShell allow={["accountant"]} title={`أهلًا، ${user?.name ?? ""}`}>
       <div className="flex flex-col gap-6">
+        <OwnerScopeBanner scope={scope} />
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="الإيرادات المحصّلة" value={currency(collected)} icon={Wallet} tone="success" />
           <StatCard label="مستحقات معلقة" value={currency(pendingRevenue)} icon={FileWarning} tone="warning" />

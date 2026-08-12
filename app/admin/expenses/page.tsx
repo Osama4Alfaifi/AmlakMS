@@ -2,14 +2,16 @@
 
 import { Fragment, useMemo, useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
+import { OwnerScopeBanner } from "@/components/accountant/OwnerScopeBanner";
 import { StatCard } from "@/components/ui/StatCard";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
+import { useAccountantOwnerScope } from "@/lib/accountant-scope";
 import { currency } from "@/lib/mock-data";
-import { useExpenses, useProperties } from "@/lib/firestore/hooks";
+import { useOwnerExpenses, useOwnerProperties } from "@/lib/firestore/hooks";
 import { createExpense, updateExpenseStatus } from "@/lib/firestore/mutations";
 import type { ExpenseCategory, ExpenseItem } from "@/lib/types";
 import { CheckCircle2, ChevronDown, ChevronUp, Plus, Receipt, TrendingDown, Trash2, Wallet } from "lucide-react";
@@ -21,8 +23,9 @@ function itemsTotal(items: ExpenseItem[]) {
 }
 
 export default function AdminExpensesPage() {
-  const { data: expenses } = useExpenses();
-  const { data: properties } = useProperties();
+  const scope = useAccountantOwnerScope();
+  const { data: expenses } = useOwnerExpenses(scope.queryOwnerId);
+  const { data: properties } = useOwnerProperties(scope.queryOwnerId);
 
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("الكل");
@@ -94,6 +97,7 @@ export default function AdminExpensesPage() {
   return (
     <DashboardShell allow={["admin", "accountant"]} title="المصروفات">
       <div className="flex flex-col gap-6">
+        <OwnerScopeBanner scope={scope} />
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard label="إجمالي المصروفات" value={currency(total)} icon={Wallet} tone="brand" />
           <StatCard label="مدفوعة" value={currency(paid)} icon={Receipt} tone="success" />

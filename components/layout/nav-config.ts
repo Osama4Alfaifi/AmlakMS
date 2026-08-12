@@ -80,8 +80,10 @@ export const navByRole: Record<Role, NavItem[]> = {
   ],
   accountant: [
     { label: "لوحة التحكم", href: "/accountant", icon: LayoutDashboard },
+    { label: "العقارات", href: "/admin/properties", icon: Building2 },
     { label: "العقود", href: "/admin/contracts", icon: FileText },
     { label: "المصروفات", href: "/admin/expenses", icon: Wallet },
+    { label: "المباني والوحدات", href: "/admin/buildings", icon: Building2 },
     { label: "السندات", href: "/admin/vouchers", icon: Receipt },
     { label: "التقارير والفواتير", href: "/reports", icon: BarChart3 },
     { label: "التقارير المالية", href: "/admin/reports/financial", icon: BarChart3 },

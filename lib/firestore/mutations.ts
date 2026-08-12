@@ -185,3 +185,11 @@ export async function createVoucher(voucher: Omit<Voucher, "id">) {
   void logAudit("vouchers", ref.id, "create", `سند ${voucher.type} رقم ${voucher.number}`);
   return ref.id;
 }
+
+// Links an accountant account to the owners they manage — see
+// app/admin/users and lib/accountant-scope.ts. Admin-only (covered by the
+// wildcard rule, not a dedicated users/{uid} write rule).
+export async function updateUserOwnerIds(uid: string, ownerIds: string[]) {
+  await updateDoc(doc(getDb(), "users", uid), { ownerIds });
+  void logAudit("users", uid, "update", `تم تحديث الملاك المرتبطين (${ownerIds.length})`);
+}

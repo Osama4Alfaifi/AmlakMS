@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
+import { OwnerScopeBanner } from "@/components/accountant/OwnerScopeBanner";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Input, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
+import { useAccountantOwnerScope } from "@/lib/accountant-scope";
 import { computeNotifications } from "@/lib/notifications";
-import { useAllUserProfiles, useAuditLogs, useContracts, useProperties } from "@/lib/firestore/hooks";
+import { useAllUserProfiles, useAuditLogs, useOwnerContracts, useOwnerProperties } from "@/lib/firestore/hooks";
 import type { AuditAction } from "@/lib/types";
 import { Search } from "lucide-react";
 
@@ -27,6 +29,7 @@ const ENTITY_TYPE_LABEL: Record<string, string> = {
   contracts: "عقد",
   vouchers: "سند",
   tenants: "مستأجر",
+  users: "مستخدم",
 };
 
 interface Row {
@@ -40,10 +43,11 @@ interface Row {
 }
 
 export default function AdminAuditLogPage() {
+  const scope = useAccountantOwnerScope();
   const { data: logs } = useAuditLogs();
   const { data: profiles } = useAllUserProfiles();
-  const { data: contracts } = useContracts();
-  const { data: properties } = useProperties();
+  const { data: contracts } = useOwnerContracts(scope.queryOwnerId);
+  const { data: properties } = useOwnerProperties(scope.queryOwnerId);
 
   const [query, setQuery] = useState("");
   const [entityType, setEntityType] = useState("الكل");
@@ -88,7 +92,9 @@ export default function AdminAuditLogPage() {
 
   return (
     <DashboardShell allow={["admin", "accountant"]} title="سجل العمليات">
-      <Card>
+      <div className="flex flex-col gap-6">
+        <OwnerScopeBanner scope={scope} />
+        <Card>
         <CardHeader>
           <div>
             <CardTitle>سجل العمليات</CardTitle>
@@ -134,6 +140,7 @@ export default function AdminAuditLogPage() {
           </Table>
         </CardContent>
       </Card>
+      </div>
     </DashboardShell>
   );
 }

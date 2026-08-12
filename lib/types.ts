@@ -2,12 +2,16 @@ export type Role = "admin" | "owner" | "tenant" | "technician" | "accountant" | 
 
 // linkedId points to the owners/tenants/technicians record this account
 // represents (null for admin, who isn't tied to a single record).
+// ownerIds is the accountant-only equivalent for a many-to-many link — one
+// accountant can be assigned several owners (set via app/admin/users),
+// unlike linkedId's single record. Empty/absent for every other role.
 export interface SessionUser {
   uid: string;
   role: Role;
   name: string;
   email: string;
   linkedId: string | null;
+  ownerIds?: string[];
 }
 
 export type PropertyType = "شقة" | "فيلا" | "محل تجاري" | "مكتب" | "أرض" | "استراحة";
@@ -348,6 +352,9 @@ export interface UserProfile {
   name: string;
   email: string;
   linkedId: string | null;
+  // Accountant-only: the owners this accountant is assigned to (many-to-many
+  // — see SessionUser.ownerIds and app/admin/users).
+  ownerIds?: string[];
 }
 
 export interface SystemUser {
