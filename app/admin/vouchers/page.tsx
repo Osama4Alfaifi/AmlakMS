@@ -102,7 +102,7 @@ function VouchersPageInner() {
   }
 
   return (
-    <DashboardShell allow={["admin", "accountant"]} title="السندات">
+    <DashboardShell allow={["admin", "accountant", "custom"]} customResource="vouchers" title="السندات">
       <div className="flex flex-col gap-6">
         <Card>
           <CardHeader>

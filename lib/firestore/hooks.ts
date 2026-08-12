@@ -6,10 +6,12 @@ import { onAuthStateChanged } from "firebase/auth";
 import { getDb, getFirebaseAuth } from "@/lib/firebase/client";
 import type {
   AccountManager,
+  AppSettings,
   AuditLog,
   Building,
   Client,
   Contract,
+  CustomRole,
   DocumentLink,
   Expense,
   Invoice,
@@ -242,4 +244,19 @@ export function useFirestoreDoc<T>(name: string, id: string | undefined) {
   }, [name, id, uid]);
 
   return data;
+}
+
+// Single app-wide settings doc (settings/app) — company profile, branding,
+// notification lead time, maintenance mode. See app/admin/settings.
+export function useAppSettings() {
+  return useFirestoreDoc<AppSettings>("settings", "app");
+}
+
+// Admin-defined custom roles — see app/admin/roles and firestore.rules'
+// customCan(). Reference data, readable by any signed-in account.
+export function useRoles() {
+  return useFirestoreCollection<CustomRole>("roles");
+}
+export function useCustomRole(id: string | null | undefined) {
+  return useFirestoreDoc<CustomRole>("roles", id ?? undefined);
 }

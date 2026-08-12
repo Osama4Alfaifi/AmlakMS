@@ -12,8 +12,8 @@ import { useAuth } from "@/lib/auth-context";
 import { currency } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
 import { downloadExcel } from "@/lib/excel";
-import { useOwnerProperties, useOwners } from "@/lib/firestore/hooks";
-import { createProperty } from "@/lib/firestore/mutations";
+import { useCustomRole, useOwnerProperties, useOwners } from "@/lib/firestore/hooks";
+import { createProperty, updateProperty } from "@/lib/firestore/mutations";
 import type { PropertyStatus, PropertyType } from "@/lib/types";
 import { Download, FileSpreadsheet, Plus, Search } from "lucide-react";
 
@@ -37,11 +37,15 @@ function emptyPropertyForm() {
     bedrooms: "",
     bathrooms: "",
     price: "",
-    listingType: "إيجار" as "إيجار" | "بيع",
+    listingType: "إيجار" as "إيجار" | "بيع" | "استثمار",
     status: "متاحة" as PropertyStatus,
     ownerId: "",
     lat: String(DEFAULT_LAT),
     lng: String(DEFAULT_LNG),
+    managementEndDate: "",
+    hasBroker: false,
+    brokerName: "",
+    brokerPhone: "",
   };
 }
 
@@ -53,7 +57,8 @@ export default function AdminPropertiesPage() {
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("الكل");
   const cities = ["الكل", ...Array.from(new Set(properties.map((p) => p.city)))];
-  const canCreate = user?.role === "admin" || user?.role === "leasingAgent";
+  const customRole = useCustomRole(user?.role === "custom" ? user.customRoleId : undefined);
+  const canCreate = user?.role === "admin" || user?.role === "leasingAgent" || !!customRole?.permissions?.properties?.write;
 
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -80,10 +85,18 @@ export default function AdminPropertiesPage() {
       lng: Number(form.lng) || DEFAULT_LNG,
       color: MARKER_COLORS[properties.length % MARKER_COLORS.length],
       createdAt: new Date().toISOString().slice(0, 10),
+      managementEndDate: form.managementEndDate || undefined,
+      hasBroker: form.hasBroker,
+      brokerName: form.hasBroker ? form.brokerName || undefined : undefined,
+      brokerPhone: form.hasBroker ? form.brokerPhone || undefined : undefined,
     });
     setSubmitting(false);
     setShowForm(false);
     setForm(emptyPropertyForm());
+  }
+
+  async function handleStatusChange(id: string, status: PropertyStatus) {
+    await updateProperty(id, { status });
   }
 
   const filtered = useMemo(
@@ -107,7 +120,7 @@ export default function AdminPropertiesPage() {
     }));
 
   return (
-    <DashboardShell allow={["admin", "leasingAgent", "accountant"]} title="العقارات">
+    <DashboardShell allow={["admin", "leasingAgent", "accountant", "custom"]} customResource="properties" title="العقارات">
       <div className="flex flex-col gap-6">
         <Card>
         <CardHeader>
@@ -149,6 +162,7 @@ export default function AdminPropertiesPage() {
                 <Th>السعر</Th>
                 <Th>المالك</Th>
                 <Th>الحالة</Th>
+                <Th>انتهاء الإدارة</Th>
               </Tr>
             </THead>
             <TBody>
@@ -160,7 +174,20 @@ export default function AdminPropertiesPage() {
                   <Td>{p.area} م²</Td>
                   <Td className="font-semibold">{currency(p.price)}{p.listingType === "إيجار" && <span className="text-muted font-normal">/سنويًا</span>}</Td>
                   <Td className="text-muted">{owners.find((o) => o.id === p.ownerId)?.name}</Td>
-                  <Td><Badge>{p.status}</Badge></Td>
+                  <Td>
+                    {canCreate ? (
+                      <Select
+                        value={p.status}
+                        onChange={(e) => handleStatusChange(p.id, e.target.value as PropertyStatus)}
+                        className="w-32 py-1.5 text-xs"
+                      >
+                        {PROPERTY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                      </Select>
+                    ) : (
+                      <Badge>{p.status}</Badge>
+                    )}
+                  </Td>
+                  <Td className="text-muted">{p.managementEndDate ?? "—"}</Td>
                 </Tr>
               ))}
             </TBody>
@@ -232,9 +259,10 @@ export default function AdminPropertiesPage() {
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <Label htmlFor="plistingtype">نوع العرض</Label>
-                  <Select id="plistingtype" value={form.listingType} onChange={(e) => setForm((f) => ({ ...f, listingType: e.target.value as "إيجار" | "بيع" }))}>
+                  <Select id="plistingtype" value={form.listingType} onChange={(e) => setForm((f) => ({ ...f, listingType: e.target.value as "إيجار" | "بيع" | "استثمار" }))}>
                     <option value="إيجار">إيجار</option>
                     <option value="بيع">بيع</option>
+                    <option value="استثمار">استثمار</option>
                   </Select>
                 </div>
                 <div>
@@ -251,6 +279,41 @@ export default function AdminPropertiesPage() {
                   <Label htmlFor="plng">خط الطول (Longitude)</Label>
                   <Input id="plng" type="number" step="any" dir="ltr" value={form.lng} onChange={(e) => setForm((f) => ({ ...f, lng: e.target.value }))} />
                 </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                <div>
+                  <Label htmlFor="pmgmtend">تاريخ انتهاء عقد الإدارة (اختياري)</Label>
+                  <Input
+                    id="pmgmtend"
+                    type="date"
+                    value={form.managementEndDate}
+                    onChange={(e) => setForm((f) => ({ ...f, managementEndDate: e.target.value }))}
+                  />
+                </div>
+                <div className="pb-2.5">
+                  <label className="flex items-center gap-2 text-sm font-semibold">
+                    <input
+                      type="checkbox"
+                      checked={form.hasBroker}
+                      onChange={(e) => setForm((f) => ({ ...f, hasBroker: e.target.checked }))}
+                      className="h-4 w-4 rounded border-border accent-brand-600"
+                    />
+                    عبر وسيط عقاري
+                  </label>
+                </div>
+                {form.hasBroker && (
+                  <>
+                    <div>
+                      <Label htmlFor="pbrokername">اسم الوسيط</Label>
+                      <Input id="pbrokername" value={form.brokerName} onChange={(e) => setForm((f) => ({ ...f, brokerName: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label htmlFor="pbrokerphone">جوال الوسيط</Label>
+                      <Input id="pbrokerphone" dir="ltr" value={form.brokerPhone} onChange={(e) => setForm((f) => ({ ...f, brokerPhone: e.target.value }))} />
+                    </div>
+                  </>
+                )}
               </div>
 
               <Button type="submit" disabled={submitting} className="self-start">

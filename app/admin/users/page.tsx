@@ -5,10 +5,12 @@ import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+import { Input, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
-import { useAllUserProfiles, useOwners, useSystemUsers } from "@/lib/firestore/hooks";
-import { updateUserOwnerIds } from "@/lib/firestore/mutations";
+import { useAuth } from "@/lib/auth-context";
+import { useAllUserProfiles, useOwners, useRoles, useSystemUsers } from "@/lib/firestore/hooks";
+import { updateUserOwnerIds, updateUserRole } from "@/lib/firestore/mutations";
+import type { Role } from "@/lib/types";
 import { ChevronDown, ChevronUp, Search, TriangleAlert } from "lucide-react";
 
 const roleLabels: Record<string, string> = {
@@ -19,8 +21,20 @@ const roleLabels: Record<string, string> = {
   accountant: "محاسب",
   leasingAgent: "مندوب تأجير",
   maintenanceStaff: "فريق صيانة",
+  custom: "دور مخصص",
   "مدير حساب": "مدير حساب",
 };
+
+const ASSIGNABLE_ROLES: Role[] = [
+  "admin",
+  "owner",
+  "tenant",
+  "technician",
+  "accountant",
+  "leasingAgent",
+  "maintenanceStaff",
+  "custom",
+];
 
 export default function AdminUsersPage() {
   // profiles (users/{uid}) is the authoritative account list — id here is
@@ -29,13 +43,16 @@ export default function AdminUsersPage() {
   // "own-1"), not uid, and never got backfilled for accountant/leasingAgent/
   // maintenanceStaff — it's only good for its status/lastLogin display
   // fields, joined here by email since that's the one field both share.
+  const { user: me } = useAuth();
   const { data: profiles } = useAllUserProfiles();
   const { data: systemUsers } = useSystemUsers();
   const { data: owners } = useOwners();
+  const { data: roles } = useRoles();
   const [query, setQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [draftOwnerIds, setDraftOwnerIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [savingRoleUid, setSavingRoleUid] = useState<string | null>(null);
 
   const systemUserByEmail = useMemo(() => new Map(systemUsers.map((u) => [u.email, u])), [systemUsers]);
 
@@ -48,6 +65,7 @@ export default function AdminUsersPage() {
           name: p.name,
           email: p.email,
           role: p.role,
+          customRoleId: p.customRoleId ?? null,
           ownerIds: p.ownerIds ?? [],
           status: su?.status ?? "نشط",
           lastLogin: su?.lastLogin ?? "—",
@@ -82,6 +100,18 @@ export default function AdminUsersPage() {
     await updateUserOwnerIds(uid, draftOwnerIds);
     setSaving(false);
     setExpandedId(null);
+  }
+
+  async function handleRoleChange(uid: string, role: Role, currentCustomRoleId: string | null) {
+    setSavingRoleUid(uid);
+    await updateUserRole(uid, role, role === "custom" ? currentCustomRoleId : undefined);
+    setSavingRoleUid(null);
+  }
+
+  async function handleCustomRoleChange(uid: string, customRoleId: string) {
+    setSavingRoleUid(uid);
+    await updateUserRole(uid, "custom", customRoleId);
+    setSavingRoleUid(null);
   }
 
   return (
@@ -133,7 +163,34 @@ export default function AdminUsersPage() {
                         </Td>
                         <Td className="font-semibold">{r.name}</Td>
                         <Td className="text-muted">{r.email}</Td>
-                        <Td>{roleLabels[r.role] ?? r.role}</Td>
+                        <Td onClick={(ev) => ev.stopPropagation()}>
+                          <div className="flex items-center gap-1.5">
+                            <Select
+                              value={r.role}
+                              disabled={savingRoleUid === r.uid || r.uid === me?.uid}
+                              title={r.uid === me?.uid ? "لا يمكنك تغيير دورك الخاص" : undefined}
+                              onChange={(e) => handleRoleChange(r.uid, e.target.value as Role, r.customRoleId)}
+                              className="w-36 py-1.5 text-xs"
+                            >
+                              {ASSIGNABLE_ROLES.map((role) => (
+                                <option key={role} value={role}>{roleLabels[role] ?? role}</option>
+                              ))}
+                            </Select>
+                            {r.role === "custom" && (
+                              <Select
+                                value={r.customRoleId ?? ""}
+                                disabled={savingRoleUid === r.uid || r.uid === me?.uid}
+                                onChange={(e) => handleCustomRoleChange(r.uid, e.target.value)}
+                                className="w-32 py-1.5 text-xs"
+                              >
+                                <option value="" disabled>اختر دورًا</option>
+                                {roles.map((cr) => (
+                                  <option key={cr.id} value={cr.id}>{cr.name}</option>
+                                ))}
+                              </Select>
+                            )}
+                          </div>
+                        </Td>
                         <Td className="text-muted max-w-[220px] truncate">
                           {isAccountant ? (myOwners.length > 0 ? myOwners.map((o) => o.name).join("، ") : "بدون") : "—"}
                         </Td>

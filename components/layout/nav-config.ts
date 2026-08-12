@@ -1,7 +1,8 @@
-import type { Role } from "@/lib/types";
+import type { PermissionResource, Role } from "@/lib/types";
 import {
   BarChart3,
   Building2,
+  CalendarClock,
   Contact,
   FileText,
   FolderOpen,
@@ -12,6 +13,8 @@ import {
   MapPin,
   PieChart,
   Receipt,
+  Settings,
+  ShieldCheck,
   UserCog,
   UserPlus,
   Users,
@@ -33,12 +36,29 @@ export const roleMeta: Record<Role, { title: string; homeHref: string }> = {
   accountant: { title: "بوابة المحاسب", homeHref: "/accountant" },
   leasingAgent: { title: "بوابة مندوب التأجير", homeHref: "/leasing-agent" },
   maintenanceStaff: { title: "بوابة فريق الصيانة", homeHref: "/admin/maintenance" },
+  custom: { title: "دور مخصص", homeHref: "/custom" },
+};
+
+// Maps each dynamic-permission resource to the real nav item/page that
+// exposes it — see PermissionResource in lib/types.ts and app/admin/roles.
+// A "custom" role's sidebar is built by filtering this against the role's
+// own permission matrix (see Sidebar.tsx), not from navByRole.custom below
+// (which stays empty — Record<Role,...> just needs every key present).
+export const customResourceNav: Record<PermissionResource, NavItem> = {
+  properties: { label: "العقارات", href: "/admin/properties", icon: Building2 },
+  contracts: { label: "العقود", href: "/admin/contracts", icon: FileText },
+  expenses: { label: "المصروفات", href: "/admin/expenses", icon: Wallet },
+  vouchers: { label: "السندات", href: "/admin/vouchers", icon: Receipt },
+  maintenanceRequests: { label: "طلبات الصيانة", href: "/admin/maintenance", icon: Wrench },
+  clients: { label: "العملاء المحتملون", href: "/admin/leads", icon: UserPlus },
 };
 
 export const navByRole: Record<Role, NavItem[]> = {
   admin: [
     { label: "لوحة التحكم", href: "/admin", icon: LayoutDashboard },
     { label: "المستخدمون", href: "/admin/users", icon: Users },
+    { label: "الصلاحيات", href: "/admin/roles", icon: ShieldCheck },
+    { label: "إعدادات النظام", href: "/admin/settings", icon: Settings },
     { label: "العقارات", href: "/admin/properties", icon: Building2 },
     { label: "العقود", href: "/admin/contracts", icon: FileText },
     { label: "العملاء", href: "/admin/clients", icon: Contact },
@@ -54,6 +74,7 @@ export const navByRole: Record<Role, NavItem[]> = {
     { label: "عروض الأسعار", href: "/quotes", icon: Receipt },
     { label: "التقارير والفواتير", href: "/reports", icon: BarChart3 },
     { label: "التقارير المالية", href: "/admin/reports/financial", icon: BarChart3 },
+    { label: "الدفعات القادمة", href: "/admin/reports/upcoming-payments", icon: CalendarClock },
     { label: "الخريطة التفاعلية", href: "/map", icon: MapPin },
     { label: "خدمة العملاء", href: "/support/customer", icon: Headset },
     { label: "الدعم الفني", href: "/support/technical", icon: LifeBuoy },
@@ -87,6 +108,7 @@ export const navByRole: Record<Role, NavItem[]> = {
     { label: "السندات", href: "/admin/vouchers", icon: Receipt },
     { label: "التقارير والفواتير", href: "/reports", icon: BarChart3 },
     { label: "التقارير المالية", href: "/admin/reports/financial", icon: BarChart3 },
+    { label: "الدفعات القادمة", href: "/admin/reports/upcoming-payments", icon: CalendarClock },
     { label: "سجل العمليات", href: "/admin/audit-log", icon: History },
   ],
   leasingAgent: [
@@ -99,4 +121,7 @@ export const navByRole: Record<Role, NavItem[]> = {
     { label: "طلبات الصيانة", href: "/admin/maintenance", icon: Wrench },
     { label: "المورّدون", href: "/admin/vendors", icon: Wrench },
   ],
+  // Built dynamically from the account's CustomRole permissions — see
+  // customResourceNav above and Sidebar.tsx. Empty here on purpose.
+  custom: [],
 };

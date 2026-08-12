@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { useAccountantOwnerScope } from "@/lib/accountant-scope";
+import { useAuth } from "@/lib/auth-context";
 import { currency } from "@/lib/mock-data";
-import { useOwnerExpenses, useOwnerProperties } from "@/lib/firestore/hooks";
+import { useCustomRole, useOwnerExpenses, useOwnerProperties } from "@/lib/firestore/hooks";
 import { createExpense, updateExpenseStatus } from "@/lib/firestore/mutations";
 import type { ExpenseCategory, ExpenseItem } from "@/lib/types";
 import { CheckCircle2, ChevronDown, ChevronUp, Plus, Receipt, TrendingDown, Trash2, Wallet } from "lucide-react";
@@ -22,9 +23,12 @@ function itemsTotal(items: ExpenseItem[]) {
 }
 
 export default function AdminExpensesPage() {
+  const { user } = useAuth();
   const scope = useAccountantOwnerScope();
   const { data: expenses } = useOwnerExpenses(scope.queryOwnerId);
   const { data: properties } = useOwnerProperties(scope.queryOwnerId);
+  const customRole = useCustomRole(user?.role === "custom" ? user.customRoleId : undefined);
+  const canCreate = user?.role === "admin" || user?.role === "accountant" || !!customRole?.permissions?.expenses?.write;
 
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("الكل");
@@ -94,7 +98,7 @@ export default function AdminExpensesPage() {
   }
 
   return (
-    <DashboardShell allow={["admin", "accountant"]} title="المصروفات">
+    <DashboardShell allow={["admin", "accountant", "custom"]} customResource="expenses" title="المصروفات">
       <div className="flex flex-col gap-6">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <StatCard label="إجمالي المصروفات" value={currency(total)} icon={Wallet} tone="brand" />
@@ -115,9 +119,11 @@ export default function AdminExpensesPage() {
                 ))}
               </Select>
               <Input placeholder="بحث بالعقار" value={query} onChange={(e) => setQuery(e.target.value)} className="w-44" />
-              <Button size="sm" onClick={() => setShowForm((v) => !v)}>
-                <Plus size={15} /> مصروف جديد
-              </Button>
+              {canCreate && (
+                <Button size="sm" onClick={() => setShowForm((v) => !v)}>
+                  <Plus size={15} /> مصروف جديد
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent>
@@ -199,7 +205,7 @@ export default function AdminExpensesPage() {
           </CardContent>
         </Card>
 
-        {showForm && (
+        {canCreate && showForm && (
           <Card>
             <CardHeader>
               <CardTitle>تسجيل مصروف جديد</CardTitle>

@@ -1,13 +1,15 @@
 "use client";
 
-import { addDoc, collection, doc, updateDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, setDoc, updateDoc } from "firebase/firestore";
 import { getDb, getFirebaseAuth } from "@/lib/firebase/client";
 import { generatePaymentSchedule } from "@/lib/contracts/schedule";
 import type {
+  AppSettings,
   AuditAction,
   Building,
   Contract,
   ContractPayment,
+  CustomRole,
   DocumentLink,
   Expense,
   ExpenseStatus,
@@ -16,6 +18,7 @@ import type {
   MaintenanceStatus,
   Property,
   Quote,
+  Role,
   SupportTicket,
   Tenant,
   TicketStatus,
@@ -118,6 +121,13 @@ export async function createProperty(property: Omit<Property, "id">) {
   return ref.id;
 }
 
+// Leasing-agent/admin only (see firestore.rules) — e.g. toggling status or
+// updating the management-agreement expiry from app/admin/properties.
+export async function updateProperty(id: string, patch: Partial<Omit<Property, "id">>) {
+  await updateDoc(doc(getDb(), "properties", id), patch);
+  void logAudit("properties", id, "update");
+}
+
 export async function createBuilding(building: Omit<Building, "id">) {
   const ref = await addDoc(collection(getDb(), "buildings"), building);
   void logAudit("buildings", ref.id, "create", building.name);
@@ -167,7 +177,15 @@ export async function createDocumentLink(documentLink: Omit<DocumentLink, "id">)
 // omitted, it falls back to generatePaymentSchedule's even split.
 export async function createContract(contract: Omit<Contract, "id" | "payments">, payments?: ContractPayment[]) {
   const finalPayments =
-    payments ?? generatePaymentSchedule(contract.startDate, contract.endDate, contract.value, contract.paymentCycle, contract.paymentDay);
+    payments ??
+    generatePaymentSchedule(
+      contract.startDate,
+      contract.endDate,
+      contract.value,
+      contract.paymentCycle,
+      contract.paymentDay,
+      contract.graceMonths
+    );
   const ref = await addDoc(collection(getDb(), "contracts"), { ...contract, payments: finalPayments });
   void logAudit("contracts", ref.id, "create", `عقد جديد بقيمة ${contract.value.toLocaleString("ar-SA")} ﷼`);
   return ref.id;
@@ -208,4 +226,36 @@ export async function createVoucher(voucher: Omit<Voucher, "id">) {
 export async function updateUserOwnerIds(uid: string, ownerIds: string[]) {
   await updateDoc(doc(getDb(), "users", uid), { ownerIds });
   void logAudit("users", uid, "update", `تم تحديث الملاك المرتبطين (${ownerIds.length})`);
+}
+
+// Admin-only (see firestore.rules — covered by the wildcard, no dedicated
+// write rule). Upserts the single settings/app doc — see app/admin/settings.
+export async function updateAppSettings(patch: Partial<Omit<AppSettings, "id">>) {
+  await setDoc(doc(getDb(), "settings", "app"), patch, { merge: true });
+  void logAudit("settings", "app", "update", "تحديث إعدادات النظام");
+}
+
+// Admin-only (wildcard). See app/admin/roles — the dynamic-permissions
+// engine's role editor.
+export async function createRole(role: Omit<CustomRole, "id">) {
+  const ref = await addDoc(collection(getDb(), "roles"), role);
+  void logAudit("roles", ref.id, "create", role.name);
+  return ref.id;
+}
+export async function updateRole(id: string, patch: Partial<Omit<CustomRole, "id">>) {
+  await updateDoc(doc(getDb(), "roles", id), patch);
+  void logAudit("roles", id, "update");
+}
+export async function deleteRole(id: string) {
+  await deleteDoc(doc(getDb(), "roles", id));
+  void logAudit("roles", id, "delete");
+}
+
+// Admin-only (wildcard) — reassigns an existing account's role, e.g. from
+// app/admin/users. customRoleId only matters (and should only be set) when
+// role === "custom" — pass null/undefined to clear it when switching an
+// account back to one of the 7 built-in roles.
+export async function updateUserRole(uid: string, role: Role, customRoleId?: string | null) {
+  await updateDoc(doc(getDb(), "users", uid), { role, customRoleId: role === "custom" ? customRoleId ?? null : null });
+  void logAudit("users", uid, "update", `الدور → ${role}`);
 }

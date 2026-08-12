@@ -21,6 +21,10 @@ const roleOptions: { role: Role; icon: typeof ShieldCheck; demoEmail: string }[]
   { role: "accountant", icon: Calculator, demoEmail: "accountant@amlakms.sa" },
   { role: "leasingAgent", icon: UserPlus, demoEmail: "agent@amlakms.sa" },
   { role: "maintenanceStaff", icon: Wrench, demoEmail: "maintenance-lead@amlakms.sa" },
+  // No single demo persona — custom roles are provisioned per real account
+  // by an admin (see app/admin/users). Selecting this tile just clears the
+  // email field for manual entry.
+  { role: "custom", icon: ShieldCheck, demoEmail: "" },
 ];
 
 export function LoginForm() {

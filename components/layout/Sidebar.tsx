@@ -3,9 +3,23 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
-import type { Role } from "@/lib/types";
-import { navByRole } from "./nav-config";
+import { useCustomRole } from "@/lib/firestore/hooks";
+import type { PermissionResource, Role } from "@/lib/types";
+import { customResourceNav, navByRole, type NavItem } from "./nav-config";
 import { Building2, X } from "lucide-react";
+
+// A "custom" role has no fixed nav — it's whatever resources the admin
+// granted it read access to (see app/admin/roles), resolved live from its
+// CustomRole doc instead of the static navByRole table.
+function useNavItems(role: Role, customRoleId?: string | null): NavItem[] {
+  const customRole = useCustomRole(role === "custom" ? customRoleId : undefined);
+  if (role !== "custom") return navByRole[role];
+  const home: NavItem = { label: "لوحة التحكم", href: "/custom", icon: Building2 };
+  const granted = Object.entries(customRole?.permissions ?? {})
+    .filter(([, perm]) => perm?.read)
+    .map(([resource]) => customResourceNav[resource as PermissionResource]);
+  return [home, ...granted];
+}
 
 function Brand({ action }: { action?: React.ReactNode }) {
   return (
@@ -24,9 +38,9 @@ function Brand({ action }: { action?: React.ReactNode }) {
   );
 }
 
-function NavList({ role, onNavigate }: { role: Role; onNavigate?: () => void }) {
+function NavList({ role, customRoleId, onNavigate }: { role: Role; customRoleId?: string | null; onNavigate?: () => void }) {
   const pathname = usePathname();
-  const items = navByRole[role];
+  const items = useNavItems(role, customRoleId);
   return (
     <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
       {items.map((item) => {
@@ -51,16 +65,26 @@ function NavList({ role, onNavigate }: { role: Role; onNavigate?: () => void }) 
   );
 }
 
-export function Sidebar({ role }: { role: Role }) {
+export function Sidebar({ role, customRoleId }: { role: Role; customRoleId?: string | null }) {
   return (
     <aside className="no-print hidden lg:flex w-64 shrink-0 flex-col border-l border-border bg-surface">
       <Brand />
-      <NavList role={role} />
+      <NavList role={role} customRoleId={customRoleId} />
     </aside>
   );
 }
 
-export function MobileSidebar({ role, open, onClose }: { role: Role; open: boolean; onClose: () => void }) {
+export function MobileSidebar({
+  role,
+  customRoleId,
+  open,
+  onClose,
+}: {
+  role: Role;
+  customRoleId?: string | null;
+  open: boolean;
+  onClose: () => void;
+}) {
   return (
     <div
       className={cn(
@@ -82,7 +106,7 @@ export function MobileSidebar({ role, open, onClose }: { role: Role; open: boole
             </button>
           }
         />
-        <NavList role={role} onNavigate={onClose} />
+        <NavList role={role} customRoleId={customRoleId} onNavigate={onClose} />
       </aside>
     </div>
   );

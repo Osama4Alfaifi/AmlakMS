@@ -54,21 +54,26 @@ function withDay(dateStr: string, day: number): string {
 // remainder is absorbed into the last one so the sum always matches).
 // paymentDay: optional fixed day-of-month for every installment, independent
 // of startDate's own day (see withDay above).
+// graceMonths: optional rent-free period before the first installment falls
+// due — shifts the whole schedule's start later by that many months without
+// changing the contract's own startDate/endDate.
 export function generatePaymentSchedule(
   startDate: string,
   endDate: string,
   totalValue: number,
   cycle: PaymentCycle,
-  paymentDay?: number
+  paymentDay?: number,
+  graceMonths?: number
 ): ContractPayment[] {
   const cycleMonths = CYCLE_MONTHS[cycle];
-  const totalMonths = monthsBetween(startDate, endDate);
+  const scheduleStart = graceMonths ? addMonths(startDate, graceMonths) : startDate;
+  const totalMonths = monthsBetween(scheduleStart, endDate);
   const count = Math.max(1, Math.round(totalMonths / cycleMonths));
   const baseAmount = Math.floor(totalValue / count);
   const remainder = totalValue - baseAmount * count;
 
   return Array.from({ length: count }, (_, i) => {
-    const dueDate = addMonths(startDate, i * cycleMonths);
+    const dueDate = addMonths(scheduleStart, i * cycleMonths);
     return {
       id: String(i + 1),
       dueDate: paymentDay ? withDay(dueDate, paymentDay) : dueDate,

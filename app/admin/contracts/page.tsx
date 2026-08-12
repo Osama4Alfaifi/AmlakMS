@@ -36,7 +36,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 function emptyForm() {
   return {
-    type: "إيجار" as "إيجار" | "بيع",
+    type: "إيجار" as "إيجار" | "بيع" | "استثمار",
     propertyId: "",
     tenantMode: "existing" as "existing" | "new",
     tenantId: "",
@@ -44,12 +44,18 @@ function emptyForm() {
     newTenantPhone: "",
     newTenantIdNumber: "",
     newTenantBirthDate: "",
+    newTenantSecondaryPhone: "",
+    newTenantEmployer: "",
+    newTenantIdExpiryDate: "",
     value: "",
     signedAt: today(),
     startDate: today(),
     endDate: "",
     paymentCycle: "سنوي" as PaymentCycle,
     paymentDay: "",
+    graceMonths: "",
+    waterFee: "",
+    electricityFee: "",
     documentUrl: "",
     externalContractNo: "",
   };
@@ -118,7 +124,14 @@ export default function AdminContractsPage() {
   const previewSchedule: ContractPayment[] =
     importedPayments ??
     (form.startDate && form.endDate && Number(form.value) > 0
-      ? generatePaymentSchedule(form.startDate, form.endDate, Number(form.value), form.paymentCycle, Number(form.paymentDay) || undefined)
+      ? generatePaymentSchedule(
+          form.startDate,
+          form.endDate,
+          Number(form.value),
+          form.paymentCycle,
+          Number(form.paymentDay) || undefined,
+          Number(form.graceMonths) || undefined
+        )
       : []);
 
   // Clears a stale imported schedule once the accountant edits a field it
@@ -190,6 +203,9 @@ export default function AdminContractsPage() {
         phone: form.newTenantPhone,
         idNumber: form.newTenantIdNumber || undefined,
         birthDate: form.newTenantBirthDate || undefined,
+        secondaryPhone: form.newTenantSecondaryPhone || undefined,
+        employer: form.newTenantEmployer || undefined,
+        idExpiryDate: form.newTenantIdExpiryDate || undefined,
         propertyId: property.id,
         contractId: "",
       });
@@ -207,6 +223,9 @@ export default function AdminContractsPage() {
         value: Number(form.value),
         paymentCycle: form.paymentCycle,
         paymentDay: Number(form.paymentDay) || undefined,
+        graceMonths: Number(form.graceMonths) || undefined,
+        waterFee: Number(form.waterFee) || undefined,
+        electricityFee: Number(form.electricityFee) || undefined,
         status: "نشط",
         documentUrl: form.documentUrl || undefined,
         externalContractNo: form.externalContractNo || undefined,
@@ -233,7 +252,7 @@ export default function AdminContractsPage() {
   }
 
   return (
-    <DashboardShell allow={["admin", "accountant"]} title="العقود">
+    <DashboardShell allow={["admin", "accountant", "custom"]} customResource="contracts" title="العقود">
       <div className="flex flex-col gap-6">
         <Card>
           <CardHeader>
@@ -409,9 +428,10 @@ export default function AdminContractsPage() {
                 <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
                   <div>
                     <Label htmlFor="ctype">نوع العقد</Label>
-                    <Select id="ctype" value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as "إيجار" | "بيع" }))}>
+                    <Select id="ctype" value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as "إيجار" | "بيع" | "استثمار" }))}>
                       <option value="إيجار">إيجار</option>
                       <option value="بيع">بيع</option>
+                      <option value="استثمار">استثمار</option>
                     </Select>
                   </div>
                   <div>
@@ -465,6 +485,43 @@ export default function AdminContractsPage() {
                   </div>
                 </div>
 
+                <div className="grid sm:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="cgrace">مدة السماح بالأشهر (اختياري)</Label>
+                    <Input
+                      id="cgrace"
+                      type="number"
+                      min={0}
+                      placeholder="مثال: 1"
+                      value={form.graceMonths}
+                      onChange={(e) => {
+                        clearImportedScheduleOnEdit();
+                        setForm((f) => ({ ...f, graceMonths: e.target.value }));
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="cwater">رسوم المياه الشهرية (اختياري)</Label>
+                    <Input
+                      id="cwater"
+                      type="number"
+                      min={0}
+                      value={form.waterFee}
+                      onChange={(e) => setForm((f) => ({ ...f, waterFee: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="celectricity">رسوم الكهرباء الشهرية (اختياري)</Label>
+                    <Input
+                      id="celectricity"
+                      type="number"
+                      min={0}
+                      value={form.electricityFee}
+                      onChange={(e) => setForm((f) => ({ ...f, electricityFee: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
                 <div className="flex flex-col gap-2.5">
                   <div className="flex items-center gap-2">
                     <Label className="mb-0">المستأجر</Label>
@@ -493,6 +550,17 @@ export default function AdminContractsPage() {
                         value={form.newTenantBirthDate}
                         onChange={(e) => setForm((f) => ({ ...f, newTenantBirthDate: e.target.value }))}
                       />
+                      <Input placeholder="رقم جوال آخر (اختياري)" value={form.newTenantSecondaryPhone} onChange={(e) => setForm((f) => ({ ...f, newTenantSecondaryPhone: e.target.value }))} />
+                      <Input placeholder="جهة العمل (اختياري)" value={form.newTenantEmployer} onChange={(e) => setForm((f) => ({ ...f, newTenantEmployer: e.target.value }))} />
+                      <div>
+                        <Label htmlFor="ctenantidexp" className="mb-1">تاريخ انتهاء الهوية/الإقامة (اختياري)</Label>
+                        <Input
+                          id="ctenantidexp"
+                          type="date"
+                          value={form.newTenantIdExpiryDate}
+                          onChange={(e) => setForm((f) => ({ ...f, newTenantIdExpiryDate: e.target.value }))}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>

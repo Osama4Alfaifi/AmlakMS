@@ -55,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: profile.email,
           linkedId: profile.linkedId,
           ownerIds: profile.ownerIds ?? [],
+          customRoleId: profile.customRoleId ?? null,
         }
       : null;
 
@@ -71,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user?.uid, user?.role, user?.name, user?.ownerIds?.join(","), ready]
+    [user?.uid, user?.role, user?.name, user?.ownerIds?.join(","), user?.customRoleId, ready]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

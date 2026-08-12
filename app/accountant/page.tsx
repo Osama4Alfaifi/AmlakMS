@@ -11,7 +11,7 @@ import { currency } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth-context";
 import { computeNotifications } from "@/lib/notifications";
 import { useDismissedNotifications } from "@/lib/use-dismissed-notifications";
-import { useInvoices, useOwnerContracts, useOwnerExpenses, useOwnerProperties } from "@/lib/firestore/hooks";
+import { useAppSettings, useInvoices, useOwnerContracts, useOwnerExpenses, useOwnerProperties, useTenants } from "@/lib/firestore/hooks";
 import { ArrowLeft, BarChart3, Bell, FileWarning, Receipt, TrendingDown, Wallet, X } from "lucide-react";
 
 export default function AccountantDashboardPage() {
@@ -21,13 +21,18 @@ export default function AccountantDashboardPage() {
   const { data: invoices } = useInvoices();
   const { data: contracts } = useOwnerContracts(scope.queryOwnerId);
   const { data: properties } = useOwnerProperties(scope.queryOwnerId);
+  const { data: tenants } = useTenants();
+  const settings = useAppSettings();
 
   const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
   const pendingExpenses = expenses.filter((e) => e.status === "معلقة").reduce((s, e) => s + e.amount, 0);
   const collected = invoices.filter((i) => i.status === "مدفوعة").reduce((s, i) => s + i.items.reduce((a, it) => a + it.quantity * it.unitPrice, 0), 0);
   const pendingRevenue = invoices.filter((i) => i.status !== "مدفوعة").reduce((s, i) => s + i.items.reduce((a, it) => a + it.quantity * it.unitPrice, 0), 0);
   const { isDismissed, dismiss } = useDismissedNotifications();
-  const allNotifications = computeNotifications(contracts, properties).filter((n) => !isDismissed(n.id));
+  const allNotifications = computeNotifications(contracts, properties, tenants, {
+    contract: settings?.notificationLeadDays ?? 30,
+    payment: 14,
+  }).filter((n) => !isDismissed(n.id));
   const notifications = allNotifications.slice(0, 6);
 
   return (

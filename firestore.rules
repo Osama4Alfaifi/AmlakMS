@@ -63,6 +63,20 @@ service cloud.firestore {
       return signedIn() && myRole() == "maintenanceStaff";
     }
 
+    // Dynamic permissions engine (additive — see Role in lib/types.ts). Only
+    // ever evaluated for accounts whose role is literally "custom": the
+    // `myRole() == "custom"` check short-circuits `&&` before the get() runs,
+    // so this never touches (or risks breaking) the 7 original roles' fixed
+    // rules above. `.get(key, default)` avoids errors on a resource/action
+    // the role's permission map simply never mentions.
+    function customRolePermissions(resource) {
+      return get(/databases/$(database)/documents/roles/$(myProfile().customRoleId)).data.permissions.get(resource, {});
+    }
+    function customCan(resource, action) {
+      return signedIn() && myRole() == "custom" && myProfile().customRoleId != null &&
+        customRolePermissions(resource).get(action, false) == true;
+    }
+
     // Admin manages everything.
     match /{document=**} {
       allow read, write: if isAdmin();
@@ -84,9 +98,16 @@ service cloud.firestore {
     // onboard new listings (app/admin/properties) — not owners, who stay
     // read-only everywhere in this app; admin is covered by the wildcard.
     match /properties/{id} {
-      allow read: if signedIn() && (myRole() != "accountant" || isMyOwner(resource.data.ownerId));
-      allow create: if isLeasingAgent();
+      allow read: if signedIn() && (myRole() != "accountant" || isMyOwner(resource.data.ownerId)) || customCan("properties", "read");
+      allow create: if isLeasingAgent() || customCan("properties", "write");
+      allow update: if isLeasingAgent() || customCan("properties", "write");
     }
+    // Admin-defined custom roles + their permission matrix — see
+    // customCan() above and app/admin/roles. Reference data: any signed-in
+    // account reads it (a custom-role user needs their own role's matrix to
+    // build its nav — see components/layout/Sidebar.tsx); only admin writes
+    // (wildcard above).
+    match /roles/{id} { allow read: if signedIn(); }
     match /owners/{id} { allow read: if signedIn(); }
     // Accountants register a new tenant inline when writing a contract for
     // someone not yet in the system (update covers back-filling the new
@@ -101,18 +122,23 @@ service cloud.firestore {
     // the owners assigned to them (myRole() != "accountant" preserves
     // every other role's existing unrestricted read).
     match /contracts/{id} {
-      allow read: if signedIn() && (myRole() != "accountant" || isMyOwner(resource.data.ownerId));
-      allow create: if isMyOwner(request.resource.data.ownerId);
-      allow update: if isMyOwner(resource.data.ownerId);
+      allow read: if signedIn() && (myRole() != "accountant" || isMyOwner(resource.data.ownerId)) || customCan("contracts", "read");
+      allow create: if isMyOwner(request.resource.data.ownerId) || customCan("contracts", "write");
+      allow update: if isMyOwner(resource.data.ownerId) || customCan("contracts", "write");
     }
     // Clients: reference data readable by anyone signed in; leasing agents
     // additionally manage the CRM fields (stage/interestedPropertyId) on
     // lead records, and can add new leads.
     match /clients/{id} {
       allow read: if signedIn();
-      allow create, update: if isLeasingAgent();
+      allow create, update: if isLeasingAgent() || customCan("clients", "write");
     }
     match /invoices/{id} { allow read: if signedIn(); }
+    // App-wide settings (single doc settings/app) — company profile,
+    // branding, notification lead time, maintenance-mode toggle. Every
+    // signed-in account reads it (branding/lead-time apply to everyone);
+    // only admin writes, already covered by the wildcard rule above.
+    match /settings/{id} { allow read: if signedIn(); }
     match /accountManagers/{id} { allow read: if signedIn(); }
     match /systemUsers/{id} { allow read: if signedIn(); }
     // Same accountant narrowing as properties above.
@@ -140,7 +166,8 @@ service cloud.firestore {
 
     // Receipt/disbursement vouchers — accountant tooling.
     match /vouchers/{id} {
-      allow read, create, update: if isAccountant();
+      allow read: if isAccountant() || customCan("vouchers", "read");
+      allow create, update: if isAccountant() || customCan("vouchers", "write");
     }
 
     // Append-only audit trail: anyone signed in can log their own action
@@ -163,9 +190,9 @@ service cloud.firestore {
       allow read: if signedIn() && (
         isMyOwner(resource.data.ownerId) ||
         (myRole() == "owner" && resource.data.ownerId == myProfile().linkedId)
-      );
-      allow create: if isMyOwner(request.resource.data.ownerId);
-      allow update: if isMyOwner(resource.data.ownerId);
+      ) || customCan("expenses", "read");
+      allow create: if isMyOwner(request.resource.data.ownerId) || customCan("expenses", "write");
+      allow update: if isMyOwner(resource.data.ownerId) || customCan("expenses", "write");
     }
 
     // Quotes: admin/owner can create. Any signed-in account can read at the
@@ -210,8 +237,8 @@ service cloud.firestore {
         isTechnician() ||
         isMaintenanceStaff() ||
         (myRole() == "owner" && resource.data.ownerId == myProfile().linkedId)
-      );
-      allow update: if isTechnician() || isMaintenanceStaff();
+      ) || customCan("maintenanceRequests", "read");
+      allow update: if isTechnician() || isMaintenanceStaff() || customCan("maintenanceRequests", "write");
     }
   }
 }

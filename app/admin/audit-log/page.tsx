@@ -9,11 +9,11 @@ import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { useAccountantOwnerScope } from "@/lib/accountant-scope";
 import { useAuth } from "@/lib/auth-context";
 import { computeNotifications } from "@/lib/notifications";
-import { useAllUserProfiles, useMyAuditLogs, useOwnerContracts, useOwnerProperties } from "@/lib/firestore/hooks";
+import { useAllUserProfiles, useAppSettings, useMyAuditLogs, useOwnerContracts, useOwnerProperties, useTenants } from "@/lib/firestore/hooks";
 import type { AuditAction } from "@/lib/types";
 import { Search } from "lucide-react";
 
-const ACTION_LABEL: Record<AuditAction, string> = { create: "إنشاء", update: "تحديث" };
+const ACTION_LABEL: Record<AuditAction, string> = { create: "إنشاء", update: "تحديث", delete: "حذف" };
 
 const ENTITY_TYPE_LABEL: Record<string, string> = {
   expenses: "مصروف",
@@ -31,6 +31,8 @@ const ENTITY_TYPE_LABEL: Record<string, string> = {
   tenants: "مستأجر",
   users: "مستخدم",
   properties: "عقار",
+  settings: "إعدادات",
+  roles: "دور مخصص",
 };
 
 interface Row {
@@ -38,7 +40,7 @@ interface Row {
   timestamp: string;
   actorName: string;
   actionLabel: string;
-  actionTone: "success" | "info" | "warning";
+  actionTone: "success" | "info" | "warning" | "danger";
   entityLabel: string;
   detail: string;
 }
@@ -52,6 +54,8 @@ export default function AdminAuditLogPage() {
   const { data: profiles } = useAllUserProfiles();
   const { data: contracts } = useOwnerContracts(scope.queryOwnerId);
   const { data: properties } = useOwnerProperties(scope.queryOwnerId);
+  const { data: tenants } = useTenants();
+  const settings = useAppSettings();
 
   const [query, setQuery] = useState("");
   const [entityType, setEntityType] = useState("الكل");
@@ -64,12 +68,15 @@ export default function AdminAuditLogPage() {
       timestamp: l.timestamp,
       actorName: profileByUid.get(l.actorUid)?.name ?? l.actorUid.slice(0, 8),
       actionLabel: ACTION_LABEL[l.action],
-      actionTone: l.action === "create" ? "success" : "info",
+      actionTone: l.action === "create" ? "success" : l.action === "delete" ? "danger" : "info",
       entityLabel: ENTITY_TYPE_LABEL[l.entityType] ?? l.entityType,
       detail: l.label ?? "—",
     }));
 
-    const reminderRows: Row[] = computeNotifications(contracts, properties).map((n) => ({
+    const reminderRows: Row[] = computeNotifications(contracts, properties, tenants, {
+      contract: settings?.notificationLeadDays ?? 30,
+      payment: 14,
+    }).map((n) => ({
       id: n.id,
       timestamp: `${n.date}T00:00:00.000Z`,
       actorName: "—",
@@ -80,7 +87,7 @@ export default function AdminAuditLogPage() {
     }));
 
     return [...realRows, ...reminderRows].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-  }, [logs, profileByUid, contracts, properties]);
+  }, [logs, profileByUid, contracts, properties, tenants, settings]);
 
   const entityTypes = useMemo(() => ["الكل", ...Array.from(new Set(rows.map((r) => r.entityLabel)))], [rows]);
 

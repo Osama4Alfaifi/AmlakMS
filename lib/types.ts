@@ -1,4 +1,11 @@
-export type Role = "admin" | "owner" | "tenant" | "technician" | "accountant" | "leasingAgent" | "maintenanceStaff";
+// "custom" is additive: the 7 original roles keep their fixed, hardcoded
+// permissions in firestore.rules completely unchanged. An account with role
+// "custom" instead derives 100% of its access from the CustomRole document
+// its customRoleId points to (see PermissionResource/CustomRole below,
+// app/admin/roles, and the customCan() rule helper in firestore.rules) —
+// this keeps the dynamic-permissions engine opt-in and isolated from the
+// app's existing, already-verified security boundaries.
+export type Role = "admin" | "owner" | "tenant" | "technician" | "accountant" | "leasingAgent" | "maintenanceStaff" | "custom";
 
 // linkedId points to the owners/tenants/technicians record this account
 // represents (null for admin, who isn't tied to a single record).
@@ -12,6 +19,30 @@ export interface SessionUser {
   email: string;
   linkedId: string | null;
   ownerIds?: string[];
+  // Only set (and meaningful) when role === "custom" — see CustomRole.
+  customRoleId?: string | null;
+}
+
+// The resources a custom role can be granted access to — deliberately a
+// fixed, small set matching the app's real admin-delegation surface (not
+// every collection in the database) so the permission matrix stays legible
+// and every entry maps to a real nav item — see customResourceNav in
+// components/layout/nav-config.ts.
+export type PermissionResource = "properties" | "contracts" | "expenses" | "vouchers" | "maintenanceRequests" | "clients";
+
+export interface RolePermission {
+  read?: boolean;
+  write?: boolean;
+}
+
+// Firestore doc at roles/{id} — an admin-defined custom role and its
+// permission matrix. Enforced live in firestore.rules via customCan(), not
+// just in the UI. See app/admin/roles.
+export interface CustomRole {
+  id: string;
+  name: string;
+  permissions: Partial<Record<PermissionResource, RolePermission>>;
+  createdAt: string;
 }
 
 export type PropertyType = "شقة" | "فيلا" | "محل تجاري" | "مكتب" | "أرض" | "استراحة";
@@ -28,13 +59,21 @@ export interface Property {
   bedrooms: number;
   bathrooms: number;
   price: number;
-  listingType: "إيجار" | "بيع";
+  listingType: "إيجار" | "بيع" | "استثمار";
   status: PropertyStatus;
   ownerId: string;
   lat: number;
   lng: number;
   color: string;
   createdAt: string;
+  // تاريخ انتهاء تفويض الشركة بإدارة العقار من المالك — منفصل تمامًا عن
+  // تاريخ انتهاء أي عقد إيجار قائم عليه (Contract.endDate)، انظر
+  // computeNotifications في lib/notifications.ts.
+  managementEndDate?: string;
+  // وسيط خارجي أُنجزت الصفقة عبره (إن وُجد).
+  hasBroker?: boolean;
+  brokerName?: string;
+  brokerPhone?: string;
 }
 
 export interface Owner {
@@ -59,6 +98,11 @@ export interface Tenant {
   email?: string;
   idNumber?: string;
   birthDate?: string;
+  // تاريخ انتهاء الهوية/الإقامة — يُستخدم لإصدار تنبيه قرب الانتهاء، انظر
+  // computeNotifications في lib/notifications.ts.
+  idExpiryDate?: string;
+  secondaryPhone?: string;
+  employer?: string;
   propertyId: string;
   contractId: string;
 }
@@ -80,7 +124,7 @@ export interface Contract {
   propertyId: string;
   ownerId: string;
   tenantId: string;
-  type: "إيجار" | "بيع";
+  type: "إيجار" | "بيع" | "استثمار";
   // تاريخ إبرام العقد — قد يسبق تاريخ بداية سريانه.
   signedAt?: string;
   startDate: string;
@@ -90,6 +134,13 @@ export interface Contract {
   // يوم استحقاق ثابت من كل شهر (1-31) لكل الدفعات، بمعزل عن يوم بداية العقد
   // نفسه — اختياري، انظر generatePaymentSchedule.
   paymentDay?: number;
+  // عدد أشهر السماح قبل استحقاق أول دفعة (إيجار مجاني في بداية العقد) —
+  // يُزاح جدول الدفعات بالكامل بهذا القدر، انظر generatePaymentSchedule.
+  graceMonths?: number;
+  // رسوم شهرية ثابتة للماء/الكهرباء تُضاف كبند منفصل — لا تُحتسب ضمن قيمة
+  // العقد (value) أو جدول الدفعات نفسه.
+  waterFee?: number;
+  electricityFee?: number;
   status: ContractStatus;
   // رابط خارجي لنسخة العقد (Drive وغيره) — لا رفع حقيقي داخل التطبيق؛ نفس نهج DocumentLink.
   documentUrl?: string;
@@ -280,7 +331,7 @@ export interface Unit {
   bedrooms: number;
   bathrooms: number;
   price: number;
-  listingType: "إيجار" | "بيع";
+  listingType: "إيجار" | "بيع" | "استثمار";
   status: PropertyStatus;
   createdAt: string;
 }
@@ -321,7 +372,7 @@ export interface DocumentLink {
   createdAt: string;
 }
 
-export type AuditAction = "create" | "update";
+export type AuditAction = "create" | "update" | "delete";
 
 export interface AuditLog {
   id: string;
@@ -370,6 +421,37 @@ export interface UserProfile {
   // Accountant-only: the owners this accountant is assigned to (many-to-many
   // — see SessionUser.ownerIds and app/admin/users).
   ownerIds?: string[];
+  // Only set (and meaningful) when role === "custom" — see CustomRole.
+  customRoleId?: string | null;
+}
+
+// Firestore doc at settings/app — single app-wide record (company profile,
+// branding, notification lead time, maintenance-mode toggle). Read by any
+// signed-in account; only admin writes (see app/admin/settings and
+// firestore.rules).
+export interface AppSettings {
+  id: string;
+  companyNameAr?: string;
+  companyNameEn?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  phone?: string;
+  whatsapp?: string;
+  bankName?: string;
+  accountNumber?: string;
+  taxNumber?: string;
+  taxEnabled?: boolean;
+  taxRate?: number;
+  crNumber?: string;
+  logoUrl?: string;
+  faviconUrl?: string;
+  // وضع الصيانة — يمنع كل الأدوار غير الإدمن من الوصول للوحاتهم (انظر
+  // components/layout/DashboardShell.tsx).
+  siteClosed?: boolean;
+  // عدد الأيام قبل الاستحقاق الذي يبدأ عنده ظهور تنبيهات "قرب الانتهاء" —
+  // يحل محل withinDays.contract الثابت افتراضيًا في computeNotifications.
+  notificationLeadDays?: number;
 }
 
 export interface SystemUser {
