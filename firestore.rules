@@ -77,12 +77,15 @@ service cloud.firestore {
       allow read: if signedIn() && (request.auth.uid == uid || isAccountant());
     }
 
-    // Reference/catalog data: any signed-in account can read it; writes go
-    // through the admin rule above. Accountants are narrowed to properties
-    // whose owner is assigned to them (myRole() != "accountant" short-
-    // circuits this for every other role, leaving their access unchanged).
+    // Reference/catalog data: any signed-in account can read it. Accountants
+    // are narrowed to properties whose owner is assigned to them
+    // (myRole() != "accountant" short-circuits this for every other role,
+    // leaving their access unchanged). Leasing agents are the ones who
+    // onboard new listings (app/admin/properties) — not owners, who stay
+    // read-only everywhere in this app; admin is covered by the wildcard.
     match /properties/{id} {
       allow read: if signedIn() && (myRole() != "accountant" || isMyOwner(resource.data.ownerId));
+      allow create: if isLeasingAgent();
     }
     match /owners/{id} { allow read: if signedIn(); }
     // Accountants register a new tenant inline when writing a contract for

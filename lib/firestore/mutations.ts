@@ -14,6 +14,7 @@ import type {
   LeadStage,
   MaintenanceRequest,
   MaintenanceStatus,
+  Property,
   Quote,
   SupportTicket,
   Tenant,
@@ -103,6 +104,12 @@ export async function assignVendorToMaintenanceRequest(id: string, vendorId: str
 
 // Admin-only writes (buildings/units/vendors are reference data, same
 // pattern as properties — see firestore.rules).
+export async function createProperty(property: Omit<Property, "id">) {
+  const ref = await addDoc(collection(getDb(), "properties"), property);
+  void logAudit("properties", ref.id, "create", property.title);
+  return ref.id;
+}
+
 export async function createBuilding(building: Omit<Building, "id">) {
   const ref = await addDoc(collection(getDb(), "buildings"), building);
   void logAudit("buildings", ref.id, "create", building.name);

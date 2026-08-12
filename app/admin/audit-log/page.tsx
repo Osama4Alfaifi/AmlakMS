@@ -30,6 +30,7 @@ const ENTITY_TYPE_LABEL: Record<string, string> = {
   vouchers: "سند",
   tenants: "مستأجر",
   users: "مستخدم",
+  properties: "عقار",
 };
 
 interface Row {
