@@ -33,6 +33,13 @@ export function computeEndDateFromDuration(startDate: string, years: number, mon
   return anniversary.toISOString().slice(0, 10);
 }
 
+// Same Date.UTC-based arithmetic as the rest of this file — see the note
+// on addMonths above for why plain Date parsing/toISOString isn't safe.
+export function subtractDays(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d - days)).toISOString().slice(0, 10);
+}
+
 // A 1-year contract paid semi-annually becomes exactly 2 installments: this
 // divides the contract's duration by its payment cycle length, then splits
 // the total value evenly across that many dated installments (any rounding

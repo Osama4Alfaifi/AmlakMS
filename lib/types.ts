@@ -109,6 +109,13 @@ export interface Voucher {
   statement: string;
   date: string;
   contractId?: string;
+  // Set when issued from a specific installment in a contract's payment
+  // schedule (see app/admin/contracts) — paymentNumber is that
+  // ContractPayment's id (its sequence number, e.g. "1"), and periodFrom/To
+  // is the rental period that installment covers.
+  paymentNumber?: string;
+  periodFrom?: string;
+  periodTo?: string;
   createdAt: string;
   createdByUid?: string;
 }

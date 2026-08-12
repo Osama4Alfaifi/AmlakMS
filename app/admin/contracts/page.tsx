@@ -13,7 +13,7 @@ import { currency } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
 import { downloadExcel } from "@/lib/excel";
 import { contractDisplayNumber } from "@/lib/contracts/display";
-import { computeEndDateFromDuration, generatePaymentSchedule } from "@/lib/contracts/schedule";
+import { computeEndDateFromDuration, generatePaymentSchedule, subtractDays } from "@/lib/contracts/schedule";
 import { useOwnerContracts, useOwnerProperties, useOwners, useTenants } from "@/lib/firestore/hooks";
 import { createContract, createTenant, updateContractPayments, updateTenantContract } from "@/lib/firestore/mutations";
 import { parseEjarPdf } from "@/lib/rega/parseEjarContract";
@@ -323,36 +323,51 @@ export default function AdminContractsPage() {
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {(c.payments ?? []).map((p) => (
-                                      <tr key={p.id} className="border-b border-border/60">
-                                        <td className="py-1.5 text-muted">{p.dueDate}</td>
-                                        <td className="py-1.5 font-medium">{currency(p.amount)}</td>
-                                        <td className="py-1.5"><Badge>{p.status}</Badge></td>
-                                        <td className="py-1.5">
-                                          {p.status === "مستحقة" ? (
-                                            <div className="flex items-center gap-2">
-                                              <button
-                                                onClick={() => {
-                                                  if (confirm(`هل تريد تأكيد تسديد دفعة بقيمة ${p.amount.toLocaleString("ar-SA")} ﷼؟`)) {
-                                                    handleSettlePayment(c.id, c.payments, p.id);
-                                                  }
-                                                }}
-                                                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
+                                    {(c.payments ?? []).map((p, idx) => {
+                                      const nextPayment = (c.payments ?? [])[idx + 1];
+                                      const periodFrom = p.dueDate;
+                                      const periodTo = nextPayment ? subtractDays(nextPayment.dueDate, 1) : c.endDate;
+                                      const voucherParams = new URLSearchParams({
+                                        type: "قبض",
+                                        personName: tenantName,
+                                        amount: String(p.amount),
+                                        contractId: c.id,
+                                        contractLabel: contractDisplayNumber(c),
+                                        paymentNumber: p.id,
+                                        periodFrom,
+                                        periodTo,
+                                      });
+                                      return (
+                                        <tr key={p.id} className="border-b border-border/60">
+                                          <td className="py-1.5 text-muted">{p.dueDate}</td>
+                                          <td className="py-1.5 font-medium">{currency(p.amount)}</td>
+                                          <td className="py-1.5"><Badge>{p.status}</Badge></td>
+                                          <td className="py-1.5">
+                                            {p.status === "مستحقة" ? (
+                                              <div className="flex items-center gap-2">
+                                                <button
+                                                  onClick={() => {
+                                                    if (confirm(`هل تريد تأكيد تسديد دفعة بقيمة ${p.amount.toLocaleString("ar-SA")} ﷼؟`)) {
+                                                      handleSettlePayment(c.id, c.payments, p.id);
+                                                    }
+                                                  }}
+                                                  className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
+                                                >
+                                                  <CheckCircle2 size={13} /> تسديد
+                                                </button>
+                                              </div>
+                                            ) : (
+                                              <Link
+                                                href={`/admin/vouchers?${voucherParams.toString()}`}
+                                                className="inline-flex items-center gap-1 text-xs font-semibold text-muted hover:text-brand-700"
                                               >
-                                                <CheckCircle2 size={13} /> تسديد
-                                              </button>
-                                            </div>
-                                          ) : (
-                                            <Link
-                                              href={`/admin/vouchers?type=${encodeURIComponent("قبض")}&personName=${encodeURIComponent(tenantName)}&amount=${p.amount}&contractId=${c.id}&contractLabel=${encodeURIComponent(contractDisplayNumber(c))}`}
-                                              className="inline-flex items-center gap-1 text-xs font-semibold text-muted hover:text-brand-700"
-                                            >
-                                              <Receipt size={13} /> إصدار سند قبض
-                                            </Link>
-                                          )}
-                                        </td>
-                                      </tr>
-                                    ))}
+                                                <Receipt size={13} /> إصدار سند قبض
+                                              </Link>
+                                            )}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
                                   </tbody>
                                 </table>
                               </div>

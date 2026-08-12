@@ -92,6 +92,23 @@ export default function VoucherPrintPage() {
           </div>
         </div>
 
+        {(voucher.paymentNumber || (voucher.periodFrom && voucher.periodTo)) && (
+          <div className="grid grid-cols-2 gap-6 mb-8 text-sm">
+            {voucher.paymentNumber && (
+              <div>
+                <p className="text-xs text-muted mb-1">رقم الدفعة</p>
+                <p className="font-semibold">{voucher.paymentNumber}</p>
+              </div>
+            )}
+            {voucher.periodFrom && voucher.periodTo && (
+              <div className="text-left">
+                <p className="text-xs text-muted mb-1">الفترة</p>
+                <p className="font-semibold">من {voucher.periodFrom} إلى {voucher.periodTo}</p>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="mb-10 text-sm">
           <p className="text-xs text-muted mb-1">البيان</p>
           <p className="font-medium">{voucher.statement || "—"}</p>

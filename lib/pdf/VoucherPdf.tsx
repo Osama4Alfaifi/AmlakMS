@@ -60,6 +60,25 @@ export function VoucherPdf({ voucher }: { voucher: Voucher }) {
           </View>
         </View>
 
+        {(voucher.paymentNumber || (voucher.periodFrom && voucher.periodTo)) && (
+          <View style={local.row}>
+            {voucher.paymentNumber ? (
+              <View style={local.block}>
+                <Text style={s.partyLabel}>رقم الدفعة</Text>
+                <Text style={s.partyValue}>{voucher.paymentNumber}</Text>
+              </View>
+            ) : (
+              <View style={local.block} />
+            )}
+            {voucher.periodFrom && voucher.periodTo && (
+              <View style={[local.block, { alignItems: "flex-end" }]}>
+                <Text style={s.partyLabel}>الفترة</Text>
+                <Text style={s.partyValue}>من {voucher.periodFrom} إلى {voucher.periodTo}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
         <View style={local.statementBlock}>
           <Text style={s.partyLabel}>البيان</Text>
           <Text style={s.partyValue}>{voucher.statement || "—"}</Text>

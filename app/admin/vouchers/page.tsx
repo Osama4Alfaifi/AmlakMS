@@ -27,6 +27,9 @@ function emptyForm() {
     statement: "",
     date: new Date().toISOString().slice(0, 10),
     contractId: "",
+    paymentNumber: "",
+    periodFrom: "",
+    periodTo: "",
   };
 }
 
@@ -43,14 +46,21 @@ function VouchersPageInner() {
   useEffect(() => {
     const prefillType = searchParams.get("type");
     if (!prefillType) return;
+    const paymentNumber = searchParams.get("paymentNumber") ?? "";
+    const periodFrom = searchParams.get("periodFrom") ?? "";
+    const periodTo = searchParams.get("periodTo") ?? "";
+    const contractLabel = searchParams.get("contractLabel") ?? searchParams.get("contractId");
     setForm((f) => ({
       ...f,
       type: prefillType === "صرف" ? "صرف" : "قبض",
       personName: searchParams.get("personName") ?? f.personName,
       amount: searchParams.get("amount") ?? f.amount,
       contractId: searchParams.get("contractId") ?? f.contractId,
+      paymentNumber,
+      periodFrom,
+      periodTo,
       statement: searchParams.get("contractId")
-        ? `دفعة عقد ${searchParams.get("contractLabel") ?? searchParams.get("contractId")}`
+        ? `دفعة رقم ${paymentNumber} عن عقد ${contractLabel}${periodFrom && periodTo ? ` — عن الفترة من ${periodFrom} إلى ${periodTo}` : ""}`
         : f.statement,
     }));
     setShowForm(true);
@@ -81,6 +91,9 @@ function VouchersPageInner() {
       statement: form.statement,
       date: form.date,
       contractId: form.contractId || undefined,
+      paymentNumber: form.paymentNumber || undefined,
+      periodFrom: form.periodFrom || undefined,
+      periodTo: form.periodTo || undefined,
       createdAt: new Date().toISOString().slice(0, 10),
     });
     setSubmitting(false);
@@ -179,6 +192,18 @@ function VouchersPageInner() {
                 <div>
                   <Label htmlFor="vdate">التاريخ</Label>
                   <Input id="vdate" type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} required />
+                </div>
+                <div>
+                  <Label htmlFor="vpaymentnumber">رقم الدفعة (اختياري)</Label>
+                  <Input id="vpaymentnumber" value={form.paymentNumber} onChange={(e) => setForm((f) => ({ ...f, paymentNumber: e.target.value }))} />
+                </div>
+                <div>
+                  <Label htmlFor="vperiodfrom">الفترة من</Label>
+                  <Input id="vperiodfrom" type="date" value={form.periodFrom} onChange={(e) => setForm((f) => ({ ...f, periodFrom: e.target.value }))} />
+                </div>
+                <div>
+                  <Label htmlFor="vperiodto">الفترة إلى</Label>
+                  <Input id="vperiodto" type="date" value={form.periodTo} onChange={(e) => setForm((f) => ({ ...f, periodTo: e.target.value }))} />
                 </div>
                 <div className="sm:col-span-3">
                   <Label htmlFor="vstatement">البيان</Label>
