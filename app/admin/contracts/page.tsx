@@ -49,6 +49,7 @@ function emptyForm() {
     startDate: today(),
     endDate: "",
     paymentCycle: "سنوي" as PaymentCycle,
+    paymentDay: "",
     documentUrl: "",
     externalContractNo: "",
   };
@@ -117,7 +118,7 @@ export default function AdminContractsPage() {
   const previewSchedule: ContractPayment[] =
     importedPayments ??
     (form.startDate && form.endDate && Number(form.value) > 0
-      ? generatePaymentSchedule(form.startDate, form.endDate, Number(form.value), form.paymentCycle)
+      ? generatePaymentSchedule(form.startDate, form.endDate, Number(form.value), form.paymentCycle, Number(form.paymentDay) || undefined)
       : []);
 
   // Clears a stale imported schedule once the accountant edits a field it
@@ -205,6 +206,7 @@ export default function AdminContractsPage() {
         endDate: form.endDate,
         value: Number(form.value),
         paymentCycle: form.paymentCycle,
+        paymentDay: Number(form.paymentDay) || undefined,
         status: "نشط",
         documentUrl: form.documentUrl || undefined,
         externalContractNo: form.externalContractNo || undefined,
@@ -404,7 +406,7 @@ export default function AdminContractsPage() {
                   )}
                 </div>
 
-                <div className="grid sm:grid-cols-4 gap-4">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
                   <div>
                     <Label htmlFor="ctype">نوع العقد</Label>
                     <Select id="ctype" value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as "إيجار" | "بيع" }))}>
@@ -445,6 +447,21 @@ export default function AdminContractsPage() {
                     >
                       {PAYMENT_CYCLES.map((c) => <option key={c} value={c}>{c}</option>)}
                     </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="cpaymentday">يوم الدفع الشهري (اختياري)</Label>
+                    <Input
+                      id="cpaymentday"
+                      type="number"
+                      min={1}
+                      max={31}
+                      placeholder="مثال: 1"
+                      value={form.paymentDay}
+                      onChange={(e) => {
+                        clearImportedScheduleOnEdit();
+                        setForm((f) => ({ ...f, paymentDay: e.target.value }));
+                      }}
+                    />
                   </div>
                 </div>
 

@@ -10,8 +10,9 @@ import { useAccountantOwnerScope } from "@/lib/accountant-scope";
 import { currency } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth-context";
 import { computeNotifications } from "@/lib/notifications";
+import { useDismissedNotifications } from "@/lib/use-dismissed-notifications";
 import { useInvoices, useOwnerContracts, useOwnerExpenses, useOwnerProperties } from "@/lib/firestore/hooks";
-import { ArrowLeft, BarChart3, Bell, FileWarning, Receipt, TrendingDown, Wallet } from "lucide-react";
+import { ArrowLeft, BarChart3, Bell, FileWarning, Receipt, TrendingDown, Wallet, X } from "lucide-react";
 
 export default function AccountantDashboardPage() {
   const { user } = useAuth();
@@ -25,7 +26,8 @@ export default function AccountantDashboardPage() {
   const pendingExpenses = expenses.filter((e) => e.status === "معلقة").reduce((s, e) => s + e.amount, 0);
   const collected = invoices.filter((i) => i.status === "مدفوعة").reduce((s, i) => s + i.items.reduce((a, it) => a + it.quantity * it.unitPrice, 0), 0);
   const pendingRevenue = invoices.filter((i) => i.status !== "مدفوعة").reduce((s, i) => s + i.items.reduce((a, it) => a + it.quantity * it.unitPrice, 0), 0);
-  const allNotifications = computeNotifications(contracts, properties);
+  const { isDismissed, dismiss } = useDismissedNotifications();
+  const allNotifications = computeNotifications(contracts, properties).filter((n) => !isDismissed(n.id));
   const notifications = allNotifications.slice(0, 6);
 
   return (
@@ -59,6 +61,13 @@ export default function AccountantDashboardPage() {
                   <li key={n.id} className="flex items-start gap-3 text-sm">
                     <Badge tone={n.type === "عقد قرب الانتهاء" ? "warning" : "info"}>{n.type}</Badge>
                     <span className="flex-1">{n.message}</span>
+                    <button
+                      onClick={() => dismiss(n.id)}
+                      title="إخفاء هذا الإشعار"
+                      className="text-muted hover:text-danger-500 shrink-0"
+                    >
+                      <X size={14} />
+                    </button>
                   </li>
                 ))}
               </ul>

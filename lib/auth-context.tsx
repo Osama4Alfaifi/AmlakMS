@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User as FirebaseUser } from "firebase/auth";
 import { doc, onSnapshot } from "firebase/firestore";
 import { getDb, getFirebaseAuth } from "./firebase/client";
+import { logUserLogin } from "./firestore/mutations";
 import type { Role, SessionUser, UserProfile } from "./types";
 
 interface AuthContextValue {
@@ -63,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       ready,
       login: async (email, password) => {
         await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
+        void logUserLogin();
       },
       logout: async () => {
         await signOut(getFirebaseAuth());

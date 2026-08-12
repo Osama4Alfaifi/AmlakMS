@@ -48,6 +48,14 @@ async function logAudit(entityType: string, entityId: string, action: AuditActio
   }
 }
 
+// Records a successful sign-in on سجل العمليات (not just data mutations) —
+// called from lib/auth-context.tsx's login(), after the Firebase Auth call
+// itself has already resolved (so getFirebaseAuth().currentUser is set).
+export async function logUserLogin() {
+  const uid = getFirebaseAuth().currentUser?.uid;
+  if (uid) void logAudit("users", uid, "update", "تسجيل الدخول");
+}
+
 export async function createQuote(quote: Omit<Quote, "id">) {
   const ref = await addDoc(collection(getDb(), "quotes"), quote);
   void logAudit("quotes", ref.id, "create", quote.number);
@@ -158,7 +166,8 @@ export async function createDocumentLink(documentLink: Omit<DocumentLink, "id">)
 // when available (it can be non-uniform — see lib/rega/parseEjarContract);
 // omitted, it falls back to generatePaymentSchedule's even split.
 export async function createContract(contract: Omit<Contract, "id" | "payments">, payments?: ContractPayment[]) {
-  const finalPayments = payments ?? generatePaymentSchedule(contract.startDate, contract.endDate, contract.value, contract.paymentCycle);
+  const finalPayments =
+    payments ?? generatePaymentSchedule(contract.startDate, contract.endDate, contract.value, contract.paymentCycle, contract.paymentDay);
   const ref = await addDoc(collection(getDb(), "contracts"), { ...contract, payments: finalPayments });
   void logAudit("contracts", ref.id, "create", `عقد جديد بقيمة ${contract.value.toLocaleString("ar-SA")} ﷼`);
   return ref.id;

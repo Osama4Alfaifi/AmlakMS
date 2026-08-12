@@ -40,15 +40,26 @@ export function subtractDays(dateStr: string, days: number): string {
   return new Date(Date.UTC(y, m - 1, d - days)).toISOString().slice(0, 10);
 }
 
+// Overrides the day-of-month on an already-computed due date — lets a
+// contract's installments fall on a fixed day (e.g. always the 1st)
+// regardless of which day the contract itself started on.
+function withDay(dateStr: string, day: number): string {
+  const [y, m] = dateStr.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, day)).toISOString().slice(0, 10);
+}
+
 // A 1-year contract paid semi-annually becomes exactly 2 installments: this
 // divides the contract's duration by its payment cycle length, then splits
 // the total value evenly across that many dated installments (any rounding
 // remainder is absorbed into the last one so the sum always matches).
+// paymentDay: optional fixed day-of-month for every installment, independent
+// of startDate's own day (see withDay above).
 export function generatePaymentSchedule(
   startDate: string,
   endDate: string,
   totalValue: number,
-  cycle: PaymentCycle
+  cycle: PaymentCycle,
+  paymentDay?: number
 ): ContractPayment[] {
   const cycleMonths = CYCLE_MONTHS[cycle];
   const totalMonths = monthsBetween(startDate, endDate);
@@ -56,10 +67,13 @@ export function generatePaymentSchedule(
   const baseAmount = Math.floor(totalValue / count);
   const remainder = totalValue - baseAmount * count;
 
-  return Array.from({ length: count }, (_, i) => ({
-    id: String(i + 1),
-    dueDate: addMonths(startDate, i * cycleMonths),
-    amount: i === count - 1 ? baseAmount + remainder : baseAmount,
-    status: "مستحقة" as const,
-  }));
+  return Array.from({ length: count }, (_, i) => {
+    const dueDate = addMonths(startDate, i * cycleMonths);
+    return {
+      id: String(i + 1),
+      dueDate: paymentDay ? withDay(dueDate, paymentDay) : dueDate,
+      amount: i === count - 1 ? baseAmount + remainder : baseAmount,
+      status: "مستحقة" as const,
+    };
+  });
 }

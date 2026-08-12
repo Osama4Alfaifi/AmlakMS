@@ -87,6 +87,9 @@ export interface Contract {
   endDate: string;
   value: number;
   paymentCycle: PaymentCycle;
+  // يوم استحقاق ثابت من كل شهر (1-31) لكل الدفعات، بمعزل عن يوم بداية العقد
+  // نفسه — اختياري، انظر generatePaymentSchedule.
+  paymentDay?: number;
   status: ContractStatus;
   // رابط خارجي لنسخة العقد (Drive وغيره) — لا رفع حقيقي داخل التطبيق؛ نفس نهج DocumentLink.
   documentUrl?: string;
