@@ -22,6 +22,17 @@ function monthsBetween(start: string, end: string): number {
   return Math.max(1, (ey - sy) * 12 + (em - sm));
 }
 
+// REGA/Ejar convention: a contract's end date is the day BEFORE the
+// anniversary of its duration — a 1-year contract starting 2026-08-12 ends
+// 2027-08-11, not 2027-08-12 — see the duration calculator in
+// app/admin/contracts.
+export function computeEndDateFromDuration(startDate: string, years: number, months: number, days: number): string {
+  const [y, m, d] = startDate.split("-").map(Number);
+  const anniversary = new Date(Date.UTC(y, m - 1 + years * 12 + months, d + days));
+  anniversary.setUTCDate(anniversary.getUTCDate() - 1);
+  return anniversary.toISOString().slice(0, 10);
+}
+
 // A 1-year contract paid semi-annually becomes exactly 2 installments: this
 // divides the contract's duration by its payment cycle length, then splits
 // the total value evenly across that many dated installments (any rounding

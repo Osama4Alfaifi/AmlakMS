@@ -13,7 +13,7 @@ import { currency } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
 import { downloadExcel } from "@/lib/excel";
 import { contractDisplayNumber } from "@/lib/contracts/display";
-import { generatePaymentSchedule } from "@/lib/contracts/schedule";
+import { computeEndDateFromDuration, generatePaymentSchedule } from "@/lib/contracts/schedule";
 import { useOwnerContracts, useOwnerProperties, useOwners, useTenants } from "@/lib/firestore/hooks";
 import { createContract, createTenant, updateContractPayments, updateTenantContract } from "@/lib/firestore/mutations";
 import { parseEjarPdf } from "@/lib/rega/parseEjarContract";
@@ -70,6 +70,11 @@ export default function AdminContractsPage() {
   const [importing, setImporting] = useState(false);
   const [importNotice, setImportNotice] = useState<{ tone: "success" | "danger"; text: string } | null>(null);
   const [importedPayments, setImportedPayments] = useState<ContractPayment[] | null>(null);
+  // Duration calculator: entering years/months/days derives تاريخ نهاية
+  // العقد from تاريخ بداية العقد (REGA/Ejar convention — see
+  // computeEndDateFromDuration). endDate stays a normal editable field, so
+  // this is purely an assist, not the only way to set it.
+  const [duration, setDuration] = useState({ years: "", months: "", days: "" });
 
   const propertyTitleById = useMemo(() => new Map(properties.map((p) => [p.id, p.title])), [properties]);
   const tenantNameById = useMemo(() => new Map(tenants.map((t) => [t.id, t.name])), [tenants]);
@@ -121,6 +126,17 @@ export default function AdminContractsPage() {
     setImportedPayments(null);
   }
 
+  function updateDuration(patch: Partial<typeof duration>) {
+    const next = { ...duration, ...patch };
+    setDuration(next);
+    const years = Number(next.years) || 0;
+    const months = Number(next.months) || 0;
+    const days = Number(next.days) || 0;
+    if (!form.startDate || (years === 0 && months === 0 && days === 0)) return;
+    clearImportedScheduleOnEdit();
+    setForm((f) => ({ ...f, endDate: computeEndDateFromDuration(f.startDate, years, months, days) }));
+  }
+
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -153,6 +169,7 @@ export default function AdminContractsPage() {
       newTenantEmail: matchedTenant ? f.newTenantEmail : parsed.tenantEmail ?? f.newTenantEmail,
     }));
     setImportedPayments(parsed.payments ?? null);
+    setDuration({ years: "", months: "", days: "" });
     setImportNotice({ tone: "success", text: "تم الاستخراج تلقائيًا من ملف إيجار — يرجى مراجعة الحقول قبل الحفظ." });
   }
 
@@ -200,6 +217,7 @@ export default function AdminContractsPage() {
     setSubmitting(false);
     setShowForm(false);
     setForm(emptyForm());
+    setDuration({ years: "", months: "", days: "" });
     setImportedPayments(null);
     setImportNotice(null);
   }
@@ -234,7 +252,7 @@ export default function AdminContractsPage() {
                 <FileSpreadsheet size={15} /> تصدير Excel
               </Button>
               <Button size="sm" onClick={() => setShowForm((v) => !v)}>
-                <Plus size={15} /> عقد جديد
+                <Plus size={15} /> إضافة عقد
               </Button>
             </div>
           </CardHeader>
@@ -351,7 +369,7 @@ export default function AdminContractsPage() {
         {showForm && (
           <Card>
             <CardHeader>
-              <CardTitle>عقد جديد</CardTitle>
+              <CardTitle>إضافة عقد</CardTitle>
               <CardSubtitle>سيُولَّد جدول الدفعات تلقائيًا حسب المدة ودورة الدفع</CardSubtitle>
             </CardHeader>
             <CardContent>
@@ -452,7 +470,18 @@ export default function AdminContractsPage() {
                       value={form.startDate}
                       onChange={(e) => {
                         clearImportedScheduleOnEdit();
-                        setForm((f) => ({ ...f, startDate: e.target.value }));
+                        const startDate = e.target.value;
+                        const years = Number(duration.years) || 0;
+                        const months = Number(duration.months) || 0;
+                        const days = Number(duration.days) || 0;
+                        setForm((f) => ({
+                          ...f,
+                          startDate,
+                          endDate:
+                            startDate && (years || months || days)
+                              ? computeEndDateFromDuration(startDate, years, months, days)
+                              : f.endDate,
+                        }));
                       }}
                       required
                     />
@@ -468,6 +497,33 @@ export default function AdminContractsPage() {
                         setForm((f) => ({ ...f, endDate: e.target.value }));
                       }}
                       required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label>مدة العقد (اختياري — تُحسب تاريخ النهاية تلقائيًا من تاريخ البداية)</Label>
+                  <div className="grid grid-cols-3 gap-3 max-w-sm">
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="سنوات"
+                      value={duration.years}
+                      onChange={(e) => updateDuration({ years: e.target.value })}
+                    />
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="شهور"
+                      value={duration.months}
+                      onChange={(e) => updateDuration({ months: e.target.value })}
+                    />
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="أيام"
+                      value={duration.days}
+                      onChange={(e) => updateDuration({ days: e.target.value })}
                     />
                   </div>
                 </div>
