@@ -8,6 +8,7 @@ export interface ParsedEjarContract {
   tenantName?: string;
   tenantPhone?: string;
   tenantEmail?: string;
+  tenantIdNumber?: string;
   paymentCycle?: PaymentCycle;
   totalValue?: number;
   payments?: ContractPayment[];
@@ -142,8 +143,10 @@ function extractPaymentCycle(text: string): PaymentCycle | undefined {
   return undefined;
 }
 
-function extractTenant(text: string): Pick<ParsedEjarContract, "tenantName" | "tenantPhone" | "tenantEmail"> {
-  const result: Pick<ParsedEjarContract, "tenantName" | "tenantPhone" | "tenantEmail"> = {};
+function extractTenant(
+  text: string
+): Pick<ParsedEjarContract, "tenantName" | "tenantPhone" | "tenantEmail" | "tenantIdNumber"> {
+  const result: Pick<ParsedEjarContract, "tenantName" | "tenantPhone" | "tenantEmail" | "tenantIdNumber"> = {};
 
   const nameSection = text.match(/Tenant Data([\s\S]*?)Tenant Representative Data/);
   if (nameSection) {
@@ -163,6 +166,10 @@ function extractTenant(text: string): Pick<ParsedEjarContract, "tenantName" | "t
     const section = contactSection[1];
     const phoneMatch = section.match(/Mobile No\.\s+(\+?\d[\d\s]{6,})/);
     if (phoneMatch) result.tenantPhone = phoneMatch[1].replace(/\s+/g, "");
+    // For an individual tenant this is their own national ID/Iqama; for a
+    // commercial tenant it's the representative's — still useful to prefill.
+    const idMatch = section.match(/\bID No\.\s+(\d+)/);
+    if (idMatch) result.tenantIdNumber = idMatch[1];
     const emailMatch = section.match(/Email\s+([\w.+-]+@[\w.\s-]+?\.\s*[A-Za-z]{2,})/);
     // Ejar sometimes fills unset emails with a literal "null@null.com"
     // placeholder rather than leaving the field blank.

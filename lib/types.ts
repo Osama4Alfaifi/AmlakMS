@@ -53,7 +53,12 @@ export interface Tenant {
   id: string;
   name: string;
   phone: string;
-  email: string;
+  // Not collected by the "مستأجر جديد" quick-add form (see
+  // app/admin/contracts) — still present for tenants that have one
+  // (seed data, or a real Firebase Auth login account).
+  email?: string;
+  idNumber?: string;
+  birthDate?: string;
   propertyId: string;
   contractId: string;
 }

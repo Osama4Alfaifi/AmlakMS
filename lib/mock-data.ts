@@ -98,7 +98,7 @@ export const contracts: Contract[] = rawContracts.map((c) => ({
 
 export const clients: Client[] = [
   ...owners.map((o): Client => ({ id: o.id, name: o.name, phone: o.phone, email: o.email, type: "مالك", joinedAt: o.joinedAt })),
-  ...tenants.map((t, i): Client => ({ id: t.id, name: t.name, phone: t.phone, email: t.email, type: "مستأجر", joinedAt: contracts[i]?.startDate ?? "2026-01-01" })),
+  ...tenants.map((t, i): Client => ({ id: t.id, name: t.name, phone: t.phone, email: t.email ?? "", type: "مستأجر", joinedAt: contracts[i]?.startDate ?? "2026-01-01" })),
   { id: "lead-1", name: "عمر الشمري", phone: "0511223344", email: "omar.sh@mail.com", type: "عميل محتمل", joinedAt: "2026-07-01", stage: "تواصل أولي", interestedPropertyId: "prop-2" },
   { id: "lead-2", name: "دانة العصيمي", phone: "0512233445", email: "dana.a@mail.com", type: "عميل محتمل", joinedAt: "2026-07-18", stage: "معاينة مجدولة", interestedPropertyId: "prop-10" },
   { id: "lead-3", name: "ماجد القحطاني", phone: "0513344556", email: "majed.q@mail.com", type: "عميل محتمل", joinedAt: "2026-08-02", stage: "عرض مقدم", interestedPropertyId: "prop-8" },
@@ -206,7 +206,7 @@ export const systemUsers: SystemUser[] = [
   { id: "usr-1", name: "سارة الدوسري", email: "sara.doussari@amlakms.sa", role: "مدير حساب", status: "نشط", lastLogin: "2026-08-10 09:12" },
   { id: "usr-2", name: "مدير النظام", email: "admin@amlakms.sa", role: "admin", status: "نشط", lastLogin: "2026-08-10 08:40" },
   ...owners.map((o): SystemUser => ({ id: o.id, name: o.name, email: o.email, role: "owner", status: "نشط", lastLogin: "2026-08-09 21:05" })),
-  ...tenants.map((t): SystemUser => ({ id: t.id, name: t.name, email: t.email, role: "tenant", status: "نشط", lastLogin: "2026-08-09 18:30" })),
+  ...tenants.map((t): SystemUser => ({ id: t.id, name: t.name, email: t.email ?? "", role: "tenant", status: "نشط", lastLogin: "2026-08-09 18:30" })),
   ...technicians.map((t): SystemUser => ({ id: t.id, name: t.name, email: `${t.id}@amlakms.sa`, role: "technician", status: "نشط", lastLogin: "2026-08-10 07:15" })),
 ];
 

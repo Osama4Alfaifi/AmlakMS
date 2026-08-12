@@ -42,7 +42,8 @@ function emptyForm() {
     tenantId: "",
     newTenantName: "",
     newTenantPhone: "",
-    newTenantEmail: "",
+    newTenantIdNumber: "",
+    newTenantBirthDate: "",
     value: "",
     signedAt: today(),
     startDate: today(),
@@ -166,7 +167,7 @@ export default function AdminContractsPage() {
       tenantId: matchedTenant?.id ?? f.tenantId,
       newTenantName: matchedTenant ? f.newTenantName : parsed.tenantName ?? f.newTenantName,
       newTenantPhone: matchedTenant ? f.newTenantPhone : parsed.tenantPhone ?? f.newTenantPhone,
-      newTenantEmail: matchedTenant ? f.newTenantEmail : parsed.tenantEmail ?? f.newTenantEmail,
+      newTenantIdNumber: matchedTenant ? f.newTenantIdNumber : parsed.tenantIdNumber ?? f.newTenantIdNumber,
     }));
     setImportedPayments(parsed.payments ?? null);
     setDuration({ years: "", months: "", days: "" });
@@ -186,7 +187,8 @@ export default function AdminContractsPage() {
       tenantId = await createTenant({
         name: form.newTenantName,
         phone: form.newTenantPhone,
-        email: form.newTenantEmail,
+        idNumber: form.newTenantIdNumber || undefined,
+        birthDate: form.newTenantBirthDate || undefined,
         propertyId: property.id,
         contractId: "",
       });
@@ -449,10 +451,16 @@ export default function AdminContractsPage() {
                       {tenants.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                     </Select>
                   ) : (
-                    <div className="grid sm:grid-cols-3 gap-3">
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
                       <Input placeholder="اسم المستأجر" value={form.newTenantName} onChange={(e) => setForm((f) => ({ ...f, newTenantName: e.target.value }))} required />
-                      <Input placeholder="الجوال" value={form.newTenantPhone} onChange={(e) => setForm((f) => ({ ...f, newTenantPhone: e.target.value }))} />
-                      <Input placeholder="البريد الإلكتروني" type="email" value={form.newTenantEmail} onChange={(e) => setForm((f) => ({ ...f, newTenantEmail: e.target.value }))} />
+                      <Input placeholder="رقم الجوال" value={form.newTenantPhone} onChange={(e) => setForm((f) => ({ ...f, newTenantPhone: e.target.value }))} />
+                      <Input placeholder="رقم الهوية" value={form.newTenantIdNumber} onChange={(e) => setForm((f) => ({ ...f, newTenantIdNumber: e.target.value }))} />
+                      <Input
+                        type="date"
+                        aria-label="تاريخ الميلاد"
+                        value={form.newTenantBirthDate}
+                        onChange={(e) => setForm((f) => ({ ...f, newTenantBirthDate: e.target.value }))}
+                      />
                     </div>
                   )}
                 </div>

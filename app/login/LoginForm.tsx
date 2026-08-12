@@ -16,7 +16,7 @@ const DEMO_PASSWORD = "demo1234";
 const roleOptions: { role: Role; icon: typeof ShieldCheck; demoEmail: string }[] = [
   { role: "admin", icon: UserCog, demoEmail: "admin@amlakms.sa" },
   { role: "owner", icon: ShieldCheck, demoEmail: owners[0].email },
-  { role: "tenant", icon: KeyRound, demoEmail: tenants[0].email },
+  { role: "tenant", icon: KeyRound, demoEmail: tenants[0].email ?? "" },
   { role: "technician", icon: Wrench, demoEmail: `${technicians[0].id}@amlakms.sa` },
   { role: "accountant", icon: Calculator, demoEmail: "accountant@amlakms.sa" },
   { role: "leasingAgent", icon: UserPlus, demoEmail: "agent@amlakms.sa" },
