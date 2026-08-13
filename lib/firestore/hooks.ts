@@ -63,6 +63,13 @@ interface CollectionState<T> {
 function useFirestoreQuery<T>(name: string, constraint: { field: string; value: string } | null | undefined): CollectionState<T> {
   const uid = useAuthUid();
   const [state, setState] = useState<CollectionState<T>>({ data: [], loading: true, error: null });
+  // undefined and null both collapse to the same `constraint?.field`/
+  // `constraint?.value` (both undefined), so a caller re-rendering from
+  // "don't fetch yet" (undefined — e.g. role not resolved) to "unconstrained
+  // fetch" (null — e.g. role resolved to admin) previously left the effect's
+  // dependency array unchanged, and the subscription never (re)started. This
+  // tag makes that transition visible to the dependency array.
+  const constraintState = constraint === undefined ? "pending" : constraint === null ? "unconstrained" : "scoped";
 
   useEffect(() => {
     if (!uid || constraint === undefined) {
@@ -84,7 +91,8 @@ function useFirestoreQuery<T>(name: string, constraint: { field: string; value: 
       }
     );
     return unsub;
-  }, [name, uid, constraint?.field, constraint?.value]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, uid, constraintState, constraint?.field, constraint?.value]);
 
   return state;
 }

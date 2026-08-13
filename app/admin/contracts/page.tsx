@@ -13,7 +13,14 @@ import { currency } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
 import { downloadExcel } from "@/lib/excel";
 import { contractDisplayNumber } from "@/lib/contracts/display";
-import { computeEndDateFromDuration, generatePaymentSchedule, subtractDays } from "@/lib/contracts/schedule";
+import {
+  computeEndDateFromDuration,
+  contractDuration,
+  formatDurationYMD,
+  generatePaymentSchedule,
+  remainingFromToday,
+  subtractDays,
+} from "@/lib/contracts/schedule";
 import { useOwnerContracts, useOwnerProperties, useOwners, useTenants } from "@/lib/firestore/hooks";
 import { createContract, createTenant, updateContractPayments, updateTenantContract } from "@/lib/firestore/mutations";
 import { parseEjarPdf } from "@/lib/rega/parseEjarContract";
@@ -258,7 +265,7 @@ export default function AdminContractsPage() {
           <CardHeader>
             <div>
               <CardTitle>جميع العقود</CardTitle>
-              <CardSubtitle>{filtered.length} من {contracts.length} عقد — اضغط على أي صف لعرض جدول الدفعات</CardSubtitle>
+              <CardSubtitle>{filtered.length} من {contracts.length} عقد — اضغط على أي صف لعرض بيانات العقد وجدول الدفعات</CardSubtitle>
             </div>
             <div className="flex items-center gap-2">
               <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-36">
@@ -328,10 +335,55 @@ export default function AdminContractsPage() {
                         <Td className="text-muted">{c.endDate}</Td>
                         <Td><Badge>{c.status}</Badge></Td>
                       </Tr>
-                      {isOpen && (
+                      {isOpen && (() => {
+                        const duration = contractDuration(c.startDate, c.endDate);
+                        const remaining = remainingFromToday(c.endDate);
+                        const details: { label: string; value: string; tone?: string }[] = [
+                          { label: "رقم العقد", value: contractDisplayNumber(c) },
+                          { label: "نوع العقد", value: c.type },
+                          { label: "تاريخ الإبرام", value: c.signedAt ?? "—" },
+                          { label: "تاريخ البداية", value: c.startDate },
+                          { label: "تاريخ النهاية", value: c.endDate },
+                          { label: "مدة العقد", value: formatDurationYMD(duration) },
+                          {
+                            label: remaining.expired ? "منتهٍ منذ" : "المتبقي من العقد",
+                            value: formatDurationYMD(remaining),
+                            tone: remaining.expired ? "text-danger-600" : "text-success-700",
+                          },
+                          { label: "دورة الدفع", value: c.paymentCycle },
+                          { label: "القيمة الإجمالية", value: currency(c.value) },
+                        ];
+                        if (c.graceMonths) details.push({ label: "مدة السماح", value: `${c.graceMonths} شهر` });
+                        if (c.waterFee) details.push({ label: "رسوم المياه الشهرية", value: currency(c.waterFee) });
+                        if (c.electricityFee) details.push({ label: "رسوم الكهرباء الشهرية", value: currency(c.electricityFee) });
+                        if (c.paymentDay) details.push({ label: "يوم الدفع الثابت من كل شهر", value: String(c.paymentDay) });
+                        if (c.externalContractNo) details.push({ label: "رقم عقد إيجار (خارجي)", value: c.externalContractNo });
+
+                        return (
                         <Tr className="bg-background">
                           <Td colSpan={10} className="py-4 whitespace-normal align-top">
-                            <div className="pr-8 flex flex-col gap-4">
+                            <div className="pr-8 grid lg:grid-cols-2 gap-6">
+                              <div>
+                                <p className="text-xs font-semibold text-muted mb-2">بيانات العقد</p>
+                                <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm max-w-lg">
+                                  {details.map((d) => (
+                                    <div key={d.label} className="contents">
+                                      <dt className="text-muted">{d.label}</dt>
+                                      <dd className={`font-medium ${d.tone ?? ""}`}>{d.value}</dd>
+                                    </div>
+                                  ))}
+                                </dl>
+                                {c.documentUrl && (
+                                  <a
+                                    href={c.documentUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 mt-3 text-xs font-semibold text-brand-700 hover:underline"
+                                  >
+                                    <ExternalLink size={13} /> عرض نسخة العقد
+                                  </a>
+                                )}
+                              </div>
                               <div>
                                 <p className="text-xs font-semibold text-muted mb-2">جدول الدفعات ({(c.payments ?? []).length})</p>
                                 <table className="w-full text-sm max-w-lg">
@@ -395,7 +447,8 @@ export default function AdminContractsPage() {
                             </div>
                           </Td>
                         </Tr>
-                      )}
+                        );
+                      })()}
                     </Fragment>
                   );
                 })}

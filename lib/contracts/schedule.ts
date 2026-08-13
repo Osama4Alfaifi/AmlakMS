@@ -35,9 +35,13 @@ export function computeEndDateFromDuration(startDate: string, years: number, mon
 
 // Same Date.UTC-based arithmetic as the rest of this file — see the note
 // on addMonths above for why plain Date parsing/toISOString isn't safe.
-export function subtractDays(dateStr: string, days: number): string {
+export function addDays(dateStr: string, days: number): string {
   const [y, m, d] = dateStr.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d - days)).toISOString().slice(0, 10);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+export function subtractDays(dateStr: string, days: number): string {
+  return addDays(dateStr, -days);
 }
 
 // Overrides the day-of-month on an already-computed due date — lets a
@@ -81,4 +85,70 @@ export function generatePaymentSchedule(
       status: "مستحقة" as const,
     };
   });
+}
+
+export interface DurationYMD {
+  years: number;
+  months: number;
+  days: number;
+}
+
+// Calendar Y/M/D difference between two dates (from <= to) — used both for
+// a contract's stated duration and for how much of it is left. Not simple
+// day-division: a "1 year" contract should read back as "سنة" even though
+// the exact day count varies with leap years.
+function diffYMD(from: string, to: string): DurationYMD {
+  const [fy, fm, fd] = from.split("-").map(Number);
+  const [ty, tm, td] = to.split("-").map(Number);
+  let years = ty - fy;
+  let months = tm - fm;
+  let days = td - fd;
+  if (days < 0) {
+    months -= 1;
+    days += new Date(Date.UTC(ty, tm - 1, 0)).getUTCDate();
+  }
+  if (months < 0) {
+    years -= 1;
+    months += 12;
+  }
+  return { years, months, days };
+}
+
+// A contract's real span: endDate is the day BEFORE the duration's
+// anniversary (see computeEndDateFromDuration), so the true length is
+// measured against the anniversary itself (endDate + 1 day) — otherwise a
+// clean "1 year" contract would read back as "11 months and 30 days".
+export function contractDuration(startDate: string, endDate: string): DurationYMD {
+  return diffYMD(startDate, addDays(endDate, 1));
+}
+
+export interface RemainingDuration extends DurationYMD {
+  expired: boolean;
+}
+
+// How much of a contract's term is left counting from today — or, once
+// past endDate, how long ago it lapsed. Same anniversary adjustment as
+// contractDuration above.
+export function remainingFromToday(endDate: string): RemainingDuration {
+  const today = new Date().toISOString().slice(0, 10);
+  const anniversary = addDays(endDate, 1);
+  if (today >= anniversary) {
+    return { ...diffYMD(anniversary, today), expired: true };
+  }
+  return { ...diffYMD(today, anniversary), expired: false };
+}
+
+// Simple singular/plural pairing (no dual form) — matches this codebase's
+// existing "دفعة"/"دفعات" style rather than full Arabic numeral agreement.
+const UNIT_LABELS: Record<keyof DurationYMD, [string, string]> = {
+  years: ["سنة", "سنوات"],
+  months: ["شهر", "أشهر"],
+  days: ["يوم", "أيام"],
+};
+
+export function formatDurationYMD(d: DurationYMD): string {
+  const parts = (["years", "months", "days"] as const)
+    .filter((unit) => d[unit] > 0)
+    .map((unit) => `${d[unit]} ${d[unit] === 1 ? UNIT_LABELS[unit][0] : UNIT_LABELS[unit][1]}`);
+  return parts.length > 0 ? parts.join(" و") : "أقل من يوم";
 }
