@@ -6,7 +6,6 @@ import { generatePaymentSchedule } from "@/lib/contracts/schedule";
 import type {
   AppSettings,
   AuditAction,
-  Building,
   Contract,
   ContractPayment,
   CustomRole,
@@ -113,8 +112,8 @@ export async function assignVendorToMaintenanceRequest(id: string, vendorId: str
   await updateMaintenanceRequest(id, { vendorId });
 }
 
-// Admin-only writes (buildings/units/vendors are reference data, same
-// pattern as properties — see firestore.rules).
+// Admin-only writes (units/vendors are reference data, same pattern as
+// properties — see firestore.rules).
 export async function createProperty(property: Omit<Property, "id">) {
   const ref = await addDoc(collection(getDb(), "properties"), property);
   void logAudit("properties", ref.id, "create", property.title);
@@ -128,16 +127,17 @@ export async function updateProperty(id: string, patch: Partial<Omit<Property, "
   void logAudit("properties", id, "update");
 }
 
-export async function createBuilding(building: Omit<Building, "id">) {
-  const ref = await addDoc(collection(getDb(), "buildings"), building);
-  void logAudit("buildings", ref.id, "create", building.name);
-  return ref.id;
-}
-
 export async function createUnit(unit: Omit<Unit, "id">) {
   const ref = await addDoc(collection(getDb(), "units"), unit);
   void logAudit("units", ref.id, "create", unit.unitNumber);
   return ref.id;
+}
+
+// Leasing-agent/admin only (see firestore.rules) — e.g. toggling a unit's
+// status from app/admin/properties, same pattern as updateProperty.
+export async function updateUnit(id: string, patch: Partial<Omit<Unit, "id">>) {
+  await updateDoc(doc(getDb(), "units", id), patch);
+  void logAudit("units", id, "update");
 }
 
 export async function createVendor(vendor: Omit<Vendor, "id">) {

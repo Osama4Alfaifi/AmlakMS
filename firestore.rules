@@ -141,12 +141,14 @@ service cloud.firestore {
     match /settings/{id} { allow read: if signedIn(); }
     match /accountManagers/{id} { allow read: if signedIn(); }
     match /systemUsers/{id} { allow read: if signedIn(); }
-    // Same accountant narrowing as properties above.
-    match /buildings/{id} {
-      allow read: if signedIn() && (myRole() != "accountant" || isMyOwner(resource.data.ownerId));
-    }
+    // Units: sub-records of a property (see Unit in lib/types.ts) — same
+    // rule shape as properties above, reusing the "properties" custom-role
+    // resource rather than a separate one, since a unit isn't independently
+    // delegable.
     match /units/{id} {
-      allow read: if signedIn() && (myRole() != "accountant" || isMyOwner(resource.data.ownerId));
+      allow read: if signedIn() && (myRole() != "accountant" || isMyOwner(resource.data.ownerId)) || customCan("properties", "read");
+      allow create: if isLeasingAgent() || customCan("properties", "write");
+      allow update: if isLeasingAgent() || customCan("properties", "write");
     }
     // Maintenance staff manage the vendor directory day to day.
     match /vendors/{id} {

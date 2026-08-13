@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import {
-  useBuildings,
   useContracts,
   useDocumentLinks,
   useOwners,
@@ -21,7 +20,7 @@ import type { DocumentCategory, DocumentEntityType } from "@/lib/types";
 import { ExternalLink, Plus, Search } from "lucide-react";
 
 const CATEGORIES: DocumentCategory[] = ["عقد", "فاتورة", "هوية", "صك ملكية", "تأمين", "أخرى"];
-const ENTITY_TYPES: DocumentEntityType[] = ["عقار", "عقد", "مالك", "مستأجر", "مبنى"];
+const ENTITY_TYPES: DocumentEntityType[] = ["عقار", "عقد", "مالك", "مستأجر"];
 
 export default function AdminDocumentsPage() {
   const { data: documents } = useDocumentLinks();
@@ -29,7 +28,6 @@ export default function AdminDocumentsPage() {
   const { data: contracts } = useContracts();
   const { data: owners } = useOwners();
   const { data: tenants } = useTenants();
-  const { data: buildings } = useBuildings();
 
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("الكل");
@@ -53,10 +51,8 @@ export default function AdminDocumentsPage() {
         return owners.map((o) => ({ id: o.id, label: o.name }));
       case "مستأجر":
         return tenants.map((t) => ({ id: t.id, label: t.name }));
-      case "مبنى":
-        return buildings.map((b) => ({ id: b.id, label: b.name }));
     }
-  }, [entityType, properties, contracts, owners, tenants, buildings]);
+  }, [entityType, properties, contracts, owners, tenants]);
 
   const filtered = useMemo(
     () =>

@@ -8,7 +8,6 @@ import type {
   AccountManager,
   AppSettings,
   AuditLog,
-  Building,
   Client,
   Contract,
   CustomRole,
@@ -147,9 +146,6 @@ export function useExpenses() {
 }
 
 // Reference data — readable by any signed-in account, same as properties.
-export function useBuildings() {
-  return useFirestoreCollection<Building>("buildings");
-}
 export function useUnits() {
   return useFirestoreCollection<Unit>("units");
 }
@@ -217,9 +213,6 @@ export function useOwnerContracts(ownerId: string | null | undefined) {
 }
 export function useOwnerProperties(ownerId: string | null | undefined) {
   return useFirestoreQuery<Property>("properties", fieldConstraint("ownerId", ownerId));
-}
-export function useOwnerBuildings(ownerId: string | null | undefined) {
-  return useFirestoreQuery<Building>("buildings", fieldConstraint("ownerId", ownerId));
 }
 export function useOwnerUnits(ownerId: string | null | undefined) {
   return useFirestoreQuery<Unit>("units", fieldConstraint("ownerId", ownerId));

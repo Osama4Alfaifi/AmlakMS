@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -12,13 +12,27 @@ import { useAuth } from "@/lib/auth-context";
 import { currency } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
 import { downloadExcel } from "@/lib/excel";
-import { useCustomRole, useOwnerProperties, useOwners } from "@/lib/firestore/hooks";
-import { createProperty, updateProperty } from "@/lib/firestore/mutations";
-import type { PropertyStatus, PropertyType } from "@/lib/types";
-import { Download, FileSpreadsheet, Plus, Search } from "lucide-react";
+import { useCustomRole, useOwnerProperties, useOwnerUnits, useOwners } from "@/lib/firestore/hooks";
+import { createProperty, createUnit, updateProperty, updateUnit } from "@/lib/firestore/mutations";
+import type { PropertyStatus, PropertyType, Unit } from "@/lib/types";
+import { ChevronDown, ChevronUp, Download, FileSpreadsheet, Plus, Search } from "lucide-react";
 
-const PROPERTY_TYPES: PropertyType[] = ["شقة", "فيلا", "محل تجاري", "مكتب", "أرض", "استراحة"];
+const PROPERTY_TYPES: PropertyType[] = ["شقة", "فيلا", "محل تجاري", "مكتب", "أرض", "استراحة", "غرفة عزاب"];
 const PROPERTY_STATUSES: PropertyStatus[] = ["متاحة", "مؤجرة", "مباعة", "تحت الصيانة"];
+
+function emptyUnitForm() {
+  return {
+    unitNumber: "",
+    floor: "",
+    type: "غرفة عزاب" as PropertyType,
+    area: "",
+    bedrooms: "",
+    bathrooms: "",
+    price: "",
+    listingType: "إيجار" as "إيجار" | "بيع",
+    status: "متاحة" as PropertyStatus,
+  };
+}
 // Rotates through the map's existing marker palette (see lib/mock-data.ts)
 // instead of asking the leasing agent to pick a color for every listing.
 const MARKER_COLORS = ["#3563f4", "#1fa35c", "#e0a318", "#dc3b3b", "#2196d8", "#1c3ab3"];
@@ -53,6 +67,7 @@ export default function AdminPropertiesPage() {
   const { user } = useAuth();
   const scope = useAccountantOwnerScope();
   const { data: properties } = useOwnerProperties(scope.queryOwnerId);
+  const { data: units } = useOwnerUnits(scope.queryOwnerId);
   const { data: owners } = useOwners();
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("الكل");
@@ -63,6 +78,42 @@ export default function AdminPropertiesPage() {
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(emptyPropertyForm());
+
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [unitForm, setUnitForm] = useState(emptyUnitForm());
+  const [submittingUnit, setSubmittingUnit] = useState(false);
+
+  const unitsByProperty = useMemo(() => {
+    const map = new Map<string, Unit[]>();
+    units.forEach((u) => map.set(u.propertyId, [...(map.get(u.propertyId) ?? []), u]));
+    return map;
+  }, [units]);
+
+  async function handleCreateUnit(e: React.FormEvent, propertyId: string, ownerId: string) {
+    e.preventDefault();
+    if (!unitForm.unitNumber.trim() || !unitForm.price) return;
+    setSubmittingUnit(true);
+    await createUnit({
+      propertyId,
+      ownerId,
+      unitNumber: unitForm.unitNumber,
+      floor: Number(unitForm.floor) || 0,
+      type: unitForm.type,
+      area: Number(unitForm.area) || 0,
+      bedrooms: Number(unitForm.bedrooms) || 0,
+      bathrooms: Number(unitForm.bathrooms) || 0,
+      price: Number(unitForm.price),
+      listingType: unitForm.listingType,
+      status: unitForm.status,
+      createdAt: new Date().toISOString().slice(0, 10),
+    });
+    setSubmittingUnit(false);
+    setUnitForm(emptyUnitForm());
+  }
+
+  async function handleUnitStatusChange(id: string, status: PropertyStatus) {
+    await updateUnit(id, { status });
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -155,6 +206,7 @@ export default function AdminPropertiesPage() {
           <Table>
             <THead>
               <Tr>
+                <Th></Th>
                 <Th>العقار</Th>
                 <Th>النوع</Th>
                 <Th>المدينة / الحي</Th>
@@ -163,33 +215,111 @@ export default function AdminPropertiesPage() {
                 <Th>المالك</Th>
                 <Th>الحالة</Th>
                 <Th>انتهاء الإدارة</Th>
+                <Th>الوحدات</Th>
               </Tr>
             </THead>
             <TBody>
-              {filtered.map((p) => (
-                <Tr key={p.id}>
-                  <Td className="font-semibold">{p.title}</Td>
-                  <Td>{p.type}</Td>
-                  <Td className="text-muted">{p.city} · {p.district}</Td>
-                  <Td>{p.area} م²</Td>
-                  <Td className="font-semibold">{currency(p.price)}{p.listingType === "إيجار" && <span className="text-muted font-normal">/سنويًا</span>}</Td>
-                  <Td className="text-muted">{owners.find((o) => o.id === p.ownerId)?.name}</Td>
-                  <Td>
-                    {canCreate ? (
-                      <Select
-                        value={p.status}
-                        onChange={(e) => handleStatusChange(p.id, e.target.value as PropertyStatus)}
-                        className="w-32 py-1.5 text-xs"
-                      >
-                        {PROPERTY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </Select>
-                    ) : (
-                      <Badge>{p.status}</Badge>
+              {filtered.map((p) => {
+                const isOpen = expandedId === p.id;
+                const propertyUnits = unitsByProperty.get(p.id) ?? [];
+                return (
+                  <Fragment key={p.id}>
+                    <Tr className="cursor-pointer" onClick={() => setExpandedId(isOpen ? null : p.id)}>
+                      <Td className="w-8 text-muted">{isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</Td>
+                      <Td className="font-semibold">{p.title}</Td>
+                      <Td>{p.type}</Td>
+                      <Td className="text-muted">{p.city} · {p.district}</Td>
+                      <Td>{p.area} م²</Td>
+                      <Td className="font-semibold">{currency(p.price)}{p.listingType === "إيجار" && <span className="text-muted font-normal">/سنويًا</span>}</Td>
+                      <Td className="text-muted">{owners.find((o) => o.id === p.ownerId)?.name}</Td>
+                      <Td onClick={(e) => e.stopPropagation()}>
+                        {canCreate ? (
+                          <Select
+                            value={p.status}
+                            onChange={(e) => handleStatusChange(p.id, e.target.value as PropertyStatus)}
+                            className="w-32 py-1.5 text-xs"
+                          >
+                            {PROPERTY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                          </Select>
+                        ) : (
+                          <Badge>{p.status}</Badge>
+                        )}
+                      </Td>
+                      <Td className="text-muted">{p.managementEndDate ?? "—"}</Td>
+                      <Td className="text-muted">{propertyUnits.length || "—"}</Td>
+                    </Tr>
+                    {isOpen && (
+                      <Tr className="bg-background">
+                        <Td colSpan={10} className="py-4 whitespace-normal align-top">
+                          <div className="pr-8 flex flex-col gap-4">
+                            {propertyUnits.length > 0 && (
+                              <Table>
+                                <THead>
+                                  <Tr>
+                                    <Th>الوحدة</Th>
+                                    <Th>الطابق</Th>
+                                    <Th>النوع</Th>
+                                    <Th>المساحة</Th>
+                                    <Th>السعر</Th>
+                                    <Th>الحالة</Th>
+                                  </Tr>
+                                </THead>
+                                <TBody>
+                                  {propertyUnits.map((u) => (
+                                    <Tr key={u.id}>
+                                      <Td className="font-semibold">{u.unitNumber}</Td>
+                                      <Td className="text-muted">{u.floor}</Td>
+                                      <Td>{u.type}</Td>
+                                      <Td>{u.area} م²</Td>
+                                      <Td className="font-semibold">{currency(u.price)}</Td>
+                                      <Td>
+                                        {canCreate ? (
+                                          <Select
+                                            value={u.status}
+                                            onChange={(e) => handleUnitStatusChange(u.id, e.target.value as PropertyStatus)}
+                                            className="w-32 py-1.5 text-xs"
+                                          >
+                                            {PROPERTY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                                          </Select>
+                                        ) : (
+                                          <Badge>{u.status}</Badge>
+                                        )}
+                                      </Td>
+                                    </Tr>
+                                  ))}
+                                </TBody>
+                              </Table>
+                            )}
+                            {canCreate && (
+                              <form onSubmit={(e) => handleCreateUnit(e, p.id, p.ownerId)} className="grid sm:grid-cols-4 gap-3 max-w-3xl">
+                                <Input placeholder="رقم الوحدة" value={unitForm.unitNumber} onChange={(e) => setUnitForm((f) => ({ ...f, unitNumber: e.target.value }))} required />
+                                <Input type="number" placeholder="الطابق" value={unitForm.floor} onChange={(e) => setUnitForm((f) => ({ ...f, floor: e.target.value }))} />
+                                <Select value={unitForm.type} onChange={(e) => setUnitForm((f) => ({ ...f, type: e.target.value as PropertyType }))}>
+                                  {PROPERTY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                                </Select>
+                                <Input type="number" placeholder="المساحة (م²)" value={unitForm.area} onChange={(e) => setUnitForm((f) => ({ ...f, area: e.target.value }))} />
+                                <Input type="number" placeholder="غرف النوم" value={unitForm.bedrooms} onChange={(e) => setUnitForm((f) => ({ ...f, bedrooms: e.target.value }))} />
+                                <Input type="number" placeholder="دورات المياه" value={unitForm.bathrooms} onChange={(e) => setUnitForm((f) => ({ ...f, bathrooms: e.target.value }))} />
+                                <Input type="number" placeholder="السعر (﷼)" value={unitForm.price} onChange={(e) => setUnitForm((f) => ({ ...f, price: e.target.value }))} required />
+                                <Select value={unitForm.listingType} onChange={(e) => setUnitForm((f) => ({ ...f, listingType: e.target.value as "إيجار" | "بيع" }))}>
+                                  <option value="إيجار">إيجار</option>
+                                  <option value="بيع">بيع</option>
+                                </Select>
+                                <Select value={unitForm.status} onChange={(e) => setUnitForm((f) => ({ ...f, status: e.target.value as PropertyStatus }))}>
+                                  {PROPERTY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                                </Select>
+                                <Button type="submit" size="sm" disabled={submittingUnit} className="self-start">
+                                  <Plus size={14} /> {submittingUnit ? "جارِ الحفظ..." : "إضافة وحدة"}
+                                </Button>
+                              </form>
+                            )}
+                          </div>
+                        </Td>
+                      </Tr>
                     )}
-                  </Td>
-                  <Td className="text-muted">{p.managementEndDate ?? "—"}</Td>
-                </Tr>
-              ))}
+                  </Fragment>
+                );
+              })}
             </TBody>
           </Table>
         </CardContent>

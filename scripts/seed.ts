@@ -20,7 +20,6 @@ if (useEmulator) {
 import { getAdminAuth, getAdminDb } from "../lib/firebase/admin";
 import {
   accountManagers,
-  buildings,
   clients,
   contracts,
   documentLinks,
@@ -94,7 +93,6 @@ async function main() {
   await seedCollection("expenses", expenses);
   await seedCollection("accountManagers", accountManagers);
   await seedCollection("systemUsers", systemUsers);
-  await seedCollection("buildings", buildings);
   await seedCollection("units", units);
   await seedCollection("vendors", vendors);
   await seedCollection("viewings", viewings);

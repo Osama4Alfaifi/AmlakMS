@@ -1,7 +1,6 @@
 import { generatePaymentSchedule } from "./contracts/schedule";
 import type {
   AccountManager,
-  Building,
   Client,
   Contract,
   DocumentLink,
@@ -104,18 +103,17 @@ export const clients: Client[] = [
   { id: "lead-3", name: "ماجد القحطاني", phone: "0513344556", email: "majed.q@mail.com", type: "عميل محتمل", joinedAt: "2026-08-02", stage: "عرض مقدم", interestedPropertyId: "prop-8" },
 ];
 
-export const buildings: Building[] = [
-  { id: "bld-1", name: "برج الياسمين السكني", city: "الرياض", district: "الياسمين", address: "شارع أنس بن مالك، الياسمين", ownerId: "own-5", notes: "مبنى سكني من 4 طوابق", createdAt: "2026-01-15" },
-  { id: "bld-2", name: "مجمع الروضة التجاري", city: "جدة", district: "الروضة", address: "شارع فلسطين، الروضة", ownerId: "own-3", notes: "محلات ومكاتب على واجهة رئيسية", createdAt: "2026-02-10" },
-];
-
+// A property can optionally branch into units (see Unit in lib/types.ts) —
+// modeled here on prop-1 (a standalone-looking apartment listing that's
+// really a small residential building) and prop-5 (a commercial storefront
+// property with multiple retail units).
 export const units: Unit[] = [
-  { id: "unit-1", buildingId: "bld-1", ownerId: "own-5", unitNumber: "101", floor: 1, type: "شقة", area: 120, bedrooms: 2, bathrooms: 2, price: 42000, listingType: "إيجار", status: "مؤجرة", createdAt: "2026-01-15" },
-  { id: "unit-2", buildingId: "bld-1", ownerId: "own-5", unitNumber: "102", floor: 1, type: "شقة", area: 130, bedrooms: 3, bathrooms: 2, price: 48000, listingType: "إيجار", status: "متاحة", createdAt: "2026-01-15" },
-  { id: "unit-3", buildingId: "bld-1", ownerId: "own-5", unitNumber: "201", floor: 2, type: "شقة", area: 125, bedrooms: 2, bathrooms: 2, price: 45000, listingType: "إيجار", status: "تحت الصيانة", createdAt: "2026-01-15" },
-  { id: "unit-4", buildingId: "bld-2", ownerId: "own-3", unitNumber: "G1", floor: 0, type: "محل تجاري", area: 60, bedrooms: 0, bathrooms: 1, price: 35000, listingType: "إيجار", status: "مؤجرة", createdAt: "2026-02-10" },
-  { id: "unit-5", buildingId: "bld-2", ownerId: "own-3", unitNumber: "G2", floor: 0, type: "محل تجاري", area: 55, bedrooms: 0, bathrooms: 1, price: 32000, listingType: "إيجار", status: "متاحة", createdAt: "2026-02-10" },
-  { id: "unit-6", buildingId: "bld-2", ownerId: "own-3", unitNumber: "M1", floor: 1, type: "مكتب", area: 80, bedrooms: 0, bathrooms: 1, price: 40000, listingType: "إيجار", status: "متاحة", createdAt: "2026-02-10" },
+  { id: "unit-1", propertyId: "prop-1", ownerId: "own-1", unitNumber: "101", floor: 1, type: "شقة", area: 120, bedrooms: 2, bathrooms: 2, price: 42000, listingType: "إيجار", status: "مؤجرة", createdAt: "2026-01-15" },
+  { id: "unit-2", propertyId: "prop-1", ownerId: "own-1", unitNumber: "102", floor: 1, type: "شقة", area: 130, bedrooms: 3, bathrooms: 2, price: 48000, listingType: "إيجار", status: "متاحة", createdAt: "2026-01-15" },
+  { id: "unit-3", propertyId: "prop-1", ownerId: "own-1", unitNumber: "201", floor: 2, type: "شقة", area: 125, bedrooms: 2, bathrooms: 2, price: 45000, listingType: "إيجار", status: "تحت الصيانة", createdAt: "2026-01-15" },
+  { id: "unit-4", propertyId: "prop-5", ownerId: "own-4", unitNumber: "G1", floor: 0, type: "محل تجاري", area: 60, bedrooms: 0, bathrooms: 1, price: 35000, listingType: "إيجار", status: "مؤجرة", createdAt: "2026-02-10" },
+  { id: "unit-5", propertyId: "prop-5", ownerId: "own-4", unitNumber: "G2", floor: 0, type: "محل تجاري", area: 55, bedrooms: 0, bathrooms: 1, price: 32000, listingType: "إيجار", status: "متاحة", createdAt: "2026-02-10" },
+  { id: "unit-6", propertyId: "prop-5", ownerId: "own-4", unitNumber: "M1", floor: 1, type: "مكتب", area: 80, bedrooms: 0, bathrooms: 1, price: 40000, listingType: "إيجار", status: "متاحة", createdAt: "2026-02-10" },
 ];
 
 export const vendors: Vendor[] = [
@@ -136,7 +134,7 @@ export const viewings: Viewing[] = [
 export const documentLinks: DocumentLink[] = [
   { id: "doc-1", title: "عقد إيجار شقة الملقا", category: "عقد", entityType: "عقد", entityId: "con-1", entityLabel: "CON-1", url: "https://drive.example.com/docs/con-1-lease.pdf", createdAt: "2026-02-01" },
   { id: "doc-2", title: "صك ملكية فيلا النرجس", category: "صك ملكية", entityType: "عقار", entityId: "prop-2", entityLabel: "فيلا دورين بحي النرجس", url: "https://drive.example.com/docs/prop-2-deed.pdf", createdAt: "2026-02-20" },
-  { id: "doc-3", title: "وثيقة تأمين مبنى الياسمين", category: "تأمين", entityType: "مبنى", entityId: "bld-1", entityLabel: "برج الياسمين السكني", url: "https://drive.example.com/docs/bld-1-insurance.pdf", createdAt: "2026-01-20" },
+  { id: "doc-3", title: "وثيقة تأمين شقة الملقا", category: "تأمين", entityType: "عقار", entityId: "prop-1", entityLabel: "شقة فاخرة بحي الملقا", url: "https://drive.example.com/docs/prop-1-insurance.pdf", createdAt: "2026-01-20" },
 ];
 
 export const expenses: Expense[] = [

@@ -21,7 +21,7 @@ import {
   remainingFromToday,
   subtractDays,
 } from "@/lib/contracts/schedule";
-import { useOwnerContracts, useOwnerProperties, useOwners, useTenants } from "@/lib/firestore/hooks";
+import { useOwnerContracts, useOwnerProperties, useOwnerUnits, useOwners, useTenants } from "@/lib/firestore/hooks";
 import { createContract, createTenant, updateContractPayments, updateTenantContract } from "@/lib/firestore/mutations";
 import { parseEjarPdf } from "@/lib/rega/parseEjarContract";
 import type { ContractPayment, PaymentCycle } from "@/lib/types";
@@ -45,6 +45,7 @@ function emptyForm() {
   return {
     type: "إيجار" as "إيجار" | "بيع" | "استثمار",
     propertyId: "",
+    unitId: "",
     tenantMode: "existing" as "existing" | "new",
     tenantId: "",
     newTenantName: "",
@@ -72,6 +73,7 @@ export default function AdminContractsPage() {
   const scope = useAccountantOwnerScope();
   const { data: contracts } = useOwnerContracts(scope.queryOwnerId);
   const { data: properties } = useOwnerProperties(scope.queryOwnerId);
+  const { data: units } = useOwnerUnits(scope.queryOwnerId);
   const { data: owners } = useOwners();
   const { data: tenants } = useTenants();
 
@@ -93,16 +95,24 @@ export default function AdminContractsPage() {
 
   const propertyTitleById = useMemo(() => new Map(properties.map((p) => [p.id, p.title])), [properties]);
   const tenantNameById = useMemo(() => new Map(tenants.map((t) => [t.id, t.name])), [tenants]);
+  const unitLabelById = useMemo(() => new Map(units.map((u) => [u.id, `${u.unitNumber} — ${u.type}`])), [units]);
+  const unitsByProperty = useMemo(() => {
+    const map = new Map<string, typeof units>();
+    units.forEach((u) => map.set(u.propertyId, [...(map.get(u.propertyId) ?? []), u]));
+    return map;
+  }, [units]);
+  const selectedPropertyUnits = form.propertyId ? unitsByProperty.get(form.propertyId) ?? [] : [];
 
   const enriched = useMemo(
     () =>
       contracts.map((c) => ({
         contract: c,
         propertyTitle: propertyTitleById.get(c.propertyId) ?? "",
+        unitLabel: c.unitId ? unitLabelById.get(c.unitId) ?? "" : "",
         ownerName: owners.find((o) => o.id === c.ownerId)?.name ?? "",
         tenantName: tenantNameById.get(c.tenantId) ?? "",
       })),
-    [contracts, propertyTitleById, owners, tenantNameById]
+    [contracts, propertyTitleById, unitLabelById, owners, tenantNameById]
   );
 
   const filtered = useMemo(
@@ -116,9 +126,9 @@ export default function AdminContractsPage() {
   );
 
   const exportRows = () =>
-    filtered.map(({ contract: c, propertyTitle, ownerName, tenantName }) => ({
+    filtered.map(({ contract: c, propertyTitle, unitLabel, ownerName, tenantName }) => ({
       "رقم العقد": contractDisplayNumber(c),
-      العقار: propertyTitle,
+      العقار: unitLabel ? `${propertyTitle} — ${unitLabel}` : propertyTitle,
       المالك: ownerName,
       المستأجر: tenantName,
       النوع: c.type,
@@ -201,6 +211,7 @@ export default function AdminContractsPage() {
     if (!property || !form.endDate || !Number(form.value)) return;
     if (form.tenantMode === "existing" && !form.tenantId) return;
     if (form.tenantMode === "new" && !form.newTenantName.trim()) return;
+    if (selectedPropertyUnits.length > 0 && !form.unitId) return;
 
     setSubmitting(true);
     let tenantId = form.tenantId;
@@ -214,6 +225,7 @@ export default function AdminContractsPage() {
         employer: form.newTenantEmployer || undefined,
         idExpiryDate: form.newTenantIdExpiryDate || undefined,
         propertyId: property.id,
+        unitId: form.unitId || undefined,
         contractId: "",
       });
     }
@@ -221,6 +233,7 @@ export default function AdminContractsPage() {
     const contractId = await createContract(
       {
         propertyId: property.id,
+        unitId: form.unitId || undefined,
         ownerId: property.ownerId,
         tenantId,
         type: form.type,
@@ -303,7 +316,7 @@ export default function AdminContractsPage() {
                 </Tr>
               </THead>
               <TBody>
-                {filtered.map(({ contract: c, propertyTitle, ownerName, tenantName }) => {
+                {filtered.map(({ contract: c, propertyTitle, unitLabel, ownerName, tenantName }) => {
                   const isOpen = expandedId === c.id;
                   return (
                     <Fragment key={c.id}>
@@ -326,7 +339,7 @@ export default function AdminContractsPage() {
                             )}
                           </span>
                         </Td>
-                        <Td className="max-w-[180px] truncate">{propertyTitle}</Td>
+                        <Td className="max-w-[180px] truncate">{propertyTitle}{unitLabel && <span className="text-muted"> — {unitLabel}</span>}</Td>
                         <Td className="text-muted">{ownerName}</Td>
                         <Td className="text-muted">{tenantName || "—"}</Td>
                         <Td>{c.type}</Td>
@@ -340,6 +353,7 @@ export default function AdminContractsPage() {
                         const remaining = remainingFromToday(c.endDate);
                         const details: { label: string; value: string; tone?: string }[] = [
                           { label: "رقم العقد", value: contractDisplayNumber(c) },
+                          ...(unitLabel ? [{ label: "الوحدة", value: unitLabel }] : []),
                           { label: "نوع العقد", value: c.type },
                           { label: "تاريخ الإبرام", value: c.signedAt ?? "—" },
                           { label: "تاريخ البداية", value: c.startDate },
@@ -489,11 +503,20 @@ export default function AdminContractsPage() {
                   </div>
                   <div>
                     <Label htmlFor="cproperty">العقار</Label>
-                    <Select id="cproperty" value={form.propertyId} onChange={(e) => setForm((f) => ({ ...f, propertyId: e.target.value }))} required>
+                    <Select id="cproperty" value={form.propertyId} onChange={(e) => setForm((f) => ({ ...f, propertyId: e.target.value, unitId: "" }))} required>
                       <option value="" disabled>اختر عقارًا</option>
                       {properties.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
                     </Select>
                   </div>
+                  {selectedPropertyUnits.length > 0 && (
+                    <div>
+                      <Label htmlFor="cunit">الوحدة</Label>
+                      <Select id="cunit" value={form.unitId} onChange={(e) => setForm((f) => ({ ...f, unitId: e.target.value }))} required>
+                        <option value="" disabled>اختر وحدة</option>
+                        {selectedPropertyUnits.map((u) => <option key={u.id} value={u.id}>{u.unitNumber} — {u.type}</option>)}
+                      </Select>
+                    </div>
+                  )}
                   <div>
                     <Label htmlFor="cvalue">القيمة (﷼)</Label>
                     <Input

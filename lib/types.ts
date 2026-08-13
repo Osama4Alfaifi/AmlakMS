@@ -45,7 +45,7 @@ export interface CustomRole {
   createdAt: string;
 }
 
-export type PropertyType = "شقة" | "فيلا" | "محل تجاري" | "مكتب" | "أرض" | "استراحة";
+export type PropertyType = "شقة" | "فيلا" | "محل تجاري" | "مكتب" | "أرض" | "استراحة" | "غرفة عزاب";
 export type PropertyStatus = "متاحة" | "مؤجرة" | "مباعة" | "تحت الصيانة";
 
 export interface Property {
@@ -104,6 +104,10 @@ export interface Tenant {
   secondaryPhone?: string;
   employer?: string;
   propertyId: string;
+  // Set when propertyId points at a property that's split into units (see
+  // Unit below) — identifies which specific unit this tenant occupies.
+  // Undefined for a standalone (non-branched) property.
+  unitId?: string;
   contractId: string;
 }
 
@@ -122,6 +126,10 @@ export interface ContractPayment {
 export interface Contract {
   id: string;
   propertyId: string;
+  // Set when propertyId points at a property that's split into units (see
+  // Unit below) — this lease is for one specific unit, not the whole
+  // property. Undefined for a standalone (non-branched) property.
+  unitId?: string;
   ownerId: string;
   tenantId: string;
   type: "إيجار" | "بيع" | "استثمار";
@@ -304,24 +312,14 @@ export interface Vendor {
   createdAt: string;
 }
 
-// A building groups multiple rentable/sellable units under one address —
-// additive to the existing single-level `Property` catalog, which continues
-// to represent standalone listings unchanged.
-export interface Building {
-  id: string;
-  name: string;
-  city: string;
-  district: string;
-  address: string;
-  ownerId: string;
-  notes?: string;
-  createdAt: string;
-}
-
+// A property can optionally branch into units — e.g. a complex with many
+// individually-leased rooms/shops, each getting its own Contract/Tenant via
+// unitId above, instead of the whole property being one rentable listing.
+// A property with no units behaves exactly as before (standalone listing).
 export interface Unit {
   id: string;
-  buildingId: string;
-  // Denormalized from the building — same list-provability reason as
+  propertyId: string;
+  // Denormalized from the property — same list-provability reason as
   // Expense.ownerId (see firestore.rules).
   ownerId: string;
   unitNumber: string;
@@ -358,7 +356,7 @@ export interface Viewing {
 // Firebase project to the Blaze plan; deferred until that's decided (see
 // the same call on expense receipts).
 export type DocumentCategory = "عقد" | "فاتورة" | "هوية" | "صك ملكية" | "تأمين" | "أخرى";
-export type DocumentEntityType = "عقار" | "عقد" | "مالك" | "مستأجر" | "مبنى";
+export type DocumentEntityType = "عقار" | "عقد" | "مالك" | "مستأجر";
 
 export interface DocumentLink {
   id: string;
