@@ -1,8 +1,9 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
+import { useEffect } from "react";
 import L from "leaflet";
-import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
 
 const markerIcon = L.divIcon({
   className: "",
@@ -24,6 +25,22 @@ function ClickHandler({ onPick }: { onPick: (lat: number, lng: number) => void }
   return null;
 }
 
+// MapContainer's `center` prop only applies on first mount (react-leaflet
+// doesn't re-pan on prop changes) — this imperatively recenters the view
+// when the caller picks a region/city from the wizard's dropdowns, without
+// re-centering on every ordinary pin click/drag (those don't touch flyTo).
+// Uses setView rather than flyTo — flyTo's animated pan never completed
+// reliably (confirmed via direct map instance inspection: the animation
+// call returned normally but the view snapped back to its prior center),
+// so an instant jump beats a broken animation.
+function FlyTo({ target }: { target: { lat: number; lng: number; zoom?: number } }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView([target.lat, target.lng], target.zoom ?? 12);
+  }, [map, target.lat, target.lng, target.zoom]);
+  return null;
+}
+
 // Single-marker picker: click anywhere to move the pin, or drag it —
 // used by the intake wizard's location step (app/admin/properties/new).
 // PropertyMap (components/map/PropertyMap.tsx) stays read-only/multi-marker
@@ -33,10 +50,15 @@ export function LocationPicker({
   lat,
   lng,
   onChange,
+  flyTo,
 }: {
   lat: number;
   lng: number;
   onChange: (lat: number, lng: number) => void;
+  // Set by the caller when a region/city dropdown picks a new place —
+  // pans the map there without moving the pin on its own (the caller
+  // updates lat/lng separately if it wants the pin to follow).
+  flyTo?: { lat: number; lng: number; zoom?: number };
 }) {
   return (
     <MapContainer center={[lat, lng]} zoom={12} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
@@ -56,6 +78,7 @@ export function LocationPicker({
         }}
       />
       <ClickHandler onPick={onChange} />
+      {flyTo && <FlyTo target={flyTo} />}
     </MapContainer>
   );
 }

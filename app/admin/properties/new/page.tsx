@@ -11,6 +11,7 @@ import { useOwners, useProperties } from "@/lib/firestore/hooks";
 import { createOwner, createProperty, createUnit } from "@/lib/firestore/mutations";
 import { UNIT_AMENITIES, UNIT_TYPES } from "@/lib/types";
 import type { MeterBilledTo, PropertyType, UnitType } from "@/lib/types";
+import { SAUDI_REGIONS } from "@/lib/saudi-regions";
 import {
   AirVent,
   Archive,
@@ -43,6 +44,7 @@ const MARKER_COLORS = ["#3563f4", "#1fa35c", "#e0a318", "#dc3b3b", "#2196d8", "#
 const METER_BILLED_TO: MeterBilledTo[] = ["المالك", "المستأجر"];
 const DEFAULT_LAT = 24.7136;
 const DEFAULT_LNG = 46.6753;
+const OTHER_CITY = "مدينة أخرى";
 
 const AMENITY_ICONS: Record<(typeof UNIT_AMENITIES)[number], typeof Bath> = {
   "دورة مياه": Bath,
@@ -141,6 +143,32 @@ export default function NewPropertyWizardPage() {
   const [postalCode, setPostalCode] = useState("");
   const [lat, setLat] = useState(DEFAULT_LAT);
   const [lng, setLng] = useState(DEFAULT_LNG);
+  const [cityMode, setCityMode] = useState<"select" | "other">("select");
+  const [flyTo, setFlyTo] = useState<{ lat: number; lng: number; zoom?: number } | undefined>(undefined);
+
+  function handleRegionChange(newRegion: string) {
+    setRegion(newRegion);
+    setCity("");
+    setCityMode("select");
+    const regionData = SAUDI_REGIONS.find((r) => r.name === newRegion);
+    const center = regionData?.cities[0];
+    if (center) setFlyTo({ lat: center.lat, lng: center.lng, zoom: 8 });
+  }
+
+  function handleCityChange(newCity: string) {
+    if (newCity === OTHER_CITY) {
+      setCityMode("other");
+      setCity("");
+      return;
+    }
+    setCity(newCity);
+    const cityData = SAUDI_REGIONS.find((r) => r.name === region)?.cities.find((c) => c.name === newCity);
+    if (cityData) {
+      setLat(cityData.lat);
+      setLng(cityData.lng);
+      setFlyTo({ lat: cityData.lat, lng: cityData.lng, zoom: 13 });
+    }
+  }
 
   // Step 3 — property details
   const [title, setTitle] = useState("");
@@ -403,11 +431,29 @@ export default function NewPropertyWizardPage() {
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <Label htmlFor="region">المنطقة</Label>
-                  <Input id="region" value={region} onChange={(e) => setRegion(e.target.value)} />
+                  <Select id="region" value={region} onChange={(e) => handleRegionChange(e.target.value)}>
+                    <option value="">اختر المنطقة</option>
+                    {SAUDI_REGIONS.map((r) => <option key={r.name} value={r.name}>{r.name}</option>)}
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="city">المدينة</Label>
-                  <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} required />
+                  {cityMode === "select" ? (
+                    <Select id="city" value={city} onChange={(e) => handleCityChange(e.target.value)} disabled={!region} required>
+                      <option value="" disabled>{region ? "اختر المدينة" : "اختر المنطقة أولًا"}</option>
+                      {(SAUDI_REGIONS.find((r) => r.name === region)?.cities ?? []).map((c) => (
+                        <option key={c.name} value={c.name}>{c.name}</option>
+                      ))}
+                      <option value={OTHER_CITY}>مدينة أخرى...</option>
+                    </Select>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="اسم المدينة" required autoFocus />
+                      <Button type="button" size="sm" variant="outline" onClick={() => { setCityMode("select"); setCity(""); }}>
+                        رجوع للقائمة
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="district">الحي</Label>
@@ -434,7 +480,12 @@ export default function NewPropertyWizardPage() {
                 <Label>الموقع على الخريطة</Label>
                 <p className="text-xs text-muted mb-2">اضغط على الخريطة أو اسحب الدبوس لتحديد الموقع بدقة</p>
                 <div className="h-72 rounded-xl overflow-hidden border border-border">
-                  <LocationPicker lat={lat} lng={lng} onChange={(newLat, newLng) => { setLat(newLat); setLng(newLng); }} />
+                  <LocationPicker
+                    lat={lat}
+                    lng={lng}
+                    onChange={(newLat, newLng) => { setLat(newLat); setLng(newLng); }}
+                    flyTo={flyTo}
+                  />
                 </div>
               </div>
             </CardContent>

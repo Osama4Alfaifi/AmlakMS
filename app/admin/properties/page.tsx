@@ -200,7 +200,7 @@ export default function AdminPropertiesPage() {
             <CardTitle>جميع العقارات</CardTitle>
             <CardSubtitle>{properties.length} عقار مُدار عبر المنصة</CardSubtitle>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Select value={city} onChange={(e) => setCity(e.target.value)} className="w-36">
               {cities.map((c) => (
                 <option key={c} value={c}>{c}</option>
