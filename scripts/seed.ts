@@ -100,7 +100,7 @@ async function main() {
 
   const personas: Persona[] = [
     { id: "admin", role: "admin", name: "مدير النظام", email: "admin@amlakms.sa", linkedId: null },
-    ...owners.map((o): Persona => ({ id: o.id, role: "owner", name: o.name, email: o.email, linkedId: o.id })),
+    ...owners.map((o): Persona => ({ id: o.id, role: "owner", name: o.name, email: o.email ?? "", linkedId: o.id })),
     ...tenants.map((t): Persona => ({ id: t.id, role: "tenant", name: t.name, email: t.email ?? "", linkedId: t.id })),
     ...technicians.map(
       (t): Persona => ({ id: t.id, role: "technician", name: t.name, email: `${t.id}@amlakms.sa`, linkedId: t.id })

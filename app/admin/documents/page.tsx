@@ -62,6 +62,21 @@ export default function AdminDocumentsPage() {
     [documents, category, query]
   );
 
+  function resolveOwnerId(): string | undefined {
+    switch (entityType) {
+      case "عقار":
+        return properties.find((p) => p.id === entityId)?.ownerId;
+      case "عقد":
+        return contracts.find((c) => c.id === entityId)?.ownerId;
+      case "مالك":
+        return entityId;
+      case "مستأجر": {
+        const tenant = tenants.find((t) => t.id === entityId);
+        return properties.find((p) => p.id === tenant?.propertyId)?.ownerId;
+      }
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const entity = entityOptions?.find((o) => o.id === entityId);
@@ -73,6 +88,7 @@ export default function AdminDocumentsPage() {
       entityType,
       entityId: entity.id,
       entityLabel: entity.label,
+      ownerId: resolveOwnerId(),
       url,
       notes: notes || undefined,
       createdAt: new Date().toISOString().slice(0, 10),

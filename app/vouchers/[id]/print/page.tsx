@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowRight, Building2, Download, Printer } from "lucide-react";
+import { ArrowRight, Building2, Download, FileText, Printer } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { currency } from "@/lib/mock-data";
 import { useFirestoreDoc } from "@/lib/firestore/hooks";
@@ -14,6 +14,7 @@ export default function VoucherPrintPage() {
   const router = useRouter();
   const voucher = useFirestoreDoc<Voucher>("vouchers", params.id);
   const [downloading, setDownloading] = useState(false);
+  const [downloadingEinvoice, setDownloadingEinvoice] = useState(false);
 
   if (voucher === undefined) return null;
 
@@ -29,7 +30,7 @@ export default function VoucherPrintPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-6">
+    <div className="min-h-screen bg-background py-6 pt-[max(1.5rem,env(safe-area-inset-top))]">
       <div className="no-print max-w-3xl mx-auto px-5 mb-4 flex items-center justify-between">
         <button onClick={() => router.push("/admin/vouchers")} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
           <ArrowRight size={16} /> رجوع
@@ -47,6 +48,20 @@ export default function VoucherPrintPage() {
           }}>
             <Download size={16} /> {downloading ? "جارِ التحميل..." : "تحميل PDF"}
           </Button>
+          {voucher.type === "قبض" && voucher.contractId && (
+            <Button variant="outline" disabled={downloadingEinvoice} onClick={async () => {
+              setDownloadingEinvoice(true);
+              try {
+                await downloadPdf(`/api/pdf/einvoice/${voucher.id}`, `einvoice-${voucher.number}`);
+              } catch {
+                alert("تعذّر تحميل الفاتورة الإلكترونية");
+              } finally {
+                setDownloadingEinvoice(false);
+              }
+            }}>
+              <FileText size={16} /> {downloadingEinvoice ? "جارِ التحميل..." : "تحميل فاتورة إلكترونية (تجريبي)"}
+            </Button>
+          )}
           <Button onClick={() => window.print()}>
             <Printer size={16} /> طباعة / تصدير PDF
           </Button>

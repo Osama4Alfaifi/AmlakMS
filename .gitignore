@@ -51,6 +51,17 @@ service-account*.json
 # vercel
 .vercel
 
+# android (Capacitor) — local.properties has a machine-specific SDK path,
+# the rest are build outputs; the android/ project structure itself is
+# committed.
+/android/local.properties
+/android/.gradle/
+/android/app/build/
+/android/build/
+/android/captures/
+*.apk
+*.aab
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

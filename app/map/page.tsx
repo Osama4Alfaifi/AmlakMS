@@ -6,7 +6,8 @@ import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Label, Select } from "@/components/ui/Input";
 import { currency } from "@/lib/mock-data";
-import { useProperties } from "@/lib/firestore/hooks";
+import { useAuth } from "@/lib/auth-context";
+import { useOwnerProperties } from "@/lib/firestore/hooks";
 
 const PropertyMap = dynamic(() => import("@/components/map/PropertyMap").then((m) => m.PropertyMap), {
   ssr: false,
@@ -16,7 +17,17 @@ const PropertyMap = dynamic(() => import("@/components/map/PropertyMap").then((m
 });
 
 export default function MapPage() {
-  const { data: properties } = useProperties();
+  const { user, ready } = useAuth();
+  // Query-level scoping (matches firestore.rules): an owner's query is
+  // constrained to their own ownerId; admin/leasingAgent pass null for the
+  // unconstrained fetch their broader access is entitled to. Gating the
+  // unconstrained branch on `ready` (not just role) matters here — this
+  // component's hooks run before DashboardShell's own ready-check takes
+  // effect, so an eventual owner would otherwise briefly fire an
+  // unconstrained query (denied by firestore.rules) during the render(s)
+  // before their role is known.
+  const ownerScopedId = !ready ? undefined : user?.role === "owner" ? user.linkedId ?? undefined : null;
+  const { data: properties } = useOwnerProperties(ownerScopedId);
   const [city, setCity] = useState("الكل");
   const [type, setType] = useState("الكل");
   const [status, setStatus] = useState("الكل");

@@ -12,7 +12,7 @@ import { currency } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
 import { downloadExcel } from "@/lib/excel";
 import { useAuth } from "@/lib/auth-context";
-import { useFirestoreDoc, useProperties, useQuotes } from "@/lib/firestore/hooks";
+import { useFirestoreDoc, useOwnerQuotes } from "@/lib/firestore/hooks";
 import { createQuote } from "@/lib/firestore/mutations";
 import type { InvoiceItem, Owner } from "@/lib/types";
 import { Download, Eye, FileSpreadsheet, Plus, Search, Trash2 } from "lucide-react";
@@ -23,18 +23,14 @@ function totalOf(items: InvoiceItem[], taxRate: number) {
 }
 
 export default function QuotesPage() {
-  const { user } = useAuth();
-  const { data: allQuotes } = useQuotes();
-  const { data: properties } = useProperties();
+  const { user, ready } = useAuth();
   const currentOwner = useFirestoreDoc<Owner>("owners", user?.role === "owner" ? user.linkedId ?? undefined : undefined);
-
-  // Owners only see quotes tied to their own properties; admin sees all.
-  const quotesList = useMemo(() => {
-    if (user?.role !== "owner") return allQuotes;
-    if (!currentOwner) return [];
-    const myTitles = new Set(properties.filter((p) => p.ownerId === currentOwner.id).map((p) => p.title));
-    return allQuotes.filter((q) => myTitles.has(q.propertyTitle));
-  }, [allQuotes, properties, user?.role, currentOwner]);
+  // Owner-scoped at the query level (ownerId is set on every owner-created
+  // quote — see handleSubmit) — null for admin gives the unconstrained
+  // fetch it's entitled to via the wildcard rule. Gated on `ready` first so
+  // an eventual owner never briefly fires the unconstrained branch before
+  // their role is known (see the same note in app/map/page.tsx).
+  const { data: quotesList } = useOwnerQuotes(!ready ? undefined : user?.role === "owner" ? user.linkedId ?? undefined : null);
 
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -86,11 +82,15 @@ export default function QuotesPage() {
     e.preventDefault();
     if (!clientName.trim() || !propertyTitle.trim()) return;
     setSubmitting(true);
-    const number = `QT-${new Date().getFullYear()}-${String(200 + allQuotes.length + 1).padStart(3, "0")}`;
+    const number = `QT-${new Date().getFullYear()}-${String(200 + quotesList.length + 1).padStart(3, "0")}`;
     await createQuote({
       number,
       clientName,
       propertyTitle,
+      // Tied to the creating owner regardless of what they typed in
+      // propertyTitle — this is what firestore.rules actually checks, not
+      // a match against the real property list (see the rules comment).
+      ownerId: user?.role === "owner" ? currentOwner?.id : undefined,
       items: items.filter((i) => i.description.trim()),
       taxRate,
       status: "مسودة",

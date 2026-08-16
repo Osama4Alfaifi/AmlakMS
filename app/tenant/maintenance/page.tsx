@@ -8,16 +8,17 @@ import { Button } from "@/components/ui/Button";
 import { Input, Label, Select, Textarea } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { useAuth } from "@/lib/auth-context";
-import { useFirestoreDoc, useMyMaintenanceRequests, useProperties } from "@/lib/firestore/hooks";
+import { useFirestoreDoc, useMyMaintenanceRequests } from "@/lib/firestore/hooks";
 import { createMaintenanceRequest } from "@/lib/firestore/mutations";
-import type { Priority, Tenant } from "@/lib/types";
+import type { Priority, Property, Tenant } from "@/lib/types";
 import { CheckCircle2 } from "lucide-react";
 
 export default function TenantMaintenancePage() {
   const { user } = useAuth();
   const currentTenant = useFirestoreDoc<Tenant>("tenants", user?.linkedId ?? undefined);
   const { data: requests } = useMyMaintenanceRequests(user?.uid);
-  const { data: properties } = useProperties();
+  // Single get-by-id — matches firestore.rules' myTenantPropertyId() scoping.
+  const myProperty = useFirestoreDoc<Property>("properties", currentTenant?.propertyId);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("متوسط");
@@ -30,10 +31,9 @@ export default function TenantMaintenancePage() {
     e.preventDefault();
     if (!title.trim() || !currentTenant || !user) return;
     setSubmitting(true);
-    const property = properties.find((p) => p.id === currentTenant.propertyId);
     await createMaintenanceRequest({
       propertyId: currentTenant.propertyId,
-      ownerId: property?.ownerId ?? null,
+      ownerId: myProperty?.ownerId ?? null,
       tenantName: currentTenant.name,
       createdByUid: user.uid,
       technicianId: null,

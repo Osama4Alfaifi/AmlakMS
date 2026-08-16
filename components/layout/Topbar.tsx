@@ -12,7 +12,7 @@ export function Topbar({ title, onMenuClick }: { title?: string; onMenuClick?: (
   if (!user) return null;
 
   return (
-    <header className="no-print h-16 border-b border-border bg-surface flex items-center justify-between px-4 lg:px-6 shrink-0">
+    <header className="no-print min-h-16 border-b border-border bg-surface flex items-center justify-between px-4 lg:px-6 shrink-0 pt-[env(safe-area-inset-top)]">
       <div className="flex items-center gap-3">
         <button onClick={onMenuClick} className="lg:hidden p-2 -mr-2 text-muted hover:text-foreground">
           <Menu size={20} />

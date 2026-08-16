@@ -23,7 +23,7 @@ function useNavItems(role: Role, customRoleId?: string | null): NavItem[] {
 
 function Brand({ action }: { action?: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-2.5 px-5 h-16 border-b border-border shrink-0">
+    <div className="flex items-center justify-between gap-2.5 px-5 min-h-16 border-b border-border shrink-0 pt-[env(safe-area-inset-top)]">
       <div className="flex items-center gap-2.5">
         <div className="h-9 w-9 rounded-xl bg-brand-600 flex items-center justify-center text-white">
           <Building2 size={18} />
@@ -95,7 +95,7 @@ export function MobileSidebar({
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <aside
         className={cn(
-          "absolute top-0 right-0 h-full w-72 bg-surface flex flex-col transition-transform duration-200",
+          "absolute top-0 right-0 h-full w-72 bg-surface flex flex-col transition-transform duration-200 pb-[env(safe-area-inset-bottom)]",
           open ? "translate-x-0" : "translate-x-full"
         )}
       >

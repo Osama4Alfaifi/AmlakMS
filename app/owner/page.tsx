@@ -12,34 +12,49 @@ import { BarChartCard } from "@/components/charts/Charts";
 import { contractDisplayNumber } from "@/lib/contracts/display";
 import { currency, DEFAULT_MANAGEMENT_FEE_RATE } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth-context";
+import { computeNotifications } from "@/lib/notifications";
+import { useDismissedNotifications } from "@/lib/use-dismissed-notifications";
 import {
+  useAppSettings,
   useContracts,
   useFirestoreDoc,
   useOwnerExpenses,
   useOwnerMaintenanceRequests,
-  useProperties,
+  useOwnerProperties,
   useTechnicians,
+  useTenants,
 } from "@/lib/firestore/hooks";
 import type { Owner } from "@/lib/types";
-import { Building2, ChevronDown, ChevronUp, FileScan, FileText, TrendingDown, TrendingUp, Wallet, Wrench } from "lucide-react";
+import { Bell, Building2, ChevronDown, ChevronUp, FileScan, FileText, TrendingDown, TrendingUp, Wallet, Wrench, X } from "lucide-react";
 
 export default function OwnerDashboardPage() {
   const { user } = useAuth();
   const [expandedExpenseId, setExpandedExpenseId] = useState<string | null>(null);
   const currentOwner = useFirestoreDoc<Owner>("owners", user?.linkedId ?? undefined);
-  const { data: properties } = useProperties();
+  const { data: properties } = useOwnerProperties(user?.linkedId ?? undefined);
   const { data: contracts } = useContracts();
   const { data: myMaintenance } = useOwnerMaintenanceRequests(user?.linkedId);
   const { data: myExpenses } = useOwnerExpenses(user?.linkedId);
   const { data: technicians } = useTechnicians();
+  const { data: tenants } = useTenants();
+  const settings = useAppSettings();
+  const { isDismissed, dismiss } = useDismissedNotifications();
 
   if (!currentOwner) return null;
 
-  const myProperties = properties.filter((p) => p.ownerId === currentOwner.id);
+  // Already scoped at the query level (useOwnerProperties above) — no
+  // client-side re-filter needed.
+  const myProperties = properties;
   const myContracts = contracts.filter((c) => c.ownerId === currentOwner.id);
   const activeContracts = myContracts.filter((c) => c.status === "نشط");
   const annualIncome = activeContracts.reduce((sum, c) => sum + c.value, 0);
   const openMaintenance = myMaintenance.filter((m) => m.status !== "مكتمل");
+
+  const allNotifications = computeNotifications(myContracts, myProperties, tenants, {
+    contract: settings?.notificationLeadDays ?? 30,
+    payment: 14,
+  }).filter((n) => !isDismissed(n.id));
+  const notifications = allNotifications.slice(0, 6);
 
   const totalExpenses = myExpenses.reduce((sum, e) => sum + e.amount, 0);
   const feeRate = currentOwner.managementFeeRate ?? DEFAULT_MANAGEMENT_FEE_RATE;
@@ -60,6 +75,39 @@ export default function OwnerDashboardPage() {
           <StatCard label="الدخل السنوي المتوقع" value={currency(annualIncome)} icon={TrendingUp} tone="accent" />
           <StatCard label="طلبات صيانة مفتوحة" value={String(openMaintenance.length)} icon={Wrench} tone="warning" />
         </div>
+
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle className="flex items-center gap-1.5"><Bell size={16} /> الإشعارات</CardTitle>
+              <CardSubtitle>عقود قرب الانتهاء ودفعات مستحقة على عقاراتي، الأقدم أولًا</CardSubtitle>
+            </div>
+            {allNotifications.length > notifications.length && (
+              <span className="text-xs font-semibold text-muted">+{allNotifications.length - notifications.length} أخرى</span>
+            )}
+          </CardHeader>
+          <CardContent>
+            {notifications.length === 0 ? (
+              <p className="text-sm text-muted py-2">لا توجد إشعارات حاليًا</p>
+            ) : (
+              <ul className="flex flex-col gap-2.5">
+                {notifications.map((n) => (
+                  <li key={n.id} className="flex items-start gap-3 text-sm">
+                    <Badge tone={n.type === "عقد قرب الانتهاء" ? "warning" : "info"}>{n.type}</Badge>
+                    <span className="flex-1">{n.message}</span>
+                    <button
+                      onClick={() => dismiss(n.id)}
+                      title="إخفاء هذا الإشعار"
+                      className="text-muted hover:text-danger-500 shrink-0"
+                    >
+                      <X size={14} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

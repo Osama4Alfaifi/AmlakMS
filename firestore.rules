@@ -63,6 +63,14 @@ service cloud.firestore {
       return signedIn() && myRole() == "maintenanceStaff";
     }
 
+    // A tenant's own property, resolved via their tenants/{linkedId} doc —
+    // same reasoning as isMyOwner: proves scope for a specific property id.
+    // Only ever called behind myRole() == "tenant" (see match /properties
+    // below), so the get() only runs for tenant accounts.
+    function myTenantPropertyId() {
+      return get(/databases/$(database)/documents/tenants/$(myProfile().linkedId)).data.propertyId;
+    }
+
     // Dynamic permissions engine (additive — see Role in lib/types.ts). Only
     // ever evaluated for accounts whose role is literally "custom": the
     // `myRole() == "custom"` check short-circuits `&&` before the get() runs,
@@ -91,14 +99,22 @@ service cloud.firestore {
       allow read: if signedIn() && (request.auth.uid == uid || isAccountant());
     }
 
-    // Reference/catalog data: any signed-in account can read it. Accountants
-    // are narrowed to properties whose owner is assigned to them
-    // (myRole() != "accountant" short-circuits this for every other role,
-    // leaving their access unchanged). Leasing agents are the ones who
-    // onboard new listings (app/admin/properties) — not owners, who stay
-    // read-only everywhere in this app; admin is covered by the wildcard.
+    // Reference/catalog data — but only for the roles that legitimately work
+    // across every owner's listings (admin via wildcard, leasingAgent,
+    // technician, maintenanceStaff — all have cross-owner jobs). Accountant,
+    // owner, and tenant are each narrowed to their own scope: accountant to
+    // their assigned owners, owner to their own properties, tenant to the
+    // single property they occupy (resolved via myTenantPropertyId()). Every
+    // owner/tenant-reachable page queries with a matching where()/get() —
+    // see useOwnerProperties and the useFirestoreDoc calls in app/tenant,
+    // app/tenant/maintenance, app/owner, app/owner/statement/print, app/map.
     match /properties/{id} {
-      allow read: if signedIn() && (myRole() != "accountant" || isMyOwner(resource.data.ownerId)) || customCan("properties", "read");
+      allow read: if signedIn() && (
+        (myRole() != "accountant" && myRole() != "owner" && myRole() != "tenant") ||
+        isMyOwner(resource.data.ownerId) ||
+        (myRole() == "owner" && resource.data.ownerId == myProfile().linkedId) ||
+        (myRole() == "tenant" && myTenantPropertyId() == id)
+      ) || customCan("properties", "read");
       allow create: if isLeasingAgent() || customCan("properties", "write");
       allow update: if isLeasingAgent() || customCan("properties", "write");
     }
@@ -108,7 +124,13 @@ service cloud.firestore {
     // build its nav — see components/layout/Sidebar.tsx); only admin writes
     // (wildcard above).
     match /roles/{id} { allow read: if signedIn(); }
-    match /owners/{id} { allow read: if signedIn(); }
+    // Leasing agents onboard new owners as part of onboarding their
+    // property (see app/admin/properties/new) — same write gate properties
+    // itself already uses.
+    match /owners/{id} {
+      allow read: if signedIn();
+      allow create, update: if isLeasingAgent() || customCan("properties", "write");
+    }
     // Accountants register a new tenant inline when writing a contract for
     // someone not yet in the system (update covers back-filling the new
     // tenant's contractId once the contract itself has been created).
@@ -119,10 +141,18 @@ service cloud.firestore {
     match /technicians/{id} { allow read: if signedIn(); }
     // Accountants create/manage contracts (and their payment schedules) —
     // see app/admin/contracts and lib/contracts/schedule.ts — narrowed to
-    // the owners assigned to them (myRole() != "accountant" preserves
-    // every other role's existing unrestricted read).
+    // the owners assigned to them. Tenants are narrowed to their own single
+    // contract (needed for app/tenant's payment-schedule view — see
+    // app/api/tenant-payments/settle for how a tenant actually marks their
+    // own payment paid, since writes here still require isMyOwner/customCan
+    // below). Every other role (owner, leasingAgent, technician,
+    // maintenanceStaff, admin) keeps its existing unrestricted read.
     match /contracts/{id} {
-      allow read: if signedIn() && (myRole() != "accountant" || isMyOwner(resource.data.ownerId)) || customCan("contracts", "read");
+      allow read: if signedIn() && (
+        (myRole() != "accountant" && myRole() != "tenant") ||
+        isMyOwner(resource.data.ownerId) ||
+        (myRole() == "tenant" && resource.data.tenantId == myProfile().linkedId)
+      ) || customCan("contracts", "read");
       allow create: if isMyOwner(request.resource.data.ownerId) || customCan("contracts", "write");
       allow update: if isMyOwner(resource.data.ownerId) || customCan("contracts", "write");
     }
@@ -133,7 +163,17 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update: if isLeasingAgent() || customCan("clients", "write");
     }
-    match /invoices/{id} { allow read: if signedIn(); }
+    // Invoices: same denormalized-ownerId/tenantId scoping as expenses —
+    // accountant narrowed to assigned owners, owner to their own, tenant to
+    // their own. No client write path exists yet (seed/admin data only), so
+    // there's no create/update rule (falls through to the admin wildcard).
+    match /invoices/{id} {
+      allow read: if signedIn() && (
+        isMyOwner(resource.data.ownerId) ||
+        (myRole() == "owner" && resource.data.ownerId == myProfile().linkedId) ||
+        (myRole() == "tenant" && resource.data.tenantId == myProfile().linkedId)
+      );
+    }
     // App-wide settings (single doc settings/app) — company profile,
     // branding, notification lead time, maintenance-mode toggle. Every
     // signed-in account reads it (branding/lead-time apply to everyone);
@@ -163,8 +203,14 @@ service cloud.firestore {
       allow read, create, update: if isLeasingAgent();
     }
 
-    // Document links are internal admin tooling only — no explicit rule:
-    // falls through to default-deny for everyone except admin (wildcard).
+    // Document links: admin manages the catalog (wildcard covers
+    // create/update). Owners get read-only access to their own documents
+    // (deeds, insurance, contract copies) via the denormalized ownerId —
+    // see app/owner/documents. Every other role still falls through to
+    // default-deny.
+    match /documentLinks/{id} {
+      allow read: if signedIn() && myRole() == "owner" && resource.data.ownerId == myProfile().linkedId;
+    }
 
     // Receipt/disbursement vouchers — accountant tooling.
     match /vouchers/{id} {
@@ -197,15 +243,14 @@ service cloud.firestore {
       allow update: if isMyOwner(resource.data.ownerId) || customCan("expenses", "write");
     }
 
-    // Quotes: admin/owner can create. Any signed-in account can read at the
-    // rules level — the UI narrows an owner's view to quotes tied to their
-    // own properties (app/quotes/page.tsx), but quotes don't carry a
-    // propertyId to check here (only a free-text propertyTitle), so this
-    // layer can't enforce the same narrowing without denormalizing an
-    // ownerId onto each quote. Worth doing before real production use.
+    // Quotes: denormalized ownerId (set to the creating owner regardless of
+    // the free-text propertyTitle — see app/quotes/page.tsx) scopes an
+    // owner to their own quotes only; admin covered by the wildcard above.
+    // An admin-authored quote not tied to a specific owner (a generic
+    // service quote) simply has no ownerId and isn't owner-readable.
     match /quotes/{id} {
-      allow read: if signedIn();
-      allow create: if signedIn() && (myRole() == "admin" || myRole() == "owner");
+      allow read: if signedIn() && myRole() == "owner" && resource.data.ownerId == myProfile().linkedId;
+      allow create: if signedIn() && myRole() == "owner" && request.resource.data.ownerId == myProfile().linkedId;
     }
 
     // Support tickets: anyone signed in can file one (as themselves only).

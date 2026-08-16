@@ -20,7 +20,7 @@ export interface AccountantOwnerScope {
 }
 
 function computeScope(): AccountantOwnerScope {
-  const { user } = useAuth();
+  const { user, ready } = useAuth();
   const { data: owners } = useOwners();
   const isAccountant = user?.role === "accountant";
   const ownerIds = isAccountant ? user?.ownerIds ?? [] : [];
@@ -43,7 +43,15 @@ function computeScope(): AccountantOwnerScope {
     if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, ownerId);
   }
 
-  const queryOwnerId: string | null | undefined = !isAccountant
+  // Gated on `ready` first: consumers of this scope (useOwnerProperties,
+  // useOwnerContracts, etc.) run before DashboardShell's own ready-check
+  // takes effect, so without this an eventual accountant would briefly
+  // resolve `!isAccountant` to true (role not loaded yet, not actually
+  // confirmed non-accountant) and fire an unconstrained fetch that
+  // firestore.rules now denies once their real role is known.
+  const queryOwnerId: string | null | undefined = !ready
+    ? undefined
+    : !isAccountant
     ? null
     : ownerIds.length === 0
     ? undefined

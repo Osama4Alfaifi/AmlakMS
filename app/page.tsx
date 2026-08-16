@@ -128,8 +128,8 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-border bg-surface">
-        <div className="max-w-7xl mx-auto px-5 lg:px-8 h-16 flex items-center justify-between">
+      <header className="border-b border-border bg-surface pt-[env(safe-area-inset-top)]">
+        <div className="max-w-7xl mx-auto px-5 lg:px-8 min-h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="h-9 w-9 rounded-xl bg-brand-600 flex items-center justify-center text-white">
               <Building2 size={18} />

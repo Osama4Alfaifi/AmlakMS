@@ -15,7 +15,7 @@ const DEMO_PASSWORD = "demo1234";
 
 const roleOptions: { role: Role; icon: typeof ShieldCheck; demoEmail: string }[] = [
   { role: "admin", icon: UserCog, demoEmail: "admin@amlakms.sa" },
-  { role: "owner", icon: ShieldCheck, demoEmail: owners[0].email },
+  { role: "owner", icon: ShieldCheck, demoEmail: owners[0].email ?? "" },
   { role: "tenant", icon: KeyRound, demoEmail: tenants[0].email ?? "" },
   { role: "technician", icon: Wrench, demoEmail: `${technicians[0].id}@amlakms.sa` },
   { role: "accountant", icon: Calculator, demoEmail: "accountant@amlakms.sa" },
@@ -64,7 +64,7 @@ export function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-5">
+    <div className="min-h-screen flex items-center justify-center p-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1.25rem,env(safe-area-inset-bottom))]">
       <div className="w-full max-w-md">
         <Link href="/" className="flex items-center justify-center gap-2.5 mb-8">
           <div className="h-10 w-10 rounded-xl bg-brand-600 flex items-center justify-center text-white">

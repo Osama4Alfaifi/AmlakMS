@@ -11,32 +11,28 @@ import { Input, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { PieChartCard, RevenueAreaChart } from "@/components/charts/Charts";
 import { useAuth } from "@/lib/auth-context";
+import { useAccountantOwnerScope } from "@/lib/accountant-scope";
 import { currency, monthlyRevenue } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
 import { downloadExcel } from "@/lib/excel";
-import { useFirestoreDoc, useInvoices, useProperties } from "@/lib/firestore/hooks";
-import type { Owner, Tenant } from "@/lib/types";
+import { useOwnerInvoices, useTenantInvoices } from "@/lib/firestore/hooks";
 import { Download, Eye, FileSpreadsheet, FileWarning, ReceiptText, Search, Wallet } from "lucide-react";
 
 export default function ReportsPage() {
   const { user } = useAuth();
+  const scope = useAccountantOwnerScope();
   const [status, setStatus] = useState("الكل");
   const [query, setQuery] = useState("");
-  const { data: invoices } = useInvoices();
-  const { data: properties } = useProperties();
-  const currentOwner = useFirestoreDoc<Owner>("owners", user?.role === "owner" ? user.linkedId ?? undefined : undefined);
-  const currentTenant = useFirestoreDoc<Tenant>("tenants", user?.role === "tenant" ? user.linkedId ?? undefined : undefined);
-
-  const scopedInvoices = useMemo(() => {
-    if (user?.role === "owner" && currentOwner) {
-      const myTitles = new Set(properties.filter((p) => p.ownerId === currentOwner.id).map((p) => p.title));
-      return invoices.filter((i) => myTitles.has(i.propertyTitle));
-    }
-    if (user?.role === "tenant" && currentTenant) {
-      return invoices.filter((i) => i.clientName === currentTenant.name);
-    }
-    return invoices;
-  }, [user?.role, currentOwner, currentTenant, properties, invoices]);
+  // Both scoped queries are called unconditionally (rules of hooks) — only
+  // the one matching the signed-in role's field constraint actually fetches
+  // (see fieldConstraint in lib/firestore/hooks.ts: undefined = don't fetch
+  // yet, null = unconstrained). admin gets ownerId=null → unconstrained,
+  // which its wildcard rule allows regardless of query shape.
+  const ownerScopedId =
+    user?.role === "owner" ? user.linkedId ?? undefined : scope.isAccountant ? scope.queryOwnerId : user?.role === "admin" ? null : undefined;
+  const { data: ownerInvoices } = useOwnerInvoices(ownerScopedId);
+  const { data: tenantInvoices } = useTenantInvoices(user?.role === "tenant" ? user.linkedId ?? undefined : undefined);
+  const scopedInvoices = user?.role === "tenant" ? tenantInvoices : ownerInvoices;
 
   const filtered = useMemo(
     () =>

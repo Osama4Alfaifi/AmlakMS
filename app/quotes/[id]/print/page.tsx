@@ -33,7 +33,7 @@ export default function QuotePrintPage() {
   const total = subtotal + tax;
 
   return (
-    <div className="min-h-screen bg-background py-6">
+    <div className="min-h-screen bg-background py-6 pt-[max(1.5rem,env(safe-area-inset-top))]">
       <div className="no-print max-w-3xl mx-auto px-5 mb-4 flex items-center justify-between">
         <button onClick={() => router.push("/quotes")} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
           <ArrowRight size={16} /> رجوع

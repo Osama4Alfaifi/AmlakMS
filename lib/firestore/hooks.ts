@@ -162,6 +162,11 @@ export function useViewings() {
 export function useDocumentLinks() {
   return useFirestoreCollection<DocumentLink>("documentLinks");
 }
+// Scoped by ownerId — see firestore.rules' owner-read scoping on
+// documentLinks (app/owner/documents).
+export function useOwnerDocumentLinks(ownerId: string | null | undefined) {
+  return useFirestoreQuery<DocumentLink>("documentLinks", fieldConstraint("ownerId", ownerId));
+}
 export function useAuditLogs() {
   return useFirestoreCollection<AuditLog>("auditLogs");
 }
@@ -216,6 +221,18 @@ export function useOwnerProperties(ownerId: string | null | undefined) {
 }
 export function useOwnerUnits(ownerId: string | null | undefined) {
   return useFirestoreQuery<Unit>("units", fieldConstraint("ownerId", ownerId));
+}
+// Scoped by ownerId — same field an owner's own linkedId matches, so this
+// hook serves both the owner role (pass user.linkedId) and admin (pass null
+// for an unconstrained fetch). See firestore.rules for the matching rule.
+export function useOwnerQuotes(ownerId: string | null | undefined) {
+  return useFirestoreQuery<Quote>("quotes", fieldConstraint("ownerId", ownerId));
+}
+export function useOwnerInvoices(ownerId: string | null | undefined) {
+  return useFirestoreQuery<Invoice>("invoices", fieldConstraint("ownerId", ownerId));
+}
+export function useTenantInvoices(tenantId: string | null | undefined) {
+  return useFirestoreQuery<Invoice>("invoices", fieldConstraint("tenantId", tenantId));
 }
 
 // Scoped to one ticket category — safe for technicians reading "الدعم الفني".

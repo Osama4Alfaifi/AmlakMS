@@ -10,7 +10,7 @@ import {
   useContracts,
   useFirestoreDoc,
   useOwnerExpenses,
-  useProperties,
+  useOwnerProperties,
 } from "@/lib/firestore/hooks";
 import { downloadPdf } from "@/lib/pdf/download";
 import type { Owner } from "@/lib/types";
@@ -19,14 +19,12 @@ export default function OwnerStatementPrintPage() {
   const router = useRouter();
   const { user } = useAuth();
   const currentOwner = useFirestoreDoc<Owner>("owners", user?.linkedId ?? undefined);
-  const { data: properties } = useProperties();
+  const { data: myProperties } = useOwnerProperties(user?.linkedId ?? undefined);
   const { data: contracts } = useContracts();
   const { data: expenses } = useOwnerExpenses(user?.linkedId);
   const [downloading, setDownloading] = useState(false);
 
   if (!currentOwner) return null;
-
-  const myProperties = properties.filter((p) => p.ownerId === currentOwner.id);
   const myContracts = contracts.filter((c) => c.ownerId === currentOwner.id && c.status === "نشط");
   const annualIncome = myContracts.reduce((sum, c) => sum + c.value, 0);
   const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
@@ -35,7 +33,7 @@ export default function OwnerStatementPrintPage() {
   const netIncome = annualIncome - totalExpenses - managementFee;
 
   return (
-    <div className="min-h-screen bg-background py-6">
+    <div className="min-h-screen bg-background py-6 pt-[max(1.5rem,env(safe-area-inset-top))]">
       <div className="no-print max-w-3xl mx-auto px-5 mb-4 flex items-center justify-between">
         <button onClick={() => router.push("/owner")} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
           <ArrowRight size={16} /> رجوع
@@ -92,7 +90,7 @@ export default function OwnerStatementPrintPage() {
           </thead>
           <tbody>
             {myContracts.map((c) => {
-              const property = properties.find((p) => p.id === c.propertyId);
+              const property = myProperties.find((p) => p.id === c.propertyId);
               return (
                 <tr key={c.id} className="border-b border-border/60">
                   <td className="py-2.5">{property?.title ?? "—"}</td>

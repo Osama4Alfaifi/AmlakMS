@@ -60,7 +60,7 @@ export function DashboardShell({
       <MobileSidebar role={user.role} customRoleId={user.customRoleId} open={mobileOpen} onClose={() => setMobileOpen(false)} />
       <div className="flex-1 min-w-0 flex flex-col">
         <Topbar title={title} onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 p-4 lg:p-6 overflow-x-hidden flex flex-col gap-4 lg:gap-6">
+        <main className="flex-1 px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] lg:px-6 lg:pt-6 lg:pb-6 overflow-x-hidden flex flex-col gap-4 lg:gap-6">
           <ShellOwnerScopeBanner />
           {customDenied ? (
             <div className="flex-1 flex items-center justify-center">

@@ -96,7 +96,7 @@ export const contracts: Contract[] = rawContracts.map((c) => ({
 }));
 
 export const clients: Client[] = [
-  ...owners.map((o): Client => ({ id: o.id, name: o.name, phone: o.phone, email: o.email, type: "مالك", joinedAt: o.joinedAt })),
+  ...owners.map((o): Client => ({ id: o.id, name: o.name, phone: o.phone, email: o.email ?? "", type: "مالك", joinedAt: o.joinedAt })),
   ...tenants.map((t, i): Client => ({ id: t.id, name: t.name, phone: t.phone, email: t.email ?? "", type: "مستأجر", joinedAt: contracts[i]?.startDate ?? "2026-01-01" })),
   { id: "lead-1", name: "عمر الشمري", phone: "0511223344", email: "omar.sh@mail.com", type: "عميل محتمل", joinedAt: "2026-07-01", stage: "تواصل أولي", interestedPropertyId: "prop-2" },
   { id: "lead-2", name: "دانة العصيمي", phone: "0512233445", email: "dana.a@mail.com", type: "عميل محتمل", joinedAt: "2026-07-18", stage: "معاينة مجدولة", interestedPropertyId: "prop-10" },
@@ -111,8 +111,8 @@ export const units: Unit[] = [
   { id: "unit-1", propertyId: "prop-1", ownerId: "own-1", unitNumber: "101", floor: 1, type: "شقة", area: 120, bedrooms: 2, bathrooms: 2, price: 42000, listingType: "إيجار", status: "مؤجرة", createdAt: "2026-01-15" },
   { id: "unit-2", propertyId: "prop-1", ownerId: "own-1", unitNumber: "102", floor: 1, type: "شقة", area: 130, bedrooms: 3, bathrooms: 2, price: 48000, listingType: "إيجار", status: "متاحة", createdAt: "2026-01-15" },
   { id: "unit-3", propertyId: "prop-1", ownerId: "own-1", unitNumber: "201", floor: 2, type: "شقة", area: 125, bedrooms: 2, bathrooms: 2, price: 45000, listingType: "إيجار", status: "تحت الصيانة", createdAt: "2026-01-15" },
-  { id: "unit-4", propertyId: "prop-5", ownerId: "own-4", unitNumber: "G1", floor: 0, type: "محل تجاري", area: 60, bedrooms: 0, bathrooms: 1, price: 35000, listingType: "إيجار", status: "مؤجرة", createdAt: "2026-02-10" },
-  { id: "unit-5", propertyId: "prop-5", ownerId: "own-4", unitNumber: "G2", floor: 0, type: "محل تجاري", area: 55, bedrooms: 0, bathrooms: 1, price: 32000, listingType: "إيجار", status: "متاحة", createdAt: "2026-02-10" },
+  { id: "unit-4", propertyId: "prop-5", ownerId: "own-4", unitNumber: "G1", floor: 0, type: "محل", area: 60, bedrooms: 0, bathrooms: 1, price: 35000, listingType: "إيجار", status: "مؤجرة", createdAt: "2026-02-10" },
+  { id: "unit-5", propertyId: "prop-5", ownerId: "own-4", unitNumber: "G2", floor: 0, type: "محل", area: 55, bedrooms: 0, bathrooms: 1, price: 32000, listingType: "إيجار", status: "متاحة", createdAt: "2026-02-10" },
   { id: "unit-6", propertyId: "prop-5", ownerId: "own-4", unitNumber: "M1", floor: 1, type: "مكتب", area: 80, bedrooms: 0, bathrooms: 1, price: 40000, listingType: "إيجار", status: "متاحة", createdAt: "2026-02-10" },
 ];
 
@@ -132,9 +132,9 @@ export const viewings: Viewing[] = [
 // Placeholder URLs (example.com) — real usage has the admin paste a link to
 // an actually-hosted file (Drive, email, etc.) via app/admin/documents.
 export const documentLinks: DocumentLink[] = [
-  { id: "doc-1", title: "عقد إيجار شقة الملقا", category: "عقد", entityType: "عقد", entityId: "con-1", entityLabel: "CON-1", url: "https://drive.example.com/docs/con-1-lease.pdf", createdAt: "2026-02-01" },
-  { id: "doc-2", title: "صك ملكية فيلا النرجس", category: "صك ملكية", entityType: "عقار", entityId: "prop-2", entityLabel: "فيلا دورين بحي النرجس", url: "https://drive.example.com/docs/prop-2-deed.pdf", createdAt: "2026-02-20" },
-  { id: "doc-3", title: "وثيقة تأمين شقة الملقا", category: "تأمين", entityType: "عقار", entityId: "prop-1", entityLabel: "شقة فاخرة بحي الملقا", url: "https://drive.example.com/docs/prop-1-insurance.pdf", createdAt: "2026-01-20" },
+  { id: "doc-1", title: "عقد إيجار شقة الملقا", category: "عقد", entityType: "عقد", entityId: "con-1", entityLabel: "CON-1", ownerId: "own-1", url: "https://drive.example.com/docs/con-1-lease.pdf", createdAt: "2026-02-01" },
+  { id: "doc-2", title: "صك ملكية فيلا النرجس", category: "صك ملكية", entityType: "عقار", entityId: "prop-2", entityLabel: "فيلا دورين بحي النرجس", ownerId: "own-2", url: "https://drive.example.com/docs/prop-2-deed.pdf", createdAt: "2026-02-20" },
+  { id: "doc-3", title: "وثيقة تأمين شقة الملقا", category: "تأمين", entityType: "عقار", entityId: "prop-1", entityLabel: "شقة فاخرة بحي الملقا", ownerId: "own-1", url: "https://drive.example.com/docs/prop-1-insurance.pdf", createdAt: "2026-01-20" },
 ];
 
 export const expenses: Expense[] = [
@@ -155,21 +155,22 @@ export const expenses: Expense[] = [
 ];
 
 export const invoices: Invoice[] = [
-  { id: "inv-1", number: "INV-2026-101", clientName: "خالد المطيري", propertyTitle: "شقة فاخرة بحي الملقا", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 65000 }], taxRate: 0, issueDate: "2026-02-01", dueDate: "2026-02-10", status: "مدفوعة" },
-  { id: "inv-2", number: "INV-2026-102", clientName: "نورة الحربي", propertyTitle: "شقة عوائل بحي الروضة", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 42000 }], taxRate: 0, issueDate: "2026-03-15", dueDate: "2026-03-25", status: "مدفوعة" },
-  { id: "inv-3", number: "INV-2026-103", clientName: "تركي الغامدي", propertyTitle: "محل تجاري بواجهة رئيسية", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 38000 }], taxRate: 0.15, issueDate: "2025-12-01", dueDate: "2025-12-10", status: "مدفوعة" },
-  { id: "inv-4", number: "INV-2026-104", clientName: "ريم الزهراني", propertyTitle: "شقة استثمارية بحي العزيزية", items: [{ description: "إيجار ربع سنوي", quantity: 1, unitPrice: 8000 }], taxRate: 0, issueDate: "2026-08-01", dueDate: "2026-08-10", status: "معلقة" },
-  { id: "inv-5", number: "INV-2026-105", clientName: "لمى القرني", propertyTitle: "شقة قريبة من الحرم", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 45000 }], taxRate: 0, issueDate: "2026-04-01", dueDate: "2026-04-10", status: "مدفوعة" },
-  { id: "inv-6", number: "INV-2026-106", clientName: "سعود الرشيد", propertyTitle: "شقة اقتصادية بحي السلي", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 27000 }], taxRate: 0, issueDate: "2026-03-01", dueDate: "2026-03-10", status: "متأخرة" },
-  { id: "inv-7", number: "INV-2026-107", clientName: "بندر العنزي", propertyTitle: "مكتب مشترك بحي الورود", items: [{ description: "إيجار شهري", quantity: 1, unitPrice: 2833 }], taxRate: 0.15, issueDate: "2026-07-01", dueDate: "2026-07-05", status: "معلقة" },
-  { id: "inv-8", number: "INV-2026-108", clientName: "خالد المطيري", propertyTitle: "فيلا مودرن بحي الياسمين", items: [{ description: "دفعة شراء", quantity: 1, unitPrice: 1650000 }], taxRate: 0, issueDate: "2025-10-20", dueDate: "2025-10-25", status: "مدفوعة" },
+  { id: "inv-1", number: "INV-2026-101", clientName: "خالد المطيري", propertyTitle: "شقة فاخرة بحي الملقا", ownerId: "own-1", tenantId: "ten-1", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 65000 }], taxRate: 0, issueDate: "2026-02-01", dueDate: "2026-02-10", status: "مدفوعة" },
+  { id: "inv-2", number: "INV-2026-102", clientName: "نورة الحربي", propertyTitle: "شقة عوائل بحي الروضة", ownerId: "own-3", tenantId: "ten-2", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 42000 }], taxRate: 0, issueDate: "2026-03-15", dueDate: "2026-03-25", status: "مدفوعة" },
+  { id: "inv-3", number: "INV-2026-103", clientName: "تركي الغامدي", propertyTitle: "محل تجاري بواجهة رئيسية", ownerId: "own-4", tenantId: "ten-3", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 38000 }], taxRate: 0.15, issueDate: "2025-12-01", dueDate: "2025-12-10", status: "مدفوعة" },
+  { id: "inv-4", number: "INV-2026-104", clientName: "ريم الزهراني", propertyTitle: "شقة استثمارية بحي العزيزية", ownerId: "own-2", tenantId: "ten-4", items: [{ description: "إيجار ربع سنوي", quantity: 1, unitPrice: 8000 }], taxRate: 0, issueDate: "2026-08-01", dueDate: "2026-08-10", status: "معلقة" },
+  { id: "inv-5", number: "INV-2026-105", clientName: "لمى القرني", propertyTitle: "شقة قريبة من الحرم", ownerId: "own-3", tenantId: "ten-6", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 45000 }], taxRate: 0, issueDate: "2026-04-01", dueDate: "2026-04-10", status: "مدفوعة" },
+  { id: "inv-6", number: "INV-2026-106", clientName: "سعود الرشيد", propertyTitle: "شقة اقتصادية بحي السلي", ownerId: "own-2", tenantId: "ten-7", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 27000 }], taxRate: 0, issueDate: "2026-03-01", dueDate: "2026-03-10", status: "متأخرة" },
+  { id: "inv-7", number: "INV-2026-107", clientName: "بندر العنزي", propertyTitle: "مكتب مشترك بحي الورود", ownerId: "own-1", tenantId: "ten-5", items: [{ description: "إيجار شهري", quantity: 1, unitPrice: 2833 }], taxRate: 0.15, issueDate: "2026-07-01", dueDate: "2026-07-05", status: "معلقة" },
+  // Sale, not a rental — no tenantId (the buyer isn't a rental tenant record).
+  { id: "inv-8", number: "INV-2026-108", clientName: "خالد المطيري", propertyTitle: "فيلا مودرن بحي الياسمين", ownerId: "own-2", items: [{ description: "دفعة شراء", quantity: 1, unitPrice: 1650000 }], taxRate: 0, issueDate: "2025-10-20", dueDate: "2025-10-25", status: "مدفوعة" },
 ];
 
 export const quotes: Quote[] = [
-  { id: "q-1", number: "QT-2026-201", clientName: "عمر الشمري", propertyTitle: "فيلا دورين بحي النرجس", items: [{ description: "سعر الفيلا", quantity: 1, unitPrice: 1850000 }, { description: "رسوم خدمات الوساطة", quantity: 1, unitPrice: 18500 }], taxRate: 0, status: "مرسل", createdAt: "2026-08-01", validUntil: "2026-08-15", notes: "السعر شامل رسوم النقل الأساسية." },
-  { id: "q-2", number: "QT-2026-202", clientName: "دانة العصيمي", propertyTitle: "شقة عصرية بحي الياسمين", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 58000 }, { description: "تأمين استرجاعي", quantity: 1, unitPrice: 5800 }], taxRate: 0, status: "مسودة", createdAt: "2026-08-05", validUntil: "2026-08-20" },
-  { id: "q-3", number: "QT-2026-203", clientName: "ماجد القحطاني", propertyTitle: "أرض سكنية بحي القيروان", items: [{ description: "سعر الأرض", quantity: 1, unitPrice: 980000 }], taxRate: 0, status: "مقبول", createdAt: "2026-07-20", validUntil: "2026-08-05" },
-  { id: "q-4", number: "QT-2026-204", clientName: "خالد المطيري", propertyTitle: "مكتب إداري ببرج الأعمال", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 55000 }], taxRate: 0.15, status: "مرفوض", createdAt: "2026-06-10", validUntil: "2026-06-25" },
+  { id: "q-1", number: "QT-2026-201", clientName: "عمر الشمري", propertyTitle: "فيلا دورين بحي النرجس", ownerId: "own-2", items: [{ description: "سعر الفيلا", quantity: 1, unitPrice: 1850000 }, { description: "رسوم خدمات الوساطة", quantity: 1, unitPrice: 18500 }], taxRate: 0, status: "مرسل", createdAt: "2026-08-01", validUntil: "2026-08-15", notes: "السعر شامل رسوم النقل الأساسية." },
+  { id: "q-2", number: "QT-2026-202", clientName: "دانة العصيمي", propertyTitle: "شقة عصرية بحي الياسمين", ownerId: "own-5", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 58000 }, { description: "تأمين استرجاعي", quantity: 1, unitPrice: 5800 }], taxRate: 0, status: "مسودة", createdAt: "2026-08-05", validUntil: "2026-08-20" },
+  { id: "q-3", number: "QT-2026-203", clientName: "ماجد القحطاني", propertyTitle: "أرض سكنية بحي القيروان", ownerId: "own-3", items: [{ description: "سعر الأرض", quantity: 1, unitPrice: 980000 }], taxRate: 0, status: "مقبول", createdAt: "2026-07-20", validUntil: "2026-08-05" },
+  { id: "q-4", number: "QT-2026-204", clientName: "خالد المطيري", propertyTitle: "مكتب إداري ببرج الأعمال", ownerId: "own-1", items: [{ description: "إيجار سنوي", quantity: 1, unitPrice: 55000 }], taxRate: 0.15, status: "مرفوض", createdAt: "2026-06-10", validUntil: "2026-06-25" },
 ];
 
 export const technicians: Technician[] = [
@@ -203,7 +204,7 @@ export const accountManagers: AccountManager[] = [
 export const systemUsers: SystemUser[] = [
   { id: "usr-1", name: "سارة الدوسري", email: "sara.doussari@amlakms.sa", role: "مدير حساب", status: "نشط", lastLogin: "2026-08-10 09:12" },
   { id: "usr-2", name: "مدير النظام", email: "admin@amlakms.sa", role: "admin", status: "نشط", lastLogin: "2026-08-10 08:40" },
-  ...owners.map((o): SystemUser => ({ id: o.id, name: o.name, email: o.email, role: "owner", status: "نشط", lastLogin: "2026-08-09 21:05" })),
+  ...owners.map((o): SystemUser => ({ id: o.id, name: o.name, email: o.email ?? "", role: "owner", status: "نشط", lastLogin: "2026-08-09 21:05" })),
   ...tenants.map((t): SystemUser => ({ id: t.id, name: t.name, email: t.email ?? "", role: "tenant", status: "نشط", lastLogin: "2026-08-09 18:30" })),
   ...technicians.map((t): SystemUser => ({ id: t.id, name: t.name, email: `${t.id}@amlakms.sa`, role: "technician", status: "نشط", lastLogin: "2026-08-10 07:15" })),
 ];

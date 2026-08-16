@@ -12,7 +12,7 @@ import { contractDisplayNumber } from "@/lib/contracts/display";
 import { currency } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
 import { downloadExcel } from "@/lib/excel";
-import { useInvoices, useOwnerContracts, useOwnerExpenses, useOwnerProperties, useOwners, useTenants } from "@/lib/firestore/hooks";
+import { useOwnerContracts, useOwnerExpenses, useOwnerInvoices, useOwnerProperties, useOwners, useTenants } from "@/lib/firestore/hooks";
 import { Download, FileSpreadsheet, Percent, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 
 const ARABIC_MONTHS = [
@@ -31,7 +31,7 @@ function monthLabel(key: string) {
 
 export default function FinancialReportsPage() {
   const scope = useAccountantOwnerScope();
-  const { data: invoices } = useInvoices();
+  const { data: invoices } = useOwnerInvoices(scope.queryOwnerId);
   const { data: expenses } = useOwnerExpenses(scope.queryOwnerId);
   const { data: contracts } = useOwnerContracts(scope.queryOwnerId);
   const { data: properties } = useOwnerProperties(scope.queryOwnerId);

@@ -15,6 +15,7 @@ import type {
   LeadStage,
   MaintenanceRequest,
   MaintenanceStatus,
+  Owner,
   Property,
   Quote,
   Role,
@@ -117,6 +118,15 @@ export async function assignVendorToMaintenanceRequest(id: string, vendorId: str
 export async function createProperty(property: Omit<Property, "id">) {
   const ref = await addDoc(collection(getDb(), "properties"), property);
   void logAudit("properties", ref.id, "create", property.title);
+  return ref.id;
+}
+
+// Leasing-agent/admin only (see firestore.rules) — used by both the plain
+// "owner موجود" picker and the intake wizard's inline "مالك جديد" creation
+// (app/admin/properties/new).
+export async function createOwner(owner: Omit<Owner, "id">) {
+  const ref = await addDoc(collection(getDb(), "owners"), owner);
+  void logAudit("owners", ref.id, "create", owner.name);
   return ref.id;
 }
 

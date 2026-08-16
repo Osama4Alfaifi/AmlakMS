@@ -45,8 +45,36 @@ export interface CustomRole {
   createdAt: string;
 }
 
-export type PropertyType = "شقة" | "فيلا" | "محل تجاري" | "مكتب" | "أرض" | "استراحة" | "غرفة عزاب";
+// Kept additive — existing seeded properties use "شقة"/"محل تجاري"/etc.
+// already, and Unit now has its own much finer-grained UnitType below, so
+// these two enums don't need to stay in lockstep.
+export type PropertyType =
+  | "شقة"
+  | "فيلا"
+  | "محل تجاري"
+  | "مكتب"
+  | "أرض"
+  | "استراحة"
+  | "غرفة عزاب"
+  | "عمارة"
+  | "مجمع تجاري مفتوح"
+  | "مجمع تجاري مغلق"
+  | "برج"
+  | "أخرى";
 export type PropertyStatus = "متاحة" | "مؤجرة" | "مباعة" | "تحت الصيانة";
+
+// Who's billed for a utility meter's consumption — the owner (المالك) or the
+// tenant (المستأجر) currently occupying the listing.
+export type MeterBilledTo = "المالك" | "المستأجر";
+
+// Additional owner captured at intake for contact purposes only (no
+// ownership-percentage/financial-split logic) — see app/admin/properties/new.
+export interface CoOwnerContact {
+  name: string;
+  idNumber?: string;
+  birthDate?: string;
+  phone?: string;
+}
 
 export interface Property {
   id: string;
@@ -74,18 +102,41 @@ export interface Property {
   hasBroker?: boolean;
   brokerName?: string;
   brokerPhone?: string;
+  // Captured by the leasing-agent intake wizard (app/admin/properties/new) —
+  // optional everywhere else, since the plain admin form doesn't collect them.
+  deedType?: "إلكتروني" | "ورقي" | "عقد إيجار" | "سجل عقاري";
+  deedIssueDate?: string;
+  region?: string;
+  street?: string;
+  buildingNumber?: string;
+  subNumber?: string;
+  postalCode?: string;
+  propertyNumber?: string;
+  usage?: "سكن عائلات" | "سكن أفراد" | "تجاري" | "سكني-تجاري" | "سكن جماعي";
+  coOwners?: CoOwnerContact[];
+  // Utility meters — only meaningful when the property has no units (a
+  // standalone listing); when it branches into units (see Unit below), each
+  // unit carries its own meters instead.
+  electricityMeterNumber?: string;
+  electricityMeterBilledTo?: MeterBilledTo;
+  waterMeterNumber?: string;
+  waterMeterBilledTo?: MeterBilledTo;
 }
 
 export interface Owner {
   id: string;
   name: string;
   phone: string;
-  email: string;
+  // Not always on hand at intake time (see app/admin/properties/new) — the
+  // demo-persona seed data always sets it, real agent-created owners may not.
+  email?: string;
   joinedAt: string;
   // Fraction of net rental income retained as a management fee when
   // computing the owner statement (e.g. 0.1 = 10%). Defaults to 0.1 in
   // app/owner/page.tsx when not set.
   managementFeeRate?: number;
+  idNumber?: string;
+  birthDate?: string;
 }
 
 export interface Tenant {
@@ -209,6 +260,11 @@ export interface Invoice {
   number: string;
   clientName: string;
   propertyTitle: string;
+  // Denormalized so firestore.rules can scope reads without a
+  // cross-collection get() — same reason as Expense.ownerId. Undefined only
+  // for legacy/unlinked invoices, which then only admin can read.
+  ownerId?: string;
+  tenantId?: string;
   items: InvoiceItem[];
   // Residential rentals are VAT-exempt in Saudi Arabia; only commercial
   // rentals carry the 15% VAT — see taxRateForPropertyType() in mock-data.ts.
@@ -261,6 +317,11 @@ export interface Quote {
   number: string;
   clientName: string;
   propertyTitle: string;
+  // Denormalized to the creating owner (undefined for an admin-authored
+  // quote not tied to a specific owner's property/listing) — see
+  // firestore.rules, which uses this to scope an owner's reads to their own
+  // quotes instead of the whole collection.
+  ownerId?: string;
   items: InvoiceItem[];
   taxRate: number;
   status: QuoteStatus;
@@ -312,6 +373,71 @@ export interface Vendor {
   createdAt: string;
 }
 
+// Much finer-grained than PropertyType on purpose — a unit is a specific
+// space within a property, not the property's own classification. Kept as
+// its own enum rather than folded into PropertyType (see the note there).
+// "غرفة عزاب" appended at the end so the units seeded earlier this session
+// stay valid. Exported as a const array (not just a union) so pages don't
+// each need to retype this 35-item list — see app/admin/properties/page.tsx
+// and app/admin/properties/new.
+export const UNIT_TYPES = [
+  "كشك",
+  "محل",
+  "ورشة",
+  "أرض",
+  "أرض مسورة",
+  "محطة",
+  "مكتب",
+  "مستودع",
+  "معرض",
+  "صراف",
+  "سينما",
+  "محطة كهرباء",
+  "برج اتصالات",
+  "فندق",
+  "مواقف سيارات",
+  "مجمع تجاري مفتوح (بلازا)",
+  "دور",
+  "شقة",
+  "فيلا",
+  "عمارة",
+  "برج",
+  "شقة ثنائية الدور (دوبلكس)",
+  "شقة صغيرة (استديو)",
+  "شقة ملحق",
+  "شقة وملحق علوي",
+  "دور وملحق علوي",
+  "فيلا سطح",
+  "غرفة سائق",
+  "استراحة",
+  "غرفة بمساحة مشتركة",
+  "غرفة فندقية",
+  "بيت شعبي",
+  "شقة دورين",
+  "مجمع تعليمي",
+  "مجمع سكني",
+  "غرفة عزاب",
+] as const;
+export type UnitType = (typeof UNIT_TYPES)[number];
+
+// The fixed facility checklist offered when adding a unit — see
+// app/admin/properties/new. Stored as free-form strings on Unit.amenities
+// rather than a strict type so the list can grow without a schema change.
+export const UNIT_AMENITIES = [
+  "دورة مياه",
+  "غرف نوم",
+  "غرفة الخادمة",
+  "صالات",
+  "مخزن",
+  "مطبخ",
+  "مجلس",
+  "الفناء الخلفي",
+  "مكيف سبليت",
+  "مكيف مركزي",
+  "مكيف شباك",
+  "مكيف صحراوي",
+] as const;
+
 // A property can optionally branch into units — e.g. a complex with many
 // individually-leased rooms/shops, each getting its own Contract/Tenant via
 // unitId above, instead of the whole property being one rentable listing.
@@ -324,7 +450,7 @@ export interface Unit {
   ownerId: string;
   unitNumber: string;
   floor: number;
-  type: PropertyType;
+  type: UnitType;
   area: number;
   bedrooms: number;
   bathrooms: number;
@@ -332,6 +458,13 @@ export interface Unit {
   listingType: "إيجار" | "بيع" | "استثمار";
   status: PropertyStatus;
   createdAt: string;
+  furnished?: boolean;
+  furnitureCondition?: "جديد" | "مستخدم";
+  amenities?: string[];
+  electricityMeterNumber?: string;
+  electricityMeterBilledTo?: MeterBilledTo;
+  waterMeterNumber?: string;
+  waterMeterBilledTo?: MeterBilledTo;
 }
 
 // CRM pipeline stage for Client records of type "عميل محتمل" — see
@@ -365,6 +498,11 @@ export interface DocumentLink {
   entityType: DocumentEntityType;
   entityId: string;
   entityLabel: string;
+  // Denormalized from the linked entity at creation time (see
+  // app/admin/documents) — lets an owner read just the documents tied to
+  // their own properties/contracts/self, same list-provability reason as
+  // Expense.ownerId (see firestore.rules).
+  ownerId?: string;
   url: string;
   notes?: string;
   createdAt: string;

@@ -4,7 +4,7 @@ import { Fragment, useMemo, useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Button, LinkButton } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { useAccountantOwnerScope } from "@/lib/accountant-scope";
@@ -14,23 +14,32 @@ import { downloadCsv } from "@/lib/csv";
 import { downloadExcel } from "@/lib/excel";
 import { useCustomRole, useOwnerProperties, useOwnerUnits, useOwners } from "@/lib/firestore/hooks";
 import { createProperty, createUnit, updateProperty, updateUnit } from "@/lib/firestore/mutations";
-import type { PropertyStatus, PropertyType, Unit } from "@/lib/types";
+import type { MeterBilledTo, PropertyStatus, PropertyType, Unit, UnitType } from "@/lib/types";
+import { UNIT_TYPES } from "@/lib/types";
 import { ChevronDown, ChevronUp, Download, FileSpreadsheet, Plus, Search } from "lucide-react";
 
-const PROPERTY_TYPES: PropertyType[] = ["شقة", "فيلا", "محل تجاري", "مكتب", "أرض", "استراحة", "غرفة عزاب"];
+const PROPERTY_TYPES: PropertyType[] = [
+  "شقة", "فيلا", "محل تجاري", "مكتب", "أرض", "استراحة", "غرفة عزاب",
+  "عمارة", "مجمع تجاري مفتوح", "مجمع تجاري مغلق", "برج", "أخرى",
+];
 const PROPERTY_STATUSES: PropertyStatus[] = ["متاحة", "مؤجرة", "مباعة", "تحت الصيانة"];
+const METER_BILLED_TO: MeterBilledTo[] = ["المالك", "المستأجر"];
 
 function emptyUnitForm() {
   return {
     unitNumber: "",
     floor: "",
-    type: "غرفة عزاب" as PropertyType,
+    type: "غرفة عزاب" as UnitType,
     area: "",
     bedrooms: "",
     bathrooms: "",
     price: "",
     listingType: "إيجار" as "إيجار" | "بيع",
     status: "متاحة" as PropertyStatus,
+    electricityMeterNumber: "",
+    electricityMeterBilledTo: "المستأجر" as MeterBilledTo,
+    waterMeterNumber: "",
+    waterMeterBilledTo: "المستأجر" as MeterBilledTo,
   };
 }
 // Rotates through the map's existing marker palette (see lib/mock-data.ts)
@@ -60,6 +69,10 @@ function emptyPropertyForm() {
     hasBroker: false,
     brokerName: "",
     brokerPhone: "",
+    electricityMeterNumber: "",
+    electricityMeterBilledTo: "المستأجر" as MeterBilledTo,
+    waterMeterNumber: "",
+    waterMeterBilledTo: "المستأجر" as MeterBilledTo,
   };
 }
 
@@ -106,6 +119,10 @@ export default function AdminPropertiesPage() {
       listingType: unitForm.listingType,
       status: unitForm.status,
       createdAt: new Date().toISOString().slice(0, 10),
+      electricityMeterNumber: unitForm.electricityMeterNumber || undefined,
+      electricityMeterBilledTo: unitForm.electricityMeterNumber ? unitForm.electricityMeterBilledTo : undefined,
+      waterMeterNumber: unitForm.waterMeterNumber || undefined,
+      waterMeterBilledTo: unitForm.waterMeterNumber ? unitForm.waterMeterBilledTo : undefined,
     });
     setSubmittingUnit(false);
     setUnitForm(emptyUnitForm());
@@ -140,6 +157,10 @@ export default function AdminPropertiesPage() {
       hasBroker: form.hasBroker,
       brokerName: form.hasBroker ? form.brokerName || undefined : undefined,
       brokerPhone: form.hasBroker ? form.brokerPhone || undefined : undefined,
+      electricityMeterNumber: form.electricityMeterNumber || undefined,
+      electricityMeterBilledTo: form.electricityMeterNumber ? form.electricityMeterBilledTo : undefined,
+      waterMeterNumber: form.waterMeterNumber || undefined,
+      waterMeterBilledTo: form.waterMeterNumber ? form.waterMeterBilledTo : undefined,
     });
     setSubmitting(false);
     setShowForm(false);
@@ -195,10 +216,16 @@ export default function AdminPropertiesPage() {
             <Button size="sm" variant="outline" onClick={() => downloadExcel("العقارات", "العقارات", exportRows())}>
               <FileSpreadsheet size={15} /> تصدير Excel
             </Button>
-            {canCreate && (
-              <Button size="sm" onClick={() => setShowForm((v) => !v)}>
+            {canCreate && user?.role === "leasingAgent" ? (
+              <LinkButton href="/admin/properties/new" size="sm">
                 <Plus size={15} /> عقار جديد
-              </Button>
+              </LinkButton>
+            ) : (
+              canCreate && (
+                <Button size="sm" onClick={() => setShowForm((v) => !v)}>
+                  <Plus size={15} /> عقار جديد
+                </Button>
+              )
             )}
           </div>
         </CardHeader>
@@ -252,6 +279,36 @@ export default function AdminPropertiesPage() {
                       <Tr className="bg-background">
                         <Td colSpan={10} className="py-4 whitespace-normal align-top">
                           <div className="pr-8 flex flex-col gap-4">
+                            {(p.deedType || p.region || p.street || p.usage || p.propertyNumber || p.coOwners?.length || p.electricityMeterNumber || p.waterMeterNumber) && (
+                              <div className="rounded-xl border border-border bg-surface p-4">
+                                <p className="text-xs font-bold text-muted mb-2">تفاصيل إضافية</p>
+                                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-2 text-sm">
+                                  {p.deedType && <div><span className="text-muted">نوع الصك: </span>{p.deedType}</div>}
+                                  {p.deedIssueDate && <div><span className="text-muted">تاريخ الإصدار: </span>{p.deedIssueDate}</div>}
+                                  {p.usage && <div><span className="text-muted">الاستخدام: </span>{p.usage}</div>}
+                                  {p.propertyNumber && <div><span className="text-muted">رقم العقار: </span>{p.propertyNumber}</div>}
+                                  {p.region && <div><span className="text-muted">المنطقة: </span>{p.region}</div>}
+                                  {p.street && <div><span className="text-muted">الشارع: </span>{p.street}</div>}
+                                  {p.buildingNumber && <div><span className="text-muted">رقم المبنى: </span>{p.buildingNumber}</div>}
+                                  {p.subNumber && <div><span className="text-muted">الرقم الفرعي: </span>{p.subNumber}</div>}
+                                  {p.postalCode && <div><span className="text-muted">الرمز البريدي: </span>{p.postalCode}</div>}
+                                  {p.electricityMeterNumber && <div><span className="text-muted">عداد الكهرباء: </span>{p.electricityMeterNumber} ({p.electricityMeterBilledTo})</div>}
+                                  {p.waterMeterNumber && <div><span className="text-muted">عداد المياه: </span>{p.waterMeterNumber} ({p.waterMeterBilledTo})</div>}
+                                </div>
+                                {!!p.coOwners?.length && (
+                                  <div className="mt-3 pt-3 border-t border-border">
+                                    <p className="text-xs font-bold text-muted mb-2">ملاك إضافيون</p>
+                                    <div className="flex flex-wrap gap-2">
+                                      {p.coOwners.map((c, i) => (
+                                        <span key={i} className="rounded-lg bg-background px-2.5 py-1 text-xs">
+                                          {c.name}{c.phone ? ` · ${c.phone}` : ""}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                             {propertyUnits.length > 0 && (
                               <Table>
                                 <THead>
@@ -261,6 +318,8 @@ export default function AdminPropertiesPage() {
                                     <Th>النوع</Th>
                                     <Th>المساحة</Th>
                                     <Th>السعر</Th>
+                                    <Th>عداد الكهرباء</Th>
+                                    <Th>عداد المياه</Th>
                                     <Th>الحالة</Th>
                                   </Tr>
                                 </THead>
@@ -272,6 +331,8 @@ export default function AdminPropertiesPage() {
                                       <Td>{u.type}</Td>
                                       <Td>{u.area} م²</Td>
                                       <Td className="font-semibold">{currency(u.price)}</Td>
+                                      <Td className="text-muted">{u.electricityMeterNumber ? `${u.electricityMeterNumber} (${u.electricityMeterBilledTo})` : "—"}</Td>
+                                      <Td className="text-muted">{u.waterMeterNumber ? `${u.waterMeterNumber} (${u.waterMeterBilledTo})` : "—"}</Td>
                                       <Td>
                                         {canCreate ? (
                                           <Select
@@ -294,8 +355,8 @@ export default function AdminPropertiesPage() {
                               <form onSubmit={(e) => handleCreateUnit(e, p.id, p.ownerId)} className="grid sm:grid-cols-4 gap-3 max-w-3xl">
                                 <Input placeholder="رقم الوحدة" value={unitForm.unitNumber} onChange={(e) => setUnitForm((f) => ({ ...f, unitNumber: e.target.value }))} required />
                                 <Input type="number" placeholder="الطابق" value={unitForm.floor} onChange={(e) => setUnitForm((f) => ({ ...f, floor: e.target.value }))} />
-                                <Select value={unitForm.type} onChange={(e) => setUnitForm((f) => ({ ...f, type: e.target.value as PropertyType }))}>
-                                  {PROPERTY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                                <Select value={unitForm.type} onChange={(e) => setUnitForm((f) => ({ ...f, type: e.target.value as UnitType }))}>
+                                  {UNIT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                                 </Select>
                                 <Input type="number" placeholder="المساحة (م²)" value={unitForm.area} onChange={(e) => setUnitForm((f) => ({ ...f, area: e.target.value }))} />
                                 <Input type="number" placeholder="غرف النوم" value={unitForm.bedrooms} onChange={(e) => setUnitForm((f) => ({ ...f, bedrooms: e.target.value }))} />
@@ -307,6 +368,14 @@ export default function AdminPropertiesPage() {
                                 </Select>
                                 <Select value={unitForm.status} onChange={(e) => setUnitForm((f) => ({ ...f, status: e.target.value as PropertyStatus }))}>
                                   {PROPERTY_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                                </Select>
+                                <Input placeholder="رقم عداد الكهرباء" dir="ltr" value={unitForm.electricityMeterNumber} onChange={(e) => setUnitForm((f) => ({ ...f, electricityMeterNumber: e.target.value }))} />
+                                <Select value={unitForm.electricityMeterBilledTo} onChange={(e) => setUnitForm((f) => ({ ...f, electricityMeterBilledTo: e.target.value as MeterBilledTo }))}>
+                                  {METER_BILLED_TO.map((m) => <option key={m} value={m}>فاتورة الكهرباء على {m}</option>)}
+                                </Select>
+                                <Input placeholder="رقم عداد المياه" dir="ltr" value={unitForm.waterMeterNumber} onChange={(e) => setUnitForm((f) => ({ ...f, waterMeterNumber: e.target.value }))} />
+                                <Select value={unitForm.waterMeterBilledTo} onChange={(e) => setUnitForm((f) => ({ ...f, waterMeterBilledTo: e.target.value as MeterBilledTo }))}>
+                                  {METER_BILLED_TO.map((m) => <option key={m} value={m}>فاتورة المياه على {m}</option>)}
                                 </Select>
                                 <Button type="submit" size="sm" disabled={submittingUnit} className="self-start">
                                   <Plus size={14} /> {submittingUnit ? "جارِ الحفظ..." : "إضافة وحدة"}
@@ -444,6 +513,29 @@ export default function AdminPropertiesPage() {
                     </div>
                   </>
                 )}
+              </div>
+
+              <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <Label htmlFor="pelecmeter">رقم عداد الكهرباء</Label>
+                  <Input id="pelecmeter" dir="ltr" value={form.electricityMeterNumber} onChange={(e) => setForm((f) => ({ ...f, electricityMeterNumber: e.target.value }))} />
+                </div>
+                <div>
+                  <Label htmlFor="pelecmeterbilledto">فاتورة الكهرباء على</Label>
+                  <Select id="pelecmeterbilledto" value={form.electricityMeterBilledTo} onChange={(e) => setForm((f) => ({ ...f, electricityMeterBilledTo: e.target.value as MeterBilledTo }))}>
+                    {METER_BILLED_TO.map((m) => <option key={m} value={m}>{m}</option>)}
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="pwatermeter">رقم عداد المياه</Label>
+                  <Input id="pwatermeter" dir="ltr" value={form.waterMeterNumber} onChange={(e) => setForm((f) => ({ ...f, waterMeterNumber: e.target.value }))} />
+                </div>
+                <div>
+                  <Label htmlFor="pwatermeterbilledto">فاتورة المياه على</Label>
+                  <Select id="pwatermeterbilledto" value={form.waterMeterBilledTo} onChange={(e) => setForm((f) => ({ ...f, waterMeterBilledTo: e.target.value as MeterBilledTo }))}>
+                    {METER_BILLED_TO.map((m) => <option key={m} value={m}>{m}</option>)}
+                  </Select>
+                </div>
               </div>
 
               <Button type="submit" disabled={submitting} className="self-start">

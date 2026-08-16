@@ -11,14 +11,14 @@ import { currency } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth-context";
 import { computeNotifications } from "@/lib/notifications";
 import { useDismissedNotifications } from "@/lib/use-dismissed-notifications";
-import { useAppSettings, useInvoices, useOwnerContracts, useOwnerExpenses, useOwnerProperties, useTenants } from "@/lib/firestore/hooks";
+import { useAppSettings, useOwnerContracts, useOwnerExpenses, useOwnerInvoices, useOwnerProperties, useTenants } from "@/lib/firestore/hooks";
 import { ArrowLeft, BarChart3, Bell, FileWarning, Receipt, TrendingDown, Wallet, X } from "lucide-react";
 
 export default function AccountantDashboardPage() {
   const { user } = useAuth();
   const scope = useAccountantOwnerScope();
   const { data: expenses } = useOwnerExpenses(scope.queryOwnerId);
-  const { data: invoices } = useInvoices();
+  const { data: invoices } = useOwnerInvoices(scope.queryOwnerId);
   const { data: contracts } = useOwnerContracts(scope.queryOwnerId);
   const { data: properties } = useOwnerProperties(scope.queryOwnerId);
   const { data: tenants } = useTenants();

@@ -83,6 +83,7 @@ export const navByRole: Record<Role, NavItem[]> = {
     { label: "لوحة التحكم", href: "/owner", icon: LayoutDashboard },
     { label: "عروض الأسعار", href: "/quotes", icon: Receipt },
     { label: "التقارير والفواتير", href: "/reports", icon: BarChart3 },
+    { label: "المستندات", href: "/owner/documents", icon: FolderOpen },
     { label: "الخريطة التفاعلية", href: "/map", icon: MapPin },
     { label: "خدمة العملاء", href: "/support/customer", icon: Headset },
     { label: "مدير الحساب", href: "/account-manager", icon: UserCog },
