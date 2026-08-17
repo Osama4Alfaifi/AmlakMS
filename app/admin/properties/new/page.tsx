@@ -10,7 +10,7 @@ import { Input, Label, Select } from "@/components/ui/Input";
 import { useOwners, useProperties } from "@/lib/firestore/hooks";
 import { createOwner, createProperty, createUnit } from "@/lib/firestore/mutations";
 import { UNIT_AMENITIES, UNIT_TYPES } from "@/lib/types";
-import type { MeterBilledTo, PropertyType, UnitType } from "@/lib/types";
+import type { MeterBilledTo, PropertyType, UnitAmenity, UnitType } from "@/lib/types";
 import { SAUDI_REGIONS } from "@/lib/saudi-regions";
 import {
   AirVent,
@@ -23,6 +23,7 @@ import {
   ChefHat,
   Copy,
   Fan,
+  Minus,
   Plus,
   Snowflake,
   Sofa,
@@ -76,11 +77,9 @@ interface UnitDraft {
   area: string;
   bedrooms: string;
   bathrooms: string;
-  price: string;
-  listingType: "إيجار" | "بيع";
   furnished: boolean;
   furnitureCondition: "جديد" | "مستخدم";
-  amenities: string[];
+  amenities: UnitAmenity[];
   electricityMeterNumber: string;
   electricityMeterBilledTo: MeterBilledTo;
   waterMeterNumber: string;
@@ -96,8 +95,6 @@ function emptyUnitDraft(): UnitDraft {
     area: "",
     bedrooms: "",
     bathrooms: "",
-    price: "",
-    listingType: "إيجار",
     furnished: false,
     furnitureCondition: "جديد",
     amenities: [],
@@ -175,8 +172,6 @@ export default function NewPropertyWizardPage() {
   const [type, setType] = useState<PropertyType>("عمارة");
   const [propertyNumber, setPropertyNumber] = useState("");
   const [usage, setUsage] = useState<(typeof USAGE_TYPES)[number]>("سكني-تجاري");
-  const [price, setPrice] = useState("");
-  const [listingType, setListingType] = useState<"إيجار" | "بيع" | "استثمار">("إيجار");
   const [area, setArea] = useState("");
   const [electricityMeterNumber, setElectricityMeterNumber] = useState("");
   const [electricityMeterBilledTo, setElectricityMeterBilledTo] = useState<MeterBilledTo>("المستأجر");
@@ -191,7 +186,7 @@ export default function NewPropertyWizardPage() {
 
   const canGoStep1 = ownerMode === "existing" ? !!ownerId : !!newOwner.name.trim();
   const canGoStep2 = !!city.trim() && !!district.trim();
-  const canGoStep3 = !!title.trim() && !!Number(price);
+  const canGoStep3 = !!title.trim();
 
   function addCoOwner() {
     setCoOwners((list) => [...list, { name: "", idNumber: "", birthDate: "", phone: "" }]);
@@ -206,8 +201,21 @@ export default function NewPropertyWizardPage() {
   function toggleAmenity(a: string) {
     setUnitDraft((f) => ({
       ...f,
-      amenities: f.amenities.includes(a) ? f.amenities.filter((x) => x !== a) : [...f.amenities, a],
+      amenities: f.amenities.some((x) => x.name === a)
+        ? f.amenities.filter((x) => x.name !== a)
+        : [...f.amenities, { name: a, count: 1 }],
     }));
+  }
+
+  // Pressing "-" down to 0 deselects the amenity entirely, same as clicking
+  // it off — there's no such thing as "0 of an amenity you have".
+  function updateAmenityCount(a: string, delta: number) {
+    setUnitDraft((f) => {
+      const next = f.amenities
+        .map((x) => (x.name === a ? { ...x, count: x.count + delta } : x))
+        .filter((x) => x.count > 0);
+      return { ...f, amenities: next };
+    });
   }
 
   function handleAddUnit() {
@@ -257,8 +265,10 @@ export default function NewPropertyWizardPage() {
         area: Number(area) || 0,
         bedrooms: 0,
         bathrooms: 0,
-        price: Number(price),
-        listingType,
+        // Price/listing type live on each unit now (see step 4) — a
+        // property is just the container, not itself a rentable listing.
+        price: 0,
+        listingType: "إيجار",
         status: "متاحة",
         ownerId: finalOwnerId,
         lat,
@@ -299,8 +309,10 @@ export default function NewPropertyWizardPage() {
             area: Number(u.area) || 0,
             bedrooms: Number(u.bedrooms) || 0,
             bathrooms: Number(u.bathrooms) || 0,
-            price: Number(u.price) || 0,
-            listingType: u.listingType,
+            // Price/listing type are set later from "العروض" (see
+            // app/admin/listings) — a unit is just inventory at intake.
+            price: 0,
+            listingType: "إيجار",
             status: "متاحة",
             createdAt: today,
             furnished: u.furnished,
@@ -529,20 +541,6 @@ export default function NewPropertyWizardPage() {
                   <Input id="area" type="number" min={0} value={area} onChange={(e) => setArea(e.target.value)} />
                 </div>
               </div>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="listingType">نوع العرض</Label>
-                  <Select id="listingType" value={listingType} onChange={(e) => setListingType(e.target.value as "إيجار" | "بيع" | "استثمار")}>
-                    <option value="إيجار">إيجار</option>
-                    <option value="بيع">بيع</option>
-                    <option value="استثمار">استثمار</option>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="price">السعر (﷼)</Label>
-                  <Input id="price" type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} required />
-                </div>
-              </div>
               <div>
                 <p className="text-xs font-bold text-muted mb-2">العدادات</p>
                 <p className="text-xs text-muted mb-3">اترك رقم العداد فارغًا إن كان العقار سيُقسّم إلى وحدات — عدادات كل وحدة تُضاف في الخطوة التالية</p>
@@ -592,11 +590,6 @@ export default function NewPropertyWizardPage() {
                   <Input type="number" placeholder="المساحة (م²)" value={unitDraft.area} onChange={(e) => setUnitDraft((f) => ({ ...f, area: e.target.value }))} />
                   <Input type="number" placeholder="غرف النوم" value={unitDraft.bedrooms} onChange={(e) => setUnitDraft((f) => ({ ...f, bedrooms: e.target.value }))} />
                   <Input type="number" placeholder="دورات المياه" value={unitDraft.bathrooms} onChange={(e) => setUnitDraft((f) => ({ ...f, bathrooms: e.target.value }))} />
-                  <Input type="number" placeholder="السعر (﷼)" value={unitDraft.price} onChange={(e) => setUnitDraft((f) => ({ ...f, price: e.target.value }))} />
-                  <Select value={unitDraft.listingType} onChange={(e) => setUnitDraft((f) => ({ ...f, listingType: e.target.value as "إيجار" | "بيع" }))}>
-                    <option value="إيجار">إيجار</option>
-                    <option value="بيع">بيع</option>
-                  </Select>
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -654,17 +647,37 @@ export default function NewPropertyWizardPage() {
                     <div className="grid sm:grid-cols-2 gap-3">
                       {UNIT_AMENITIES.map((a) => {
                         const Icon = AMENITY_ICONS[a];
-                        const selected = unitDraft.amenities.includes(a);
+                        const entry = unitDraft.amenities.find((x) => x.name === a);
+                        const selected = !!entry;
                         return (
-                          <button
+                          <div
                             key={a}
-                            type="button"
-                            onClick={() => toggleAmenity(a)}
                             className={`flex items-center justify-between gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${selected ? "border-brand-500 bg-brand-50 text-brand-700" : "border-border text-muted hover:bg-background"}`}
                           >
-                            {a}
-                            <Icon size={16} />
-                          </button>
+                            <button type="button" onClick={() => toggleAmenity(a)} className="flex flex-1 items-center gap-2">
+                              {a}
+                              <Icon size={16} />
+                            </button>
+                            {selected && (
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => updateAmenityCount(a, -1)}
+                                  className="h-6 w-6 rounded-md border border-brand-300 bg-white flex items-center justify-center text-brand-700 hover:bg-brand-100"
+                                >
+                                  <Minus size={12} />
+                                </button>
+                                <span className="w-4 text-center tabular-nums">{entry.count}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => updateAmenityCount(a, 1)}
+                                  className="h-6 w-6 rounded-md border border-brand-300 bg-white flex items-center justify-center text-brand-700 hover:bg-brand-100"
+                                >
+                                  <Plus size={12} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         );
                       })}
                     </div>

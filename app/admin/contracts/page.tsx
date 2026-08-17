@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { useAccountantOwnerScope } from "@/lib/accountant-scope";
+import { useAuth } from "@/lib/auth-context";
 import { currency } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
 import { downloadExcel } from "@/lib/excel";
@@ -21,7 +22,7 @@ import {
   remainingFromToday,
   subtractDays,
 } from "@/lib/contracts/schedule";
-import { useOwnerContracts, useOwnerProperties, useOwnerUnits, useOwners, useTenants } from "@/lib/firestore/hooks";
+import { useCustomRole, useOwnerContracts, useOwnerProperties, useOwnerUnits, useOwners, useTenants } from "@/lib/firestore/hooks";
 import { createContract, createTenant, updateContractPayments, updateTenantContract } from "@/lib/firestore/mutations";
 import { parseEjarPdf } from "@/lib/rega/parseEjarContract";
 import type { ContractPayment, PaymentCycle } from "@/lib/types";
@@ -70,12 +71,17 @@ function emptyForm() {
 }
 
 export default function AdminContractsPage() {
+  const { user } = useAuth();
   const scope = useAccountantOwnerScope();
   const { data: contracts } = useOwnerContracts(scope.queryOwnerId);
   const { data: properties } = useOwnerProperties(scope.queryOwnerId);
   const { data: units } = useOwnerUnits(scope.queryOwnerId);
   const { data: owners } = useOwners();
   const { data: tenants } = useTenants();
+  const customRole = useCustomRole(user?.role === "custom" ? user.customRoleId : undefined);
+  // Accountant is view-only on contracts — writing (new contract, settling
+  // a payment) is admin/leasing-agent territory now, see firestore.rules.
+  const canWrite = user?.role === "admin" || user?.role === "leasingAgent" || !!customRole?.permissions?.contracts?.write;
 
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("الكل");
@@ -272,7 +278,7 @@ export default function AdminContractsPage() {
   }
 
   return (
-    <DashboardShell allow={["admin", "accountant", "custom"]} customResource="contracts" title="العقود">
+    <DashboardShell allow={["admin", "leasingAgent", "accountant", "custom"]} customResource="contracts" title="العقود">
       <div className="flex flex-col gap-6">
         <Card>
           <CardHeader>
@@ -294,9 +300,11 @@ export default function AdminContractsPage() {
               <Button size="sm" variant="outline" onClick={() => downloadExcel("العقود", "العقود", exportRows())}>
                 <FileSpreadsheet size={15} /> تصدير Excel
               </Button>
-              <Button size="sm" onClick={() => setShowForm((v) => !v)}>
-                <Plus size={15} /> إضافة عقد
-              </Button>
+              {canWrite && (
+                <Button size="sm" onClick={() => setShowForm((v) => !v)}>
+                  <Plus size={15} /> إضافة عقد
+                </Button>
+              )}
             </div>
           </CardHeader>
           <CardContent>
@@ -431,18 +439,20 @@ export default function AdminContractsPage() {
                                           <td className="py-1.5"><Badge>{p.status}</Badge></td>
                                           <td className="py-1.5">
                                             {p.status === "مستحقة" ? (
-                                              <div className="flex items-center gap-2">
-                                                <button
-                                                  onClick={() => {
-                                                    if (confirm(`هل تريد تأكيد تسديد دفعة بقيمة ${p.amount.toLocaleString("ar-SA")} ﷼؟`)) {
-                                                      handleSettlePayment(c.id, c.payments, p.id);
-                                                    }
-                                                  }}
-                                                  className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
-                                                >
-                                                  <CheckCircle2 size={13} /> تسديد
-                                                </button>
-                                              </div>
+                                              canWrite && (
+                                                <div className="flex items-center gap-2">
+                                                  <button
+                                                    onClick={() => {
+                                                      if (confirm(`هل تريد تأكيد تسديد دفعة بقيمة ${p.amount.toLocaleString("ar-SA")} ﷼؟`)) {
+                                                        handleSettlePayment(c.id, c.payments, p.id);
+                                                      }
+                                                    }}
+                                                    className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
+                                                  >
+                                                    <CheckCircle2 size={13} /> تسديد
+                                                  </button>
+                                                </div>
+                                              )
                                             ) : (
                                               <Link
                                                 href={`/admin/vouchers?${voucherParams.toString()}`}
@@ -471,7 +481,7 @@ export default function AdminContractsPage() {
           </CardContent>
         </Card>
 
-        {showForm && (
+        {canWrite && showForm && (
           <Card>
             <CardHeader>
               <CardTitle>إضافة عقد</CardTitle>

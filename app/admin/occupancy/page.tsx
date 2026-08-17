@@ -7,31 +7,90 @@ import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/compon
 import { Badge } from "@/components/ui/Badge";
 import { Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
-import { currency } from "@/lib/mock-data";
-import { useOwners, useProperties } from "@/lib/firestore/hooks";
+import { useOwners, useProperties, useUnits } from "@/lib/firestore/hooks";
+import type { PropertyStatus } from "@/lib/types";
 import { CheckCircle2, DoorOpen, Percent, Wrench } from "lucide-react";
+
+// One row per unit, or per standalone property when it has no units — same
+// row model as app/admin/listings, since occupancy is a per-listing concept
+// and most properties now branch into units (see Unit/Property in
+// lib/types.ts). Reading Property.status/listingType alone (the old
+// behavior) went blind the moment a property got units.
+interface OccupancyRow {
+  id: string;
+  propertyTitle: string;
+  unitLabel: string;
+  type: string;
+  city: string;
+  district: string;
+  ownerId: string;
+  listingType: "إيجار" | "بيع" | "استثمار";
+  status: PropertyStatus;
+}
 
 export default function AdminOccupancyPage() {
   const { data: properties } = useProperties();
+  const { data: units } = useUnits();
   const { data: owners } = useOwners();
   const [city, setCity] = useState("الكل");
   const [status, setStatus] = useState("الكل");
 
+  const unitsByProperty = useMemo(() => {
+    const map = new Map<string, typeof units>();
+    units.forEach((u) => map.set(u.propertyId, [...(map.get(u.propertyId) ?? []), u]));
+    return map;
+  }, [units]);
+
+  const rows: OccupancyRow[] = useMemo(() => {
+    const list: OccupancyRow[] = [];
+    properties.forEach((p) => {
+      const propertyUnits = unitsByProperty.get(p.id) ?? [];
+      if (propertyUnits.length === 0) {
+        list.push({
+          id: p.id,
+          propertyTitle: p.title,
+          unitLabel: "—",
+          type: p.type,
+          city: p.city,
+          district: p.district,
+          ownerId: p.ownerId,
+          listingType: p.listingType,
+          status: p.status,
+        });
+      } else {
+        propertyUnits.forEach((u) => {
+          list.push({
+            id: u.id,
+            propertyTitle: p.title,
+            unitLabel: u.unitNumber,
+            type: u.type,
+            city: p.city,
+            district: p.district,
+            ownerId: u.ownerId,
+            listingType: u.listingType,
+            status: u.status,
+          });
+        });
+      }
+    });
+    return list;
+  }, [properties, unitsByProperty]);
+
   const cities = ["الكل", ...Array.from(new Set(properties.map((p) => p.city)))];
   const statuses = ["الكل", "مؤجرة", "متاحة", "تحت الصيانة", "مباعة"];
 
-  const rentalProperties = useMemo(() => properties.filter((p) => p.listingType === "إيجار"), [properties]);
-  const occupied = rentalProperties.filter((p) => p.status === "مؤجرة").length;
-  const vacant = rentalProperties.filter((p) => p.status === "متاحة").length;
-  const underMaintenance = rentalProperties.filter((p) => p.status === "تحت الصيانة").length;
-  const occupancyRate = rentalProperties.length ? Math.round((occupied / rentalProperties.length) * 100) : 0;
+  // "Occupancy" is a rental concept — a sold unit isn't vacant/occupied, so
+  // the stat cards (not the table below) count rental listings only, same
+  // as the original property-only version of this page.
+  const rentalRows = useMemo(() => rows.filter((r) => r.listingType === "إيجار"), [rows]);
+  const occupied = rentalRows.filter((r) => r.status === "مؤجرة").length;
+  const vacant = rentalRows.filter((r) => r.status === "متاحة").length;
+  const underMaintenance = rentalRows.filter((r) => r.status === "تحت الصيانة").length;
+  const occupancyRate = rentalRows.length ? Math.round((occupied / rentalRows.length) * 100) : 0;
 
   const filtered = useMemo(
-    () =>
-      properties.filter(
-        (p) => (city === "الكل" || p.city === city) && (status === "الكل" || p.status === status)
-      ),
-    [properties, city, status]
+    () => rows.filter((r) => (city === "الكل" || r.city === city) && (status === "الكل" || r.status === status)),
+    [rows, city, status]
   );
 
   return (
@@ -48,7 +107,7 @@ export default function AdminOccupancyPage() {
           <CardHeader>
             <div>
               <CardTitle>حالة الوحدات</CardTitle>
-              <CardSubtitle>{filtered.length} من {properties.length} عقار</CardSubtitle>
+              <CardSubtitle>{filtered.length} من {rows.length} وحدة/عقار</CardSubtitle>
             </div>
             <div className="flex items-center gap-2">
               <Select value={city} onChange={(e) => setCity(e.target.value)} className="w-36">
@@ -68,22 +127,22 @@ export default function AdminOccupancyPage() {
               <THead>
                 <Tr>
                   <Th>العقار</Th>
+                  <Th>الوحدة</Th>
                   <Th>النوع</Th>
                   <Th>المدينة / الحي</Th>
                   <Th>المالك</Th>
-                  <Th>السعر</Th>
                   <Th>الحالة</Th>
                 </Tr>
               </THead>
               <TBody>
-                {filtered.map((p) => (
-                  <Tr key={p.id}>
-                    <Td className="font-semibold">{p.title}</Td>
-                    <Td>{p.type}</Td>
-                    <Td className="text-muted">{p.city} · {p.district}</Td>
-                    <Td className="text-muted">{owners.find((o) => o.id === p.ownerId)?.name ?? "—"}</Td>
-                    <Td className="font-semibold">{currency(p.price)}</Td>
-                    <Td><Badge>{p.status}</Badge></Td>
+                {filtered.map((r) => (
+                  <Tr key={r.id}>
+                    <Td className="font-semibold">{r.propertyTitle}</Td>
+                    <Td className="text-muted">{r.unitLabel}</Td>
+                    <Td>{r.type}</Td>
+                    <Td className="text-muted">{r.city} · {r.district}</Td>
+                    <Td className="text-muted">{owners.find((o) => o.id === r.ownerId)?.name ?? "—"}</Td>
+                    <Td><Badge>{r.status}</Badge></Td>
                   </Tr>
                 ))}
               </TBody>

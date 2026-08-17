@@ -15,6 +15,7 @@ import {
   Receipt,
   Settings,
   ShieldCheck,
+  Tag,
   UserCog,
   UserPlus,
   Users,
@@ -34,7 +35,7 @@ export const roleMeta: Record<Role, { title: string; homeHref: string }> = {
   tenant: { title: "بوابة المستأجرين", homeHref: "/tenant" },
   technician: { title: "بوابة فنيي الصيانة", homeHref: "/technician" },
   accountant: { title: "بوابة المحاسب", homeHref: "/accountant" },
-  leasingAgent: { title: "بوابة مندوب التأجير", homeHref: "/leasing-agent" },
+  leasingAgent: { title: "بوابة الوسيط", homeHref: "/leasing-agent" },
   maintenanceStaff: { title: "بوابة فريق الصيانة", homeHref: "/admin/maintenance" },
   custom: { title: "دور مخصص", homeHref: "/custom" },
 };
@@ -60,6 +61,7 @@ export const navByRole: Record<Role, NavItem[]> = {
     { label: "الصلاحيات", href: "/admin/roles", icon: ShieldCheck },
     { label: "إعدادات النظام", href: "/admin/settings", icon: Settings },
     { label: "العقارات", href: "/admin/properties", icon: Building2 },
+    { label: "العروض", href: "/admin/listings", icon: Tag },
     { label: "العقود", href: "/admin/contracts", icon: FileText },
     { label: "العملاء", href: "/admin/clients", icon: Contact },
     { label: "المصروفات", href: "/admin/expenses", icon: Wallet },
@@ -114,6 +116,8 @@ export const navByRole: Record<Role, NavItem[]> = {
     { label: "لوحة التحكم", href: "/leasing-agent", icon: LayoutDashboard },
     { label: "العملاء المحتملون", href: "/admin/leads", icon: UserPlus },
     { label: "العقارات", href: "/admin/properties", icon: Building2 },
+    { label: "العروض", href: "/admin/listings", icon: Tag },
+    { label: "العقود", href: "/admin/contracts", icon: FileText },
     { label: "الخريطة التفاعلية", href: "/map", icon: MapPin },
   ],
   maintenanceStaff: [

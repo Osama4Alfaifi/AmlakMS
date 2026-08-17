@@ -8,11 +8,16 @@ import type { Owner } from "@/lib/types";
 const STORAGE_KEY = "accountant-selected-owner";
 
 export interface AccountantOwnerScope {
+  // True for accountant AND leasingAgent — both are scoped to whichever
+  // owners' portfolio was assigned to them (see app/admin/users), same
+  // isMyOwner() mechanism in firestore.rules. Named isAccountant for
+  // historical reasons (this hook predates leasingAgent scoping); check it
+  // to mean "this account's data view is owner-scoped", not literally role.
   isAccountant: boolean;
   // The ownerId to feed into useOwner*() hooks: null lets those hooks fall
-  // through to an unconstrained fetch (every non-accountant role, unchanged
+  // through to an unconstrained fetch (every unscoped role, unchanged
   // behavior); a string scopes to that owner; undefined means "don't fetch
-  // yet" (accountant with no owners assigned, or selection not resolved).
+  // yet" (scoped role with no owners assigned, or selection not resolved).
   queryOwnerId: string | null | undefined;
   selectedOwnerId: string | null;
   selectOwner: (ownerId: string) => void;
@@ -22,13 +27,13 @@ export interface AccountantOwnerScope {
 function computeScope(): AccountantOwnerScope {
   const { user, ready } = useAuth();
   const { data: owners } = useOwners();
-  const isAccountant = user?.role === "accountant";
-  const ownerIds = isAccountant ? user?.ownerIds ?? [] : [];
+  const isScoped = user?.role === "accountant" || user?.role === "leasingAgent";
+  const ownerIds = isScoped ? user?.ownerIds ?? [] : [];
 
   const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isAccountant) return;
+    if (!isScoped) return;
     if (ownerIds.length === 0) {
       setSelectedOwnerId(null);
       return;
@@ -36,7 +41,7 @@ function computeScope(): AccountantOwnerScope {
     const stored = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
     setSelectedOwnerId(stored && ownerIds.includes(stored) ? stored : ownerIds[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAccountant, ownerIds.join(",")]);
+  }, [isScoped, ownerIds.join(",")]);
 
   function selectOwner(ownerId: string) {
     setSelectedOwnerId(ownerId);
@@ -45,21 +50,21 @@ function computeScope(): AccountantOwnerScope {
 
   // Gated on `ready` first: consumers of this scope (useOwnerProperties,
   // useOwnerContracts, etc.) run before DashboardShell's own ready-check
-  // takes effect, so without this an eventual accountant would briefly
-  // resolve `!isAccountant` to true (role not loaded yet, not actually
-  // confirmed non-accountant) and fire an unconstrained fetch that
-  // firestore.rules now denies once their real role is known.
+  // takes effect, so without this an eventual scoped-role account would
+  // briefly resolve `!isScoped` to true (role not loaded yet, not actually
+  // confirmed unscoped) and fire an unconstrained fetch that firestore.rules
+  // now denies once their real role is known.
   const queryOwnerId: string | null | undefined = !ready
     ? undefined
-    : !isAccountant
+    : !isScoped
     ? null
     : ownerIds.length === 0
     ? undefined
     : selectedOwnerId ?? undefined;
 
-  const myOwners = isAccountant ? owners.filter((o) => ownerIds.includes(o.id)) : [];
+  const myOwners = isScoped ? owners.filter((o) => ownerIds.includes(o.id)) : [];
 
-  return { isAccountant, queryOwnerId, selectedOwnerId, selectOwner, myOwners };
+  return { isAccountant: isScoped, queryOwnerId, selectedOwnerId, selectOwner, myOwners };
 }
 
 const AccountantScopeContext = createContext<AccountantOwnerScope | null>(null);

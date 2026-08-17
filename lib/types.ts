@@ -438,6 +438,14 @@ export const UNIT_AMENITIES = [
   "مكيف صحراوي",
 ] as const;
 
+// A selected amenity plus how many of it the unit has (e.g. 3 غرف نوم) —
+// see app/admin/properties/new, where clicking an amenity selects it with
+// a default count of 1 and reveals a +/- stepper to adjust it.
+export interface UnitAmenity {
+  name: string;
+  count: number;
+}
+
 // A property can optionally branch into units — e.g. a complex with many
 // individually-leased rooms/shops, each getting its own Contract/Tenant via
 // unitId above, instead of the whole property being one rentable listing.
@@ -460,7 +468,7 @@ export interface Unit {
   createdAt: string;
   furnished?: boolean;
   furnitureCondition?: "جديد" | "مستخدم";
-  amenities?: string[];
+  amenities?: UnitAmenity[];
   electricityMeterNumber?: string;
   electricityMeterBilledTo?: MeterBilledTo;
   waterMeterNumber?: string;

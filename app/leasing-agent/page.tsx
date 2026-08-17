@@ -15,6 +15,9 @@ import { ArrowLeft, CalendarClock, UserPlus, Users } from "lucide-react";
 export default function LeasingAgentDashboardPage() {
   const { user } = useAuth();
   const { data: clients } = useClients();
+  // Unscoped on purpose — this only resolves property titles for viewings
+  // in the CRM pipeline (below), which spans prospecting for any property,
+  // not just this agent's already-assigned portfolio (see firestore.rules).
   const { data: properties } = useProperties();
   const { data: viewings } = useViewings();
 

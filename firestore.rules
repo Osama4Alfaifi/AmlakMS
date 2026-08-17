@@ -45,18 +45,19 @@ service cloud.firestore {
       return signedIn() && myRole() == "accountant";
     }
 
-    // An accountant only manages the owners assigned to them (see
-    // app/admin/users) — this proves ownership scope for a specific
-    // document's ownerId. Safe to call even when myProfile().ownerIds is
-    // absent (non-accountant profiles): every caller guards this behind
-    // myRole() == "accountant" first, and `&&`/`||` short-circuit here, so
-    // the missing-field access never happens for other roles.
-    function isMyOwner(ownerId) {
-      return isAccountant() && ownerId in myProfile().ownerIds;
-    }
-
     function isLeasingAgent() {
       return signedIn() && myRole() == "leasingAgent";
+    }
+
+    // An accountant or leasing agent only manages the owners assigned to
+    // them (see app/admin/users — the same ownerIds field/UI now covers
+    // both roles, a leasing agent can be linked to several owners' whole
+    // portfolio) — this proves ownership scope for a specific document's
+    // ownerId. Safe to call even when myProfile().ownerIds is absent (every
+    // other role's profile): isAccountant()/isLeasingAgent() short-circuit
+    // first, so the missing-field access never happens for other roles.
+    function isMyOwner(ownerId) {
+      return (isAccountant() || isLeasingAgent()) && ownerId in myProfile().ownerIds;
     }
 
     function isMaintenanceStaff() {
@@ -101,7 +102,9 @@ service cloud.firestore {
 
     // Reference/catalog data — but only for the roles that legitimately work
     // across every owner's listings (admin via wildcard, leasingAgent,
-    // technician, maintenanceStaff — all have cross-owner jobs). Accountant,
+    // technician, maintenanceStaff — all have cross-owner jobs: an agent's
+    // CRM/prospecting work (app/admin/leads) and dashboard reference the
+    // full catalog regardless of whose portfolio they manage). Accountant,
     // owner, and tenant are each narrowed to their own scope: accountant to
     // their assigned owners, owner to their own properties, tenant to the
     // single property they occupy (resolved via myTenantPropertyId()). Every
@@ -115,8 +118,16 @@ service cloud.firestore {
         (myRole() == "owner" && resource.data.ownerId == myProfile().linkedId) ||
         (myRole() == "tenant" && myTenantPropertyId() == id)
       ) || customCan("properties", "read");
+      // Write (not read) is what's scoped to a leasing agent's assigned
+      // portfolio — they can browse the whole catalog (read, above) but only
+      // manage their own owners' data. Create stays unscoped (isLeasingAgent(),
+      // not isMyOwner): the intake wizard (app/admin/properties/new) lets an
+      // agent onboard a brand-new owner + property together in one flow,
+      // before an admin has had a chance to add that owner to the agent's
+      // ownerIds — scoping create would turn that into a hard
+      // permission-denied. Update is scoped.
       allow create: if isLeasingAgent() || customCan("properties", "write");
-      allow update: if isLeasingAgent() || customCan("properties", "write");
+      allow update: if isMyOwner(resource.data.ownerId) || customCan("properties", "write");
     }
     // Admin-defined custom roles + their permission matrix — see
     // customCan() above and app/admin/roles. Reference data: any signed-in
@@ -131,25 +142,34 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update: if isLeasingAgent() || customCan("properties", "write");
     }
-    // Accountants register a new tenant inline when writing a contract for
-    // someone not yet in the system (update covers back-filling the new
+    // Leasing agents register a new tenant inline when writing a contract
+    // for someone not yet in the system (update covers back-filling the new
     // tenant's contractId once the contract itself has been created).
     match /tenants/{id} {
       allow read: if signedIn();
-      allow create, update: if isAccountant();
+      allow create, update: if isLeasingAgent() || customCan("contracts", "write");
     }
     match /technicians/{id} { allow read: if signedIn(); }
-    // Accountants create/manage contracts (and their payment schedules) —
-    // see app/admin/contracts and lib/contracts/schedule.ts — narrowed to
-    // the owners assigned to them. Tenants are narrowed to their own single
-    // contract (needed for app/tenant's payment-schedule view — see
-    // app/api/tenant-payments/settle for how a tenant actually marks their
-    // own payment paid, since writes here still require isMyOwner/customCan
-    // below). Every other role (owner, leasingAgent, technician,
-    // maintenanceStaff, admin) keeps its existing unrestricted read.
+    // Leasing agents (and admin) create/manage contracts (and their payment
+    // schedules) — see app/admin/contracts and lib/contracts/schedule.ts.
+    // Accountants are view-only, narrowed to the owners assigned to them.
+    // Tenants are narrowed to their own single contract (needed for
+    // app/tenant's payment-schedule view; marking a payment paid from that
+    // view goes through app/api/tenant-payments/settle, a server route on
+    // the Admin SDK, so it doesn't need a client write rule here). Every
+    // other role (owner, technician, maintenanceStaff, admin) keeps its
+    // existing unrestricted read.
     match /contracts/{id} {
+      // Accountant is view-only here (scoped to their assigned owners) —
+      // writing contracts (create/update, e.g. settling a payment) is
+      // leasing-agent/admin territory, see app/admin/contracts. Unlike
+      // properties/units, contract create is also scoped (isMyOwner, not a
+      // bare isLeasingAgent()): a contract is only ever written for a
+      // property that already exists, so there's no "onboarding a new
+      // owner" exception to make here — an agent can only sign a lease for
+      // an owner already in their assigned portfolio (see app/admin/users).
       allow read: if signedIn() && (
-        (myRole() != "accountant" && myRole() != "tenant") ||
+        (myRole() != "accountant" && myRole() != "leasingAgent" && myRole() != "tenant") ||
         isMyOwner(resource.data.ownerId) ||
         (myRole() == "tenant" && resource.data.tenantId == myProfile().linkedId)
       ) || customCan("contracts", "read");
@@ -182,13 +202,16 @@ service cloud.firestore {
     match /accountManagers/{id} { allow read: if signedIn(); }
     match /systemUsers/{id} { allow read: if signedIn(); }
     // Units: sub-records of a property (see Unit in lib/types.ts) — same
-    // rule shape as properties above, reusing the "properties" custom-role
-    // resource rather than a separate one, since a unit isn't independently
-    // delegable.
+    // rule shape as properties above: read unrestricted for leasingAgent
+    // (browsing the catalog), write scoped to their assigned portfolio.
+    // Create stays unscoped for the same reason as properties' create
+    // (units are added in the same intake-wizard flow as a brand-new
+    // owner+property); update/delete are scoped.
     match /units/{id} {
       allow read: if signedIn() && (myRole() != "accountant" || isMyOwner(resource.data.ownerId)) || customCan("properties", "read");
       allow create: if isLeasingAgent() || customCan("properties", "write");
-      allow update: if isLeasingAgent() || customCan("properties", "write");
+      allow update: if isMyOwner(resource.data.ownerId) || customCan("properties", "write");
+      allow delete: if isMyOwner(resource.data.ownerId) || customCan("properties", "write");
     }
     // Maintenance staff manage the vendor directory day to day.
     match /vendors/{id} {

@@ -150,6 +150,14 @@ export async function updateUnit(id: string, patch: Partial<Omit<Unit, "id">>) {
   void logAudit("units", id, "update");
 }
 
+// Leasing-agent/admin only (see firestore.rules) — removes a unit that was
+// added by mistake or is no longer offered; doesn't touch the parent
+// property or any other units.
+export async function deleteUnit(id: string, label?: string) {
+  await deleteDoc(doc(getDb(), "units", id));
+  void logAudit("units", id, "delete", label);
+}
+
 export async function createVendor(vendor: Omit<Vendor, "id">) {
   const ref = await addDoc(collection(getDb(), "vendors"), vendor);
   void logAudit("vendors", ref.id, "create", vendor.name);

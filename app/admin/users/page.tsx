@@ -19,7 +19,7 @@ const roleLabels: Record<string, string> = {
   tenant: "مستأجر",
   technician: "فني صيانة",
   accountant: "محاسب",
-  leasingAgent: "مندوب تأجير",
+  leasingAgent: "الوسيط",
   maintenanceStaff: "فريق صيانة",
   custom: "دور مخصص",
   "مدير حساب": "مدير حساب",
@@ -74,12 +74,16 @@ export default function AdminUsersPage() {
     [profiles, systemUserByEmail]
   );
 
-  const accountantRows = useMemo(() => rows.filter((r) => r.role === "accountant"), [rows]);
+  // Both roles use the same ownerIds many-to-many link (see
+  // lib/accountant-scope.tsx and firestore.rules' isMyOwner()) — an
+  // accountant's assigned owners for their bookkeeping scope, a leasing
+  // agent's for their managed portfolio.
+  const scopedRows = useMemo(() => rows.filter((r) => r.role === "accountant" || r.role === "leasingAgent"), [rows]);
 
   const unassignedOwners = useMemo(() => {
-    const assigned = new Set(accountantRows.flatMap((r) => r.ownerIds));
+    const assigned = new Set(scopedRows.flatMap((r) => r.ownerIds));
     return owners.filter((o) => !assigned.has(o.id));
-  }, [owners, accountantRows]);
+  }, [owners, scopedRows]);
 
   const filtered = useMemo(
     () => rows.filter((r) => r.name.includes(query) || r.email.toLowerCase().includes(query.toLowerCase())),
@@ -121,7 +125,7 @@ export default function AdminUsersPage() {
           <div className="flex items-start gap-2 rounded-xl border border-warning-500/30 bg-warning-50 px-4 py-3 text-sm font-semibold text-warning-700">
             <TriangleAlert size={16} className="shrink-0 mt-0.5" />
             <span>
-              الملاك التالية بدون محاسب مرتبط: {unassignedOwners.map((o) => o.name).join("، ")}
+              الملاك التالية بدون محاسب أو وسيط مرتبط: {unassignedOwners.map((o) => o.name).join("، ")}
             </span>
           </div>
         )}
@@ -130,7 +134,7 @@ export default function AdminUsersPage() {
           <CardHeader>
             <div>
               <CardTitle>جميع المستخدمين</CardTitle>
-              <CardSubtitle>{rows.length} مستخدم مسجّل في النظام — اضغط على صف محاسب لربطه بالملاك</CardSubtitle>
+              <CardSubtitle>{rows.length} مستخدم مسجّل في النظام — اضغط على صف محاسب أو وسيط لربطه بالملاك</CardSubtitle>
             </div>
             <div className="relative w-56">
               <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
@@ -152,14 +156,14 @@ export default function AdminUsersPage() {
               </THead>
               <TBody>
                 {filtered.map((r) => {
-                  const isAccountant = r.role === "accountant";
+                  const hasOwnerScope = r.role === "accountant" || r.role === "leasingAgent";
                   const isOpen = expandedId === r.uid;
                   const myOwners = owners.filter((o) => r.ownerIds.includes(o.id));
                   return (
                     <Fragment key={r.uid}>
-                      <Tr className={isAccountant ? "cursor-pointer" : ""} onClick={() => isAccountant && startEditing(r.uid, r.ownerIds)}>
+                      <Tr className={hasOwnerScope ? "cursor-pointer" : ""} onClick={() => hasOwnerScope && startEditing(r.uid, r.ownerIds)}>
                         <Td className="w-8 text-muted">
-                          {isAccountant && (isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />)}
+                          {hasOwnerScope && (isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />)}
                         </Td>
                         <Td className="font-semibold">{r.name}</Td>
                         <Td className="text-muted">{r.email}</Td>
@@ -192,12 +196,12 @@ export default function AdminUsersPage() {
                           </div>
                         </Td>
                         <Td className="text-muted max-w-[220px] truncate">
-                          {isAccountant ? (myOwners.length > 0 ? myOwners.map((o) => o.name).join("، ") : "بدون") : "—"}
+                          {hasOwnerScope ? (myOwners.length > 0 ? myOwners.map((o) => o.name).join("، ") : "بدون") : "—"}
                         </Td>
                         <Td><Badge tone={r.status === "نشط" ? "success" : "danger"}>{r.status}</Badge></Td>
                         <Td className="text-muted">{r.lastLogin}</Td>
                       </Tr>
-                      {isOpen && isAccountant && (
+                      {isOpen && hasOwnerScope && (
                         <Tr className="bg-background">
                           <Td colSpan={7} className="py-4 whitespace-normal align-top">
                             <div className="pr-8 flex flex-col gap-3 max-w-lg">

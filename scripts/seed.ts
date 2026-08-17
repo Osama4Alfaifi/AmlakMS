@@ -159,7 +159,7 @@ async function main() {
   tenants.forEach((t) => console.log(`  ${t.email}  — مستأجر: ${t.name}`));
   technicians.forEach((t) => console.log(`  ${t.id}@amlakms.sa  — فني: ${t.name}`));
   console.log(`  accountant@amlakms.sa  — محاسب`);
-  console.log(`  agent@amlakms.sa  — مندوب تأجير`);
+  console.log(`  agent@amlakms.sa  — وسيط`);
   console.log(`  maintenance-lead@amlakms.sa  — فريق صيانة`);
   process.exit(0);
 }
