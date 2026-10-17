@@ -2,25 +2,37 @@ import { NextRequest, NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
 import { DocumentPdf } from "@/lib/pdf/DocumentPdf";
-import type { Quote } from "@/lib/types";
+import type { Quote, UserProfile } from "@/lib/types";
 
-// Mirrors firestore.rules: `match /quotes/{id} { allow read: if signedIn(); }`
-// — any authenticated account can read a quote, so this route only needs a
-// valid Firebase ID token, not a role check.
+// Mirrors firestore.rules: `match /quotes/{id} { allow read: if signedIn()
+// && myRole() == "owner" && resource.data.ownerId == myProfile().linkedId; }`
+// (admin covered by the wildcard) — only the owner the quote belongs to may
+// read it, so this route re-checks that instead of just a valid token: Route
+// Handlers run on the Admin SDK, which bypasses Firestore security rules
+// entirely, so this check is what actually enforces it for this endpoint.
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const token = req.headers.get("authorization")?.match(/^Bearer (.+)$/)?.[1];
   if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
+  let uid: string;
   try {
-    await getAdminAuth().verifyIdToken(token);
+    ({ uid } = await getAdminAuth().verifyIdToken(token));
   } catch {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const snap = await getAdminDb().collection("quotes").doc(id).get();
+  const db = getAdminDb();
+  const profileSnap = await db.collection("users").doc(uid).get();
+  const profile = profileSnap.data() as UserProfile | undefined;
+  if (!profile) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const snap = await db.collection("quotes").doc(id).get();
   if (!snap.exists) return NextResponse.json({ error: "not found" }, { status: 404 });
   const quote = { id: snap.id, ...snap.data() } as Quote;
+
+  const canView = profile.role === "admin" || (profile.role === "owner" && profile.linkedId === quote.ownerId);
+  if (!canView) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const buffer = await renderToBuffer(
     <DocumentPdf

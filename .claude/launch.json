@@ -4,8 +4,19 @@
     {
       "name": "amlakms-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 3000
+    },
+    {
+      "name": "amlakms-demo",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        ".claude/dev-demo.mjs"
+      ],
+      "port": 3100
     }
   ]
 }

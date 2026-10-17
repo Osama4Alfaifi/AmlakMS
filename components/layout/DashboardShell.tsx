@@ -8,6 +8,9 @@ import { useAppSettings, useCustomRole } from "@/lib/firestore/hooks";
 import type { PermissionResource, Role } from "@/lib/types";
 import { useRequireAuth } from "@/lib/auth-context";
 import { MobileSidebar, Sidebar } from "./Sidebar";
+import { PullToRefresh } from "./PullToRefresh";
+import { LogoMark } from "./Logo";
+import { PageEnter } from "@/components/motion/PageEnter";
 import { Topbar } from "./Topbar";
 
 export function DashboardShell({
@@ -33,8 +36,9 @@ export function DashboardShell({
 
   if (!ready || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-muted text-sm">
-        جارِ التحميل...
+      <div role="status" aria-live="polite" className="min-h-screen flex flex-col items-center justify-center gap-4 text-muted text-sm">
+        <LogoMark size={44} className="animate-pulse" />
+        <span>جارِ التحميل...</span>
       </div>
     );
   }
@@ -43,8 +47,10 @@ export function DashboardShell({
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="max-w-sm text-center flex flex-col items-center gap-3">
-          <TriangleAlert size={32} className="text-warning-600" />
-          <p className="font-semibold">النظام مغلق مؤقتًا للصيانة</p>
+          <div className="grid place-items-center h-12 w-12 rounded-2xl bg-warning-50 text-warning-600">
+            <TriangleAlert size={24} />
+          </div>
+          <p className="font-bold">النظام مغلق مؤقتًا للصيانة</p>
           <p className="text-sm text-muted">يرجى المحاولة لاحقًا، أو التواصل مع الإدارة.</p>
         </div>
       </div>
@@ -60,19 +66,23 @@ export function DashboardShell({
       <MobileSidebar role={user.role} customRoleId={user.customRoleId} open={mobileOpen} onClose={() => setMobileOpen(false)} />
       <div className="flex-1 min-w-0 flex flex-col">
         <Topbar title={title} onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom))] lg:px-6 lg:pt-6 lg:pb-6 overflow-x-hidden flex flex-col gap-4 lg:gap-6">
-          <ShellOwnerScopeBanner />
-          {customDenied ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="max-w-sm text-center flex flex-col items-center gap-3">
-                <ShieldAlert size={32} className="text-danger-500" />
-                <p className="font-semibold">ليس لديك صلاحية الوصول لهذه الصفحة</p>
-                <p className="text-sm text-muted">تواصل مع مدير النظام إذا كنت بحاجة لهذه الصلاحية.</p>
+        <main className="flex-1 w-full max-w-[96rem] mx-auto px-4 pt-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] lg:px-8 lg:pt-8 lg:pb-10 overflow-x-hidden flex flex-col gap-4 lg:gap-6">
+          <PullToRefresh>
+            <ShellOwnerScopeBanner />
+            {customDenied ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="max-w-sm text-center flex flex-col items-center gap-3">
+                  <div className="grid place-items-center h-12 w-12 rounded-2xl bg-danger-50 text-danger-600">
+                    <ShieldAlert size={24} />
+                  </div>
+                  <p className="font-bold">ليس لديك صلاحية الوصول لهذه الصفحة</p>
+                  <p className="text-sm text-muted">تواصل مع مدير النظام إذا كنت بحاجة لهذه الصلاحية.</p>
+                </div>
               </div>
-            </div>
-          ) : (
-            children
-          )}
+            ) : (
+              <PageEnter>{children}</PageEnter>
+            )}
+          </PullToRefresh>
         </main>
       </div>
     </div>

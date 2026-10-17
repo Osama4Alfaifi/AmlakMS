@@ -160,7 +160,7 @@ export default function FinancialReportsPage() {
           title="التدفق النقدي التراكمي"
           subtitle="صافي الرصيد المتراكم شهرًا بعد شهر"
           dataKey="الرصيد التراكمي"
-          color="#1c3ab3"
+          color="#1a566a"
         />
 
         <Card>
@@ -205,7 +205,7 @@ export default function FinancialReportsPage() {
               <CardTitle>تقرير العقود التفصيلي</CardTitle>
               <CardSubtitle>{contractRows.length} عقد — حالة التحصيل الفعلية لكل عقد من جدول دفعاته الحقيقي</CardSubtitle>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button size="sm" variant="outline" onClick={() => downloadCsv("تقرير العقود", contractExportRows())}>
                 <Download size={15} /> تصدير CSV
               </Button>

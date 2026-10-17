@@ -1,50 +1,70 @@
 @import "tailwindcss";
 
+/*
+ * AmlakMS design tokens.
+ * World: ledger-grade calm. Warm stone ground, deep petrol ink, one brass
+ * accent used sparingly. Neutrals lean warm; brand leans cool, so the two
+ * never read as the same grey-blue. Status hues sit well away from brand.
+ */
 :root {
-  --background: #f4f6f9;
+  --background: #f6f5f2;
   --surface: #ffffff;
-  --foreground: #10182b;
-  --muted: #64748b;
-  --border: #e2e8f0;
+  --surface-sunken: #f1efea;
+  --foreground: #16222a;
+  --muted: #5b6870;
+  --border: #e4e1d9;
+  --border-strong: #cfcbc0;
 
-  --brand-50: #eef4ff;
-  --brand-100: #dbe7ff;
-  --brand-200: #b8d0ff;
-  --brand-300: #8bb0ff;
-  --brand-400: #5c8aff;
-  --brand-500: #3563f4;
-  --brand-600: #234adf;
-  --brand-700: #1c3ab3;
-  --brand-800: #182f8a;
-  --brand-900: #101d54;
+  --brand-50: #eef6f8;
+  --brand-100: #d9ebf0;
+  --brand-200: #b4d7e0;
+  --brand-300: #86bccb;
+  --brand-400: #4f9bb0;
+  --brand-500: #2c7e96;
+  --brand-600: #1f6a80;
+  --brand-700: #1a566a;
+  --brand-800: #144556;
+  --brand-900: #0f2f3c;
+  --brand-950: #0a2029;
 
-  --accent-400: #f4b740;
-  --accent-500: #e8a415;
-  --accent-600: #c9860a;
+  --accent-400: #d6a84e;
+  --accent-500: #b98a2e;
+  --accent-600: #94691a;
 
-  --success-50: #eafaf1;
-  --success-500: #1fa35c;
-  --success-700: #157a44;
+  --success-50: #e9f6ee;
+  --success-500: #1e9558;
+  --success-700: #14683c;
 
-  --warning-50: #fff8ea;
-  --warning-500: #e0a318;
-  --warning-700: #a8760c;
+  --warning-50: #fdf5e3;
+  --warning-500: #d4900e;
+  --warning-600: #a8700a;
+  --warning-700: #8f5d06;
 
-  --danger-50: #fdeeee;
-  --danger-500: #dc3b3b;
-  --danger-700: #a92929;
+  --danger-50: #fcecec;
+  --danger-500: #d03a3a;
+  --danger-600: #b52e2e;
+  --danger-700: #a02424;
 
-  --info-50: #eaf6ff;
-  --info-500: #2196d8;
-  --info-700: #16739f;
+  --info-50: #e8f1fb;
+  --info-500: #2b7bd6;
+  --info-700: #1d559a;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-quick: 140ms;
+  --duration-base: 220ms;
+  --duration-slow: 420ms;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-surface-sunken: var(--surface-sunken);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
 
   --color-brand-50: var(--brand-50);
   --color-brand-100: var(--brand-100);
@@ -56,6 +76,7 @@
   --color-brand-700: var(--brand-700);
   --color-brand-800: var(--brand-800);
   --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
 
   --color-accent-400: var(--accent-400);
   --color-accent-500: var(--accent-500);
@@ -67,10 +88,12 @@
 
   --color-warning-50: var(--warning-50);
   --color-warning-500: var(--warning-500);
+  --color-warning-600: var(--warning-600);
   --color-warning-700: var(--warning-700);
 
   --color-danger-50: var(--danger-50);
   --color-danger-500: var(--danger-500);
+  --color-danger-600: var(--danger-600);
   --color-danger-700: var(--danger-700);
 
   --color-info-50: var(--info-50);
@@ -80,23 +103,117 @@
   --font-sans: var(--font-cairo);
 }
 
+@theme {
+  /* Elevation comes from layered transparent shadows; borders are kept for
+     structure (dividers, inputs, selected states). */
+  --shadow-card:
+    0 0 0 1px rgb(22 34 42 / 0.05), 0 1px 2px rgb(22 34 42 / 0.04), 0 8px 20px -10px rgb(22 34 42 / 0.1);
+  --shadow-raised:
+    0 0 0 1px rgb(22 34 42 / 0.06), 0 2px 4px rgb(22 34 42 / 0.06), 0 14px 32px -12px rgb(22 34 42 / 0.18);
+  --shadow-control: 0 0 0 1px rgb(22 34 42 / 0.1), 0 1px 1px rgb(22 34 42 / 0.05);
+  --shadow-press: inset 0 1px 2px rgb(22 34 42 / 0.12);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
+  /* Suppresses the browser/WebView's own native overscroll bounce at the
+     top of the page so it doesn't visually fight with the custom
+     pull-to-refresh indicator — see components/layout/PullToRefresh.tsx. */
+  overscroll-behavior-y: contain;
+}
+
+/* Type: balanced headings, no orphans in running text, and numerals that
+   hold their width so live figures never jitter. */
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+}
+p,
+li {
+  text-wrap: pretty;
+}
+table,
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Browser surfaces carry the palette too. */
+::selection {
+  background: var(--brand-200);
+  color: var(--brand-950);
+}
+:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+input,
+textarea,
+select {
+  accent-color: var(--brand-600);
+  caret-color: var(--brand-600);
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
+  scrollbar-color: var(--border-strong) transparent;
 }
-
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: var(--border-strong);
   border-radius: 8px;
+}
+
+/* Press feedback: one scale for every pressable control. */
+.pressable {
+  transition-property: background-color, color, border-color, box-shadow, scale, opacity;
+  transition-duration: var(--duration-quick);
+  transition-timing-function: var(--ease-out);
+}
+.pressable:active:not(:disabled) {
+  scale: 0.96;
+}
+
+/* Hit areas: grow a small control to 44px without changing its look. */
+.hit-44 {
+  position: relative;
+}
+.hit-44::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+
+/* Surfaces that should wait for GSAP before showing are hidden only while
+   JS has not yet taken over, and never when motion is reduced. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @media print {

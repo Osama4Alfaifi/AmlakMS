@@ -119,7 +119,7 @@ export default function QuotesPage() {
                 {filteredQuotes.length} من {quotesList.length} عرض سعر {user?.role === "owner" ? "لعقاراتك" : "— قابلة للتصدير كملف PDF"}
               </CardSubtitle>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-32">
                 {quoteStatuses.map((s) => (
                   <option key={s} value={s}>{s}</option>

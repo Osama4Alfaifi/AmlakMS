@@ -109,7 +109,7 @@ export default function AdminOccupancyPage() {
               <CardTitle>حالة الوحدات</CardTitle>
               <CardSubtitle>{filtered.length} من {rows.length} وحدة/عقار</CardSubtitle>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Select value={city} onChange={(e) => setCity(e.target.value)} className="w-36">
                 {cities.map((c) => (
                   <option key={c} value={c}>{c}</option>

@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { useAuth } from "@/lib/auth-context";
+import { getFirebaseAuth } from "@/lib/firebase/client";
 import { useAllUserProfiles, useOwners, useRoles, useSystemUsers } from "@/lib/firestore/hooks";
 import { updateUserOwnerIds, updateUserRole } from "@/lib/firestore/mutations";
 import type { Role } from "@/lib/types";
-import { ChevronDown, ChevronUp, Search, TriangleAlert } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, TriangleAlert, UserPlus } from "lucide-react";
 
 const roleLabels: Record<string, string> = {
   admin: "مدير النظام",
@@ -53,6 +54,7 @@ export default function AdminUsersPage() {
   const [draftOwnerIds, setDraftOwnerIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [savingRoleUid, setSavingRoleUid] = useState<string | null>(null);
+  const [creatingAccountFor, setCreatingAccountFor] = useState<string | null>(null);
 
   const systemUserByEmail = useMemo(() => new Map(systemUsers.map((u) => [u.email, u])), [systemUsers]);
 
@@ -84,6 +86,37 @@ export default function AdminUsersPage() {
     const assigned = new Set(scopedRows.flatMap((r) => r.ownerIds));
     return owners.filter((o) => !assigned.has(o.id));
   }, [owners, scopedRows]);
+
+  // Owners created inline by a leasing agent (app/admin/properties/new's
+  // "مالك جديد") get provisioned a login automatically now (see
+  // app/api/owners/create-account) — this catches anyone who slipped
+  // through before that existed, or whose phone was missing at the time.
+  const ownersWithoutAccount = useMemo(() => {
+    const linkedOwnerIds = new Set(profiles.filter((p) => p.role === "owner").map((p) => p.linkedId));
+    return owners.filter((o) => !linkedOwnerIds.has(o.id));
+  }, [owners, profiles]);
+
+  async function handleCreateOwnerAccount(ownerId: string, ownerName: string) {
+    setCreatingAccountFor(ownerId);
+    try {
+      const idToken = await getFirebaseAuth().currentUser?.getIdToken();
+      const res = await fetch("/api/owners/create-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ ownerId }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        alert(`تعذّر إنشاء الحساب: ${json.error || "خطأ غير متوقع"}`);
+        return;
+      }
+      alert(
+        `تم إنشاء حساب دخول للمالك ${ownerName}:\n\nالبريد الإلكتروني: ${json.email}\nكلمة المرور: ${json.password}\n\nشارك هذه البيانات مع المالك — لن تظهر مرة أخرى.`
+      );
+    } finally {
+      setCreatingAccountFor(null);
+    }
+  }
 
   const filtered = useMemo(
     () => rows.filter((r) => r.name.includes(query) || r.email.toLowerCase().includes(query.toLowerCase())),
@@ -128,6 +161,38 @@ export default function AdminUsersPage() {
               الملاك التالية بدون محاسب أو وسيط مرتبط: {unassignedOwners.map((o) => o.name).join("، ")}
             </span>
           </div>
+        )}
+
+        {ownersWithoutAccount.length > 0 && (
+          <Card>
+            <CardHeader>
+              <div>
+                <CardTitle>ملاك بدون حساب دخول</CardTitle>
+                <CardSubtitle>عادة ملاك جدد أنشأهم وسيط أثناء إضافة عقار — أنشئ لهم حساب دخول برقم جوالهم</CardSubtitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-2">
+                {ownersWithoutAccount.map((o) => (
+                  <div key={o.id} className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm">
+                    <div>
+                      <span className="font-semibold">{o.name}</span>
+                      {o.phone && <span className="text-muted"> · {o.phone}</span>}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={creatingAccountFor === o.id || !o.phone}
+                      title={!o.phone ? "أضِف رقم جوال لهذا المالك أولًا" : undefined}
+                      onClick={() => handleCreateOwnerAccount(o.id, o.name)}
+                    >
+                      <UserPlus size={14} /> {creatingAccountFor === o.id ? "جارِ الإنشاء..." : "إنشاء حساب"}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         <Card>

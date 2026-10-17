@@ -36,7 +36,7 @@ export function PropertyMap({ properties }: { properties: Property[] }) {
           <Popup>
             <div style={{ fontFamily: "var(--font-cairo)", minWidth: 180 }} dir="rtl">
               <p style={{ fontWeight: 800, marginBottom: 4 }}>{p.title}</p>
-              <p style={{ fontSize: 12, color: "#64748b", marginBottom: 6 }}>
+              <p style={{ fontSize: 12, color: "#5b6870", marginBottom: 6 }}>
                 {p.city} · {p.district}
               </p>
               <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>

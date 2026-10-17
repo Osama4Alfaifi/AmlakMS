@@ -106,7 +106,7 @@ export default function ReportsPage() {
               <CardTitle>الفواتير</CardTitle>
               <CardSubtitle>{scopedInvoices.length} فاتورة</CardSubtitle>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-40">
                 {["الكل", "مدفوعة", "معلقة", "متأخرة"].map((s) => (
                   <option key={s} value={s}>{s}</option>

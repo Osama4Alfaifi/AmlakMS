@@ -1,6 +1,6 @@
 "use client";
 
-import { addDoc, collection, deleteDoc, doc, setDoc, updateDoc } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, doc, getDocs, query, setDoc, updateDoc, where, writeBatch } from "firebase/firestore";
 import { getDb, getFirebaseAuth } from "@/lib/firebase/client";
 import { generatePaymentSchedule } from "@/lib/contracts/schedule";
 import type {
@@ -135,6 +135,21 @@ export async function createOwner(owner: Omit<Owner, "id">) {
 export async function updateProperty(id: string, patch: Partial<Omit<Property, "id">>) {
   await updateDoc(doc(getDb(), "properties", id), patch);
   void logAudit("properties", id, "update");
+}
+
+// Leasing-agent/admin only (see firestore.rules) — cascades to every unit
+// under this property first (a unit is meaningless without its parent, see
+// Unit.propertyId), then removes the property itself. Doesn't touch
+// contracts referencing this property/its units — the caller is expected to
+// confirm none are active before calling this (see app/admin/properties'
+// confirm() prompt), same trust level deleteUnit already has.
+export async function deleteProperty(id: string, label?: string) {
+  const unitsSnap = await getDocs(query(collection(getDb(), "units"), where("propertyId", "==", id)));
+  const batch = writeBatch(getDb());
+  unitsSnap.docs.forEach((d) => batch.delete(d.ref));
+  batch.delete(doc(getDb(), "properties", id));
+  await batch.commit();
+  void logAudit("properties", id, "delete", label);
 }
 
 export async function createUnit(unit: Omit<Unit, "id">) {

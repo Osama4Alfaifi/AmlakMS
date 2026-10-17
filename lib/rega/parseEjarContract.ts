@@ -81,7 +81,9 @@ function reconstructArabicRuns(items: Array<{ str: string }>): string {
 
 async function extractFullText(file: File): Promise<string> {
   const pdfjsLib = await import("pdfjs-dist");
-  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+  // NEXT_PUBLIC_BASE_PATH is only set for the GitHub Pages demo build (served
+  // from a /<repo> sub-path); empty everywhere else.
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/pdf.worker.min.mjs`;
 
   const data = new Uint8Array(await file.arrayBuffer());
   const doc = await pdfjsLib.getDocument({ data }).promise;

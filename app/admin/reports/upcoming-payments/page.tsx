@@ -75,8 +75,8 @@ export default function UpcomingPaymentsPage() {
               <CardTitle>الدفعات القادمة لكل شهر</CardTitle>
               <CardSubtitle>كل الدفعات المستحقة عبر جميع العقارات دفعة واحدة، بحسب الشهر</CardSubtitle>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Label htmlFor="umonth" className="mb-0">الشهر</Label>
                 <Input id="umonth" type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-40" />
               </div>

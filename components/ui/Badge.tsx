@@ -2,13 +2,15 @@ import { cn } from "@/lib/cn";
 
 type Tone = "success" | "warning" | "danger" | "info" | "brand" | "neutral";
 
-const toneClasses: Record<Tone, string> = {
-  success: "bg-success-50 text-success-700",
-  warning: "bg-warning-50 text-warning-700",
-  danger: "bg-danger-50 text-danger-700",
-  info: "bg-info-50 text-info-700",
-  brand: "bg-brand-50 text-brand-700",
-  neutral: "bg-background text-muted",
+// Each tone pairs a tinted ground with a darkened text colour of the same hue
+// (≥4.5:1) and a small dot, so status never relies on colour alone.
+const toneClasses: Record<Tone, { chip: string; dot: string }> = {
+  success: { chip: "bg-success-50 text-success-700", dot: "bg-success-500" },
+  warning: { chip: "bg-warning-50 text-warning-700", dot: "bg-warning-500" },
+  danger: { chip: "bg-danger-50 text-danger-700", dot: "bg-danger-500" },
+  info: { chip: "bg-info-50 text-info-700", dot: "bg-info-500" },
+  brand: { chip: "bg-brand-50 text-brand-800", dot: "bg-brand-500" },
+  neutral: { chip: "bg-surface-sunken text-muted", dot: "bg-muted/60" },
 };
 
 const STATUS_TONE: Record<string, Tone> = {
@@ -39,14 +41,16 @@ const STATUS_TONE: Record<string, Tone> = {
 
 export function Badge({ children, tone, className }: { children: React.ReactNode; tone?: Tone; className?: string }) {
   const resolvedTone = tone ?? (typeof children === "string" ? STATUS_TONE[children] : undefined) ?? "neutral";
+  const t = toneClasses[resolvedTone];
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap",
-        toneClasses[resolvedTone],
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold leading-none whitespace-nowrap",
+        t.chip,
         className
       )}
     >
+      <span aria-hidden className={cn("h-1.5 w-1.5 rounded-full shrink-0", t.dot)} />
       {children}
     </span>
   );

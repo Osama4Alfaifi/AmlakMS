@@ -113,7 +113,7 @@ export default function AdminAuditLogPage() {
               {user?.role !== "admin" && " — العمليات المعروضة هي عملياتك فقط"}
             </CardSubtitle>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Select value={entityType} onChange={(e) => setEntityType(e.target.value)} className="w-44">
               {entityTypes.map((t) => <option key={t} value={t}>{t}</option>)}
             </Select>

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Input";
 import { useOwners, useProperties } from "@/lib/firestore/hooks";
 import { createOwner, createProperty, createUnit } from "@/lib/firestore/mutations";
+import { getFirebaseAuth } from "@/lib/firebase/client";
 import { UNIT_AMENITIES, UNIT_TYPES } from "@/lib/types";
 import type { MeterBilledTo, PropertyType, UnitAmenity, UnitType } from "@/lib/types";
 import { SAUDI_REGIONS } from "@/lib/saudi-regions";
@@ -41,7 +42,7 @@ const LocationPicker = dynamic(() => import("@/components/map/LocationPicker").t
 const PROPERTY_TYPES: PropertyType[] = ["أرض", "عمارة", "فيلا", "مجمع تجاري مفتوح", "مجمع تجاري مغلق", "برج", "استراحة", "أخرى"];
 const DEED_TYPES = ["إلكتروني", "ورقي", "عقد إيجار", "سجل عقاري"] as const;
 const USAGE_TYPES = ["سكن عائلات", "سكن أفراد", "تجاري", "سكني-تجاري", "سكن جماعي"] as const;
-const MARKER_COLORS = ["#3563f4", "#1fa35c", "#e0a318", "#dc3b3b", "#2196d8", "#1c3ab3"];
+const MARKER_COLORS = ["#2c7e96", "#1e9558", "#d4900e", "#d03a3a", "#2b7bd6", "#1a566a"];
 const METER_BILLED_TO: MeterBilledTo[] = ["المالك", "المستأجر"];
 const DEFAULT_LAT = 24.7136;
 const DEFAULT_LNG = 46.6753;
@@ -75,8 +76,6 @@ interface UnitDraft {
   type: UnitType;
   floor: string;
   area: string;
-  bedrooms: string;
-  bathrooms: string;
   furnished: boolean;
   furnitureCondition: "جديد" | "مستخدم";
   amenities: UnitAmenity[];
@@ -93,8 +92,6 @@ function emptyUnitDraft(): UnitDraft {
     type: "شقة",
     floor: "",
     area: "",
-    bedrooms: "",
-    bathrooms: "",
     furnished: false,
     furnitureCondition: "جديد",
     amenities: [],
@@ -173,10 +170,6 @@ export default function NewPropertyWizardPage() {
   const [propertyNumber, setPropertyNumber] = useState("");
   const [usage, setUsage] = useState<(typeof USAGE_TYPES)[number]>("سكني-تجاري");
   const [area, setArea] = useState("");
-  const [electricityMeterNumber, setElectricityMeterNumber] = useState("");
-  const [electricityMeterBilledTo, setElectricityMeterBilledTo] = useState<MeterBilledTo>("المستأجر");
-  const [waterMeterNumber, setWaterMeterNumber] = useState("");
-  const [waterMeterBilledTo, setWaterMeterBilledTo] = useState<MeterBilledTo>("المستأجر");
 
   // Step 4 — units
   const [units, setUnits] = useState<UnitDraft[]>([]);
@@ -184,7 +177,10 @@ export default function NewPropertyWizardPage() {
   const [copyCount, setCopyCount] = useState("1");
   const [amenitiesMode, setAmenitiesMode] = useState<"none" | "has" | null>(null);
 
-  const canGoStep1 = ownerMode === "existing" ? !!ownerId : !!newOwner.name.trim();
+  // Phone is required for a new owner (not just name) — it's how their
+  // login account gets provisioned automatically on submit, see
+  // handleSubmit below.
+  const canGoStep1 = ownerMode === "existing" ? !!ownerId : !!newOwner.name.trim() && !!newOwner.phone.trim();
   const canGoStep2 = !!city.trim() && !!district.trim();
   const canGoStep3 = !!title.trim();
 
@@ -246,6 +242,7 @@ export default function NewPropertyWizardPage() {
     try {
       const today = new Date().toISOString().slice(0, 10);
       let finalOwnerId = ownerId;
+      let newOwnerCredentials: { email: string; password: string } | null = null;
       if (ownerMode === "new") {
         finalOwnerId = await createOwner({
           name: newOwner.name,
@@ -254,6 +251,23 @@ export default function NewPropertyWizardPage() {
           birthDate: newOwner.birthDate || undefined,
           joinedAt: today,
         });
+        // Best-effort — a new owner otherwise has no way to log in at all
+        // (see app/api/owners/create-account). Doesn't block property
+        // creation if it fails (e.g. the phone number's already in use by
+        // another account) — that's surfaced via alert() below instead.
+        try {
+          const idToken = await getFirebaseAuth().currentUser?.getIdToken();
+          const res = await fetch("/api/owners/create-account", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+            body: JSON.stringify({ ownerId: finalOwnerId }),
+          });
+          const json = await res.json();
+          if (res.ok) newOwnerCredentials = json;
+          else console.error("تعذّر إنشاء حساب دخول للمالك:", json.error);
+        } catch (err) {
+          console.error("تعذّر إنشاء حساب دخول للمالك:", err);
+        }
       }
 
       const propertyId = await createProperty({
@@ -284,10 +298,6 @@ export default function NewPropertyWizardPage() {
         postalCode: postalCode || undefined,
         propertyNumber: propertyNumber || undefined,
         usage,
-        electricityMeterNumber: electricityMeterNumber || undefined,
-        electricityMeterBilledTo: electricityMeterNumber ? electricityMeterBilledTo : undefined,
-        waterMeterNumber: waterMeterNumber || undefined,
-        waterMeterBilledTo: waterMeterNumber ? waterMeterBilledTo : undefined,
         coOwners: coOwners.filter((c) => c.name.trim()).length
           ? coOwners.filter((c) => c.name.trim()).map((c) => ({
               name: c.name,
@@ -307,8 +317,11 @@ export default function NewPropertyWizardPage() {
             floor: Number(u.floor) || 0,
             type: u.type,
             area: Number(u.area) || 0,
-            bedrooms: Number(u.bedrooms) || 0,
-            bathrooms: Number(u.bathrooms) || 0,
+            // Bedrooms/bathrooms counts live in amenities (غرف نوم/دورة
+            // مياه) instead — a separate top-level count was a duplicate
+            // input for the same thing.
+            bedrooms: 0,
+            bathrooms: 0,
             // Price/listing type are set later from "العروض" (see
             // app/admin/listings) — a unit is just inventory at intake.
             price: 0,
@@ -326,6 +339,11 @@ export default function NewPropertyWizardPage() {
         )
       );
 
+      if (newOwnerCredentials) {
+        alert(
+          `تم إنشاء حساب دخول للمالك ${newOwner.name}:\n\nالبريد الإلكتروني: ${newOwnerCredentials.email}\nكلمة المرور: ${newOwnerCredentials.password}\n\nشارك هذه البيانات مع المالك — لن تظهر مرة أخرى.`
+        );
+      }
       router.push("/admin/properties");
     } finally {
       setSubmitting(false);
@@ -337,7 +355,7 @@ export default function NewPropertyWizardPage() {
   return (
     <DashboardShell allow={["admin", "leasingAgent", "custom"]} customResource="properties" title="عقار جديد">
       <div className="flex flex-col gap-6 max-w-4xl">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {stepLabels.map((label, i) => {
             const n = (i + 1) as 1 | 2 | 3 | 4;
             const active = step === n;
@@ -367,7 +385,7 @@ export default function NewPropertyWizardPage() {
               </div>
             </CardHeader>
             <CardContent className="flex flex-col gap-5">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <div className="flex rounded-lg border border-border overflow-hidden text-xs">
                   <button type="button" onClick={() => setOwnerMode("existing")} className={`px-3 py-1.5 font-semibold ${ownerMode === "existing" ? "bg-brand-600 text-white" : "text-muted"}`}>
                     مالك موجود
@@ -391,7 +409,7 @@ export default function NewPropertyWizardPage() {
                   <Input placeholder="اسم المالك" value={newOwner.name} onChange={(e) => setNewOwner((f) => ({ ...f, name: e.target.value }))} required />
                   <Input placeholder="رقم الهوية" value={newOwner.idNumber} onChange={(e) => setNewOwner((f) => ({ ...f, idNumber: e.target.value }))} />
                   <Input type="date" aria-label="تاريخ الميلاد" value={newOwner.birthDate} onChange={(e) => setNewOwner((f) => ({ ...f, birthDate: e.target.value }))} />
-                  <Input placeholder="رقم الجوال" dir="ltr" value={newOwner.phone} onChange={(e) => setNewOwner((f) => ({ ...f, phone: e.target.value }))} />
+                  <Input placeholder="رقم الجوال" dir="ltr" value={newOwner.phone} onChange={(e) => setNewOwner((f) => ({ ...f, phone: e.target.value }))} required />
                 </div>
               )}
 
@@ -541,32 +559,6 @@ export default function NewPropertyWizardPage() {
                   <Input id="area" type="number" min={0} value={area} onChange={(e) => setArea(e.target.value)} />
                 </div>
               </div>
-              <div>
-                <p className="text-xs font-bold text-muted mb-2">العدادات</p>
-                <p className="text-xs text-muted mb-3">اترك رقم العداد فارغًا إن كان العقار سيُقسّم إلى وحدات — عدادات كل وحدة تُضاف في الخطوة التالية</p>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <Label htmlFor="elecMeter">رقم عداد الكهرباء</Label>
-                    <Input id="elecMeter" dir="ltr" value={electricityMeterNumber} onChange={(e) => setElectricityMeterNumber(e.target.value)} />
-                  </div>
-                  <div>
-                    <Label htmlFor="elecMeterBilledTo">فاتورة الكهرباء على</Label>
-                    <Select id="elecMeterBilledTo" value={electricityMeterBilledTo} onChange={(e) => setElectricityMeterBilledTo(e.target.value as MeterBilledTo)}>
-                      {METER_BILLED_TO.map((m) => <option key={m} value={m}>{m}</option>)}
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="waterMeter">رقم عداد المياه</Label>
-                    <Input id="waterMeter" dir="ltr" value={waterMeterNumber} onChange={(e) => setWaterMeterNumber(e.target.value)} />
-                  </div>
-                  <div>
-                    <Label htmlFor="waterMeterBilledTo">فاتورة المياه على</Label>
-                    <Select id="waterMeterBilledTo" value={waterMeterBilledTo} onChange={(e) => setWaterMeterBilledTo(e.target.value as MeterBilledTo)}>
-                      {METER_BILLED_TO.map((m) => <option key={m} value={m}>{m}</option>)}
-                    </Select>
-                  </div>
-                </div>
-              </div>
             </CardContent>
           </Card>
         )}
@@ -588,8 +580,6 @@ export default function NewPropertyWizardPage() {
                   </Select>
                   <Input type="number" placeholder="الطابق" value={unitDraft.floor} onChange={(e) => setUnitDraft((f) => ({ ...f, floor: e.target.value }))} />
                   <Input type="number" placeholder="المساحة (م²)" value={unitDraft.area} onChange={(e) => setUnitDraft((f) => ({ ...f, area: e.target.value }))} />
-                  <Input type="number" placeholder="غرف النوم" value={unitDraft.bedrooms} onChange={(e) => setUnitDraft((f) => ({ ...f, bedrooms: e.target.value }))} />
-                  <Input type="number" placeholder="دورات المياه" value={unitDraft.bathrooms} onChange={(e) => setUnitDraft((f) => ({ ...f, bathrooms: e.target.value }))} />
                 </div>
 
                 <div className="flex items-center gap-4">

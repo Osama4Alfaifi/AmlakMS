@@ -65,3 +65,11 @@ service-account*.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# static GitHub Pages demo build (scripts/build-demo.mjs)
+/.next-demo/
+/.demo-parked-api/
+
+# impeccable review captures
+.impeccable/review/
+.npm-cache/

@@ -27,7 +27,7 @@ export default function AdminClientsPage() {
             <CardTitle>قاعدة العملاء</CardTitle>
             <CardSubtitle>{clients.length} عميل (ملاك، مستأجرون، عملاء محتملون)</CardSubtitle>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Select value={type} onChange={(e) => setType(e.target.value)} className="w-36">
               {["الكل", "مالك", "مستأجر", "عميل محتمل"].map((t) => (
                 <option key={t} value={t}>{t}</option>

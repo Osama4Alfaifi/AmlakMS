@@ -67,7 +67,7 @@ export default function AdminOverviewPage() {
         <RevenueAreaChart data={monthlyRevenue} />
 
         <div className="grid lg:grid-cols-2 gap-4">
-          <BarChartCard data={cityDistribution} title="توزيع العقارات حسب المدينة" dataKey="عقارات" color="#3563f4" />
+          <BarChartCard data={cityDistribution} title="توزيع العقارات حسب المدينة" dataKey="عقارات" color="#2c7e96" />
           <PieChartCard data={propertyTypeDistribution} title="توزيع العقارات حسب النوع" />
         </div>
 

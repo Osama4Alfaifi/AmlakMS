@@ -6,18 +6,24 @@ type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger";
 type Size = "sm" | "md" | "lg";
 
 const variantClasses: Record<Variant, string> = {
-  primary: "bg-brand-600 text-white hover:bg-brand-700 shadow-sm shadow-brand-600/20",
-  secondary: "bg-brand-50 text-brand-700 hover:bg-brand-100",
-  outline: "border border-border bg-surface text-foreground hover:bg-background",
-  ghost: "text-foreground hover:bg-background",
-  danger: "bg-danger-500 text-white hover:bg-danger-700",
+  primary:
+    "bg-brand-700 text-white shadow-control hover:bg-brand-800",
+  secondary: "bg-brand-50 text-brand-800 hover:bg-brand-100",
+  outline: "bg-surface text-foreground shadow-control hover:bg-surface-sunken",
+  ghost: "text-foreground hover:bg-surface-sunken",
+  danger: "bg-danger-600 text-white shadow-control hover:bg-danger-700",
 };
 
+// Radii are concentric with the cards they sit in (card 16px, control 12px).
+// Touch targets reach 44px on phones, 40px on desktop.
 const sizeClasses: Record<Size, string> = {
-  sm: "text-xs px-3 py-1.5 gap-1.5 rounded-lg",
-  md: "text-sm px-4 py-2.5 gap-2 rounded-xl",
-  lg: "text-base px-5 py-3 gap-2 rounded-xl",
+  sm: "min-h-9 text-xs px-3 gap-1.5 rounded-[10px] max-sm:min-h-10",
+  md: "min-h-11 sm:min-h-10 text-sm px-4 gap-2 rounded-xl",
+  lg: "min-h-12 text-base px-5 gap-2 rounded-xl",
 };
+
+const base =
+  "pressable inline-flex items-center justify-center font-semibold select-none disabled:opacity-50 disabled:cursor-not-allowed";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
@@ -25,17 +31,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export function Button({ variant = "primary", size = "md", className, ...props }: ButtonProps) {
-  return (
-    <button
-      className={cn(
-        "inline-flex items-center justify-center font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
-        variantClasses[variant],
-        sizeClasses[size],
-        className
-      )}
-      {...props}
-    />
-  );
+  return <button className={cn(base, variantClasses[variant], sizeClasses[size], className)} {...props} />;
 }
 
 interface LinkButtonProps {
@@ -48,15 +44,7 @@ interface LinkButtonProps {
 
 export function LinkButton({ href, variant = "primary", size = "md", className, children }: LinkButtonProps) {
   return (
-    <Link
-      href={href}
-      className={cn(
-        "inline-flex items-center justify-center font-medium transition-colors",
-        variantClasses[variant],
-        sizeClasses[size],
-        className
-      )}
-    >
+    <Link href={href} className={cn(base, variantClasses[variant], sizeClasses[size], className)}>
       {children}
     </Link>
   );

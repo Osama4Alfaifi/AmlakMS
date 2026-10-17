@@ -286,7 +286,7 @@ export default function AdminContractsPage() {
               <CardTitle>جميع العقود</CardTitle>
               <CardSubtitle>{filtered.length} من {contracts.length} عقد — اضغط على أي صف لعرض بيانات العقد وجدول الدفعات</CardSubtitle>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-36">
                 {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
               </Select>
@@ -300,6 +300,11 @@ export default function AdminContractsPage() {
               <Button size="sm" variant="outline" onClick={() => downloadExcel("العقود", "العقود", exportRows())}>
                 <FileSpreadsheet size={15} /> تصدير Excel
               </Button>
+              {canWrite && (
+                <Link href="/admin/contracts/import" className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-100">
+                  <Upload size={15} /> استيراد عدة عقود
+                </Link>
+              )}
               {canWrite && (
                 <Button size="sm" onClick={() => setShowForm((v) => !v)}>
                   <Plus size={15} /> إضافة عقد
@@ -440,7 +445,7 @@ export default function AdminContractsPage() {
                                           <td className="py-1.5">
                                             {p.status === "مستحقة" ? (
                                               canWrite && (
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex flex-wrap items-center gap-2">
                                                   <button
                                                     onClick={() => {
                                                       if (confirm(`هل تريد تأكيد تسديد دفعة بقيمة ${p.amount.toLocaleString("ar-SA")} ﷼؟`)) {
@@ -609,7 +614,7 @@ export default function AdminContractsPage() {
                 </div>
 
                 <div className="flex flex-col gap-2.5">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Label className="mb-0">المستأجر</Label>
                     <div className="flex rounded-lg border border-border overflow-hidden text-xs">
                       <button type="button" onClick={() => setForm((f) => ({ ...f, tenantMode: "existing" }))} className={`px-3 py-1.5 font-semibold ${form.tenantMode === "existing" ? "bg-brand-600 text-white" : "text-muted"}`}>

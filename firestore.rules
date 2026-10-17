@@ -128,6 +128,7 @@ service cloud.firestore {
       // permission-denied. Update is scoped.
       allow create: if isLeasingAgent() || customCan("properties", "write");
       allow update: if isMyOwner(resource.data.ownerId) || customCan("properties", "write");
+      allow delete: if isMyOwner(resource.data.ownerId) || customCan("properties", "write");
     }
     // Admin-defined custom roles + their permission matrix — see
     // customCan() above and app/admin/roles. Reference data: any signed-in
@@ -137,16 +138,39 @@ service cloud.firestore {
     match /roles/{id} { allow read: if signedIn(); }
     // Leasing agents onboard new owners as part of onboarding their
     // property (see app/admin/properties/new) — same write gate properties
-    // itself already uses.
+    // itself already uses. Read is deliberately NOT scoped by ownerId (unlike
+    // properties/units/contracts): lib/accountant-scope.tsx's useOwners()
+    // fetch is unconstrained (no where() clause) for every authenticated
+    // role via the app-wide AccountantScopeProvider, so a per-document rule
+    // would just deny the whole collection to accountant/owner (Firestore
+    // can't prove a data-dependent rule holds for an unconstrained query —
+    // see the file-level note at the top of this file). Instead this simply
+    // excludes the roles that have no legitimate reason to read owner
+    // records at all (their profiles include idNumber/birthDate — real PII):
+    // tenant, technician, maintenanceStaff never call useOwners() themselves,
+    // they only inherited the fetch incidentally through the global scope
+    // provider, so excluding them is a pure hardening fix with no feature
+    // impact (custom is excluded too since "owners" isn't a configurable
+    // PermissionResource — see lib/types.ts).
     match /owners/{id} {
-      allow read: if signedIn();
+      allow read: if signedIn() && myRole() != "tenant" && myRole() != "technician" && myRole() != "maintenanceStaff" && myRole() != "custom";
       allow create, update: if isLeasingAgent() || customCan("properties", "write");
     }
     // Leasing agents register a new tenant inline when writing a contract
     // for someone not yet in the system (update covers back-filling the new
-    // tenant's contractId once the contract itself has been created).
+    // tenant's contractId once the contract itself has been created). Read
+    // excludes the same no-legitimate-need roles as owners above — Tenant
+    // carries real PII (idNumber/birthDate/employer) and technician/
+    // maintenanceStaff never query this collection (MaintenanceRequest
+    // already denormalizes tenantName onto itself for their needs). A
+    // tenant may still read their own single record (app/tenant fetches it
+    // by their own linkedId, a scoped get() rather than the unconstrained
+    // list every other allowed role uses).
     match /tenants/{id} {
-      allow read: if signedIn();
+      allow read: if signedIn() && (
+        (myRole() != "tenant" && myRole() != "technician" && myRole() != "maintenanceStaff" && myRole() != "custom") ||
+        (myRole() == "tenant" && id == myProfile().linkedId)
+      ) || customCan("contracts", "read");
       allow create, update: if isLeasingAgent() || customCan("contracts", "write");
     }
     match /technicians/{id} { allow read: if signedIn(); }

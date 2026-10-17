@@ -110,7 +110,7 @@ function VouchersPageInner() {
               <CardTitle>سندات القبض والصرف</CardTitle>
               <CardSubtitle>{vouchers.length} سند</CardSubtitle>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="w-32">
                 {["الكل", ...VOUCHER_TYPES].map((t) => <option key={t} value={t}>{t}</option>)}
               </Select>

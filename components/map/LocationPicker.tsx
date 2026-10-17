@@ -9,7 +9,7 @@ const markerIcon = L.divIcon({
   className: "",
   html: `<div style="
     width:18px;height:18px;border-radius:50%;
-    background:#1c3ab3;border:3px solid white;
+    background:#1a566a;border:3px solid white;
     box-shadow:0 1px 4px rgba(0,0,0,.4);
   "></div>`,
   iconSize: [18, 18],

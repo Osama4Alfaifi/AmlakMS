@@ -112,7 +112,7 @@ export default function AdminExpensesPage() {
               <CardTitle>سجل المصروفات</CardTitle>
               <CardSubtitle>{expenses.length} مصروف على مستوى المحفظة العقارية — اضغط على أي صف لعرض التفاصيل</CardSubtitle>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Select value={category} onChange={(e) => setCategory(e.target.value)} className="w-36">
                 {["الكل", ...CATEGORIES].map((c) => (
                   <option key={c} value={c}>{c}</option>

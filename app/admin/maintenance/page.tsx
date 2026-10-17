@@ -55,7 +55,7 @@ export default function AdminMaintenancePage() {
               <CardTitle>كل طلبات الصيانة</CardTitle>
               <CardSubtitle>{filtered.length} من {requests.length} طلب — عيّن فنيًا داخليًا أو مورّدًا خارجيًا لكل طلب</CardSubtitle>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-32">
                 {["الكل", "جديد", "قيد التنفيذ", "مكتمل"].map((s) => <option key={s} value={s}>{s}</option>)}
               </Select>

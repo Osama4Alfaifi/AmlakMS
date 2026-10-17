@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 import { useCustomRole } from "@/lib/firestore/hooks";
 import type { PermissionResource, Role } from "@/lib/types";
 import { customResourceNav, navByRole, type NavItem } from "./nav-config";
+import { LogoMark } from "./Logo";
 import { Building2, X } from "lucide-react";
 
 // A "custom" role has no fixed nav — it's whatever resources the admin
@@ -23,14 +25,12 @@ function useNavItems(role: Role, customRoleId?: string | null): NavItem[] {
 
 function Brand({ action }: { action?: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-2.5 px-5 min-h-16 border-b border-border shrink-0 pt-[env(safe-area-inset-top)]">
-      <div className="flex items-center gap-2.5">
-        <div className="h-9 w-9 rounded-xl bg-brand-600 flex items-center justify-center text-white">
-          <Building2 size={18} />
-        </div>
+    <div className="flex items-center justify-between gap-2.5 px-5 min-h-16 shrink-0 pt-[env(safe-area-inset-top)]">
+      <div className="flex items-center gap-3">
+        <LogoMark size={34} />
         <div>
-          <p className="text-sm font-extrabold leading-none">أملاك MS</p>
-          <p className="text-[11px] text-muted mt-1">نظام إدارة الأملاك</p>
+          <p className="text-[15px] font-extrabold leading-none text-white">أملاك MS</p>
+          <p className="text-[11px] text-brand-300 mt-1.5 leading-none">نظام إدارة الأملاك</p>
         </div>
       </div>
       {action}
@@ -41,23 +41,30 @@ function Brand({ action }: { action?: React.ReactNode }) {
 function NavList({ role, customRoleId, onNavigate }: { role: Role; customRoleId?: string | null; onNavigate?: () => void }) {
   const pathname = usePathname();
   const items = useNavItems(role, customRoleId);
+  // The longest matching href wins, so /admin never lights up beside /admin/contracts.
+  const activeHref = items
+    .filter((i) => pathname === i.href || pathname.startsWith(i.href + "/"))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+
   return (
-    <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
+    <nav className="flex-1 overflow-y-auto py-3 px-3 flex flex-col gap-0.5 [scrollbar-color:rgb(255_255_255/0.2)_transparent]">
       {items.map((item) => {
-        const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href + "/"));
+        const active = item.href === activeHref;
         const Icon = item.icon;
         return (
           <Link
             key={item.href}
             href={item.href}
             onClick={onNavigate}
+            aria-current={active ? "page" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors",
-              active ? "bg-brand-600 text-white shadow-sm shadow-brand-600/25" : "text-foreground/80 hover:bg-background"
+              "relative flex items-center gap-3 rounded-xl px-3.5 min-h-11 lg:min-h-10 text-sm font-medium",
+              "transition-[background-color,color] duration-[var(--duration-quick)] ease-[var(--ease-out)]",
+              active ? "bg-white/[0.11] text-white" : "text-brand-200 hover:bg-white/[0.06] hover:text-white"
             )}
           >
-            <Icon size={17} />
-            {item.label}
+            <Icon size={18} strokeWidth={active ? 2 : 1.75} className={active ? "text-accent-400" : ""} />
+            <span className="truncate">{item.label}</span>
           </Link>
         );
       })}
@@ -67,7 +74,7 @@ function NavList({ role, customRoleId, onNavigate }: { role: Role; customRoleId?
 
 export function Sidebar({ role, customRoleId }: { role: Role; customRoleId?: string | null }) {
   return (
-    <aside className="no-print hidden lg:flex w-64 shrink-0 flex-col border-l border-border bg-surface">
+    <aside className="no-print hidden lg:flex w-64 shrink-0 flex-col bg-brand-950 sticky top-0 h-screen">
       <Brand />
       <NavList role={role} customRoleId={customRoleId} />
     </aside>
@@ -85,23 +92,40 @@ export function MobileSidebar({
   open: boolean;
   onClose: () => void;
 }) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
   return (
     <div
-      className={cn(
-        "no-print fixed inset-0 z-50 lg:hidden transition-opacity",
-        open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
-      )}
+      aria-hidden={!open}
+      inert={!open}
+      className={cn("no-print fixed inset-0 z-50 lg:hidden", open ? "pointer-events-auto" : "pointer-events-none")}
     >
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div
+        onClick={onClose}
+        className={cn(
+          "absolute inset-0 bg-brand-950/55 backdrop-blur-[2px] transition-opacity duration-[var(--duration-base)] ease-[var(--ease-out)]",
+          open ? "opacity-100" : "opacity-0"
+        )}
+      />
       <aside
         className={cn(
-          "absolute top-0 right-0 h-full w-72 bg-surface flex flex-col transition-transform duration-200 pb-[env(safe-area-inset-bottom)]",
+          "absolute top-0 right-0 h-full w-[18.5rem] max-w-[85vw] bg-brand-950 flex flex-col pb-[env(safe-area-inset-bottom)] shadow-raised",
+          "transition-transform duration-[var(--duration-slow)] ease-[var(--ease-out)]",
           open ? "translate-x-0" : "translate-x-full"
         )}
       >
         <Brand
           action={
-            <button onClick={onClose} className="p-2 text-muted hover:text-foreground">
+            <button
+              onClick={onClose}
+              aria-label="إغلاق القائمة"
+              className="pressable grid place-items-center h-11 w-11 rounded-xl text-brand-200 hover:bg-white/10 hover:text-white"
+            >
               <X size={20} />
             </button>
           }

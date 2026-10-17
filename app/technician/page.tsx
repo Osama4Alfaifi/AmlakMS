@@ -58,7 +58,7 @@ export default function TechnicianDashboardPage() {
               <CardTitle>أوامر العمل المسندة إليّ</CardTitle>
               <CardSubtitle>{filteredTasks.length} من {myTasks.length} أمر عمل — تخصص {currentTechnician.specialty}</CardSubtitle>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Select value={priority} onChange={(e) => setPriority(e.target.value)} className="w-32">
                 {["الكل", "منخفض", "متوسط", "عاجل"].map((p) => (
                   <option key={p} value={p}>{p}</option>

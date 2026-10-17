@@ -155,7 +155,7 @@ export default function TenantDashboardPage() {
                           ) : payingId === p.id ? (
                             <div className="flex flex-col gap-2 rounded-lg border border-brand-200 bg-brand-50 p-3 max-w-xs">
                               <p className="text-xs font-semibold text-brand-700">بيئة دفع تجريبية — لا يتم تحصيل أي مبالغ حقيقية</p>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <Button size="sm" disabled={paySubmitting} onClick={() => handleConfirmPay(p.id)}>
                                   {paySubmitting ? "جارِ المعالجة..." : "تأكيد الدفع التجريبي"}
                                 </Button>

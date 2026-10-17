@@ -57,7 +57,7 @@ export default function AdminVendorsPage() {
               <CardTitle>دليل المورّدين</CardTitle>
               <CardSubtitle>{vendors.length} مورّد/شركة خارجية — يمكن ربطهم بطلبات الصيانة</CardSubtitle>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <div className="relative w-52">
                 <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
                 <Input placeholder="بحث بالاسم أو الفئة" value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />

@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-17T00:00:00.000Z",
+  "title": "Design System: أملاك MS (AmlakMS)",
+  "extensions": {
+    "colorMeta": {
+      "brand-700": { "role": "primary", "displayName": "Deep Petrol", "canonical": "#1a566a", "tonalRamp": ["#0a2029", "#0f2f3c", "#144556", "#1a566a", "#1f6a80", "#2c7e96", "#86bccb", "#eef6f8"] },
+      "brand-950": { "role": "primary", "displayName": "Rail Night", "canonical": "#0a2029", "tonalRamp": ["#0a2029", "#0f2f3c", "#144556", "#1a566a", "#1f6a80", "#2c7e96", "#4f9bb0", "#b4d7e0"] },
+      "accent-400": { "role": "secondary", "displayName": "Ledger Brass", "canonical": "#d6a84e", "tonalRamp": ["#5a3f0c", "#7a5714", "#94691a", "#b98a2e", "#d6a84e", "#e4c27e", "#f0dbae", "#faf1dc"] },
+      "background": { "role": "neutral", "displayName": "Stone Ground", "canonical": "#f6f5f2", "tonalRamp": ["#16222a", "#5b6870", "#8c9499", "#cfcbc0", "#e4e1d9", "#f1efea", "#f6f5f2", "#ffffff"] },
+      "foreground": { "role": "neutral", "displayName": "Ink", "canonical": "#16222a", "tonalRamp": ["#16222a", "#2d3a42", "#5b6870", "#8c9499", "#b5b9b8", "#cfcbc0", "#e4e1d9", "#f6f5f2"] },
+      "success-700": { "role": "status", "displayName": "Ledger Green", "canonical": "#14683c", "tonalRamp": ["#0c4026", "#14683c", "#1e9558", "#4fb17f", "#86caa6", "#b4dfc6", "#d4eede", "#e9f6ee"] },
+      "warning-700": { "role": "status", "displayName": "Amber Notice", "canonical": "#8f5d06", "tonalRamp": ["#5c3b03", "#8f5d06", "#a8700a", "#d4900e", "#e5b04f", "#f0cb85", "#f8e3b8", "#fdf5e3"] },
+      "danger-700": { "role": "status", "displayName": "Overdue Red", "canonical": "#a02424", "tonalRamp": ["#6a1717", "#a02424", "#b52e2e", "#d03a3a", "#e07070", "#ec9f9f", "#f6cccc", "#fcecec"] },
+      "info-700": { "role": "status", "displayName": "Notice Blue", "canonical": "#1d559a", "tonalRamp": ["#12365f", "#1d559a", "#2b7bd6", "#5b9be0", "#8dbbea", "#b9d6f3", "#d7e7f8", "#e8f1fb"] }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "Headline", "purpose": "Top bar page title." },
+      "title": { "displayName": "Title", "purpose": "Card titles." },
+      "figure": { "displayName": "Figure", "purpose": "Statement figures and net income; tabular Arabic-Indic numerals." },
+      "stat": { "displayName": "Stat", "purpose": "StatCard values." },
+      "body": { "displayName": "Body", "purpose": "Table cells, notifications, nav items." },
+      "label": { "displayName": "Label", "purpose": "dt labels, form labels, table heads, subtitles." }
+    },
+    "shadows": [
+      { "name": "card", "value": "0 0 0 1px rgb(22 34 42 / 0.05), 0 1px 2px rgb(22 34 42 / 0.04), 0 8px 20px -10px rgb(22 34 42 / 0.1)", "purpose": "Cards and stat cards." },
+      { "name": "raised", "value": "0 0 0 1px rgb(22 34 42 / 0.06), 0 2px 4px rgb(22 34 42 / 0.06), 0 14px 32px -12px rgb(22 34 42 / 0.18)", "purpose": "Drawer, landing statement card, hover on landing tiles." },
+      { "name": "control", "value": "0 0 0 1px rgb(22 34 42 / 0.1), 0 1px 1px rgb(22 34 42 / 0.05)", "purpose": "Buttons, inputs, avatar, unselected role tiles." },
+      { "name": "press", "value": "inset 0 1px 2px rgb(22 34 42 / 0.12)", "purpose": "Pressed state." }
+    ],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Default easing for state transitions." },
+      { "name": "ease-in-out", "value": "cubic-bezier(0.65, 0, 0.35, 1)", "purpose": "Symmetric transitions." },
+      { "name": "duration-quick", "value": "140ms", "purpose": "Press and hover feedback." },
+      { "name": "duration-base", "value": "220ms", "purpose": "Scrim fade." },
+      { "name": "duration-slow", "value": "420ms", "purpose": "Drawer slide." },
+      { "name": "page-enter", "value": "GSAP from opacity 0, y 14, 0.55s power3.out, stagger 0.06s", "purpose": "Staged entrance of page blocks; skipped under reduced motion." },
+      { "name": "count-up", "value": "GSAP 1.1s power3.out, delay 0.15s", "purpose": "Figures count up from zero; skipped under reduced motion." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main action; petrol with control shadow and press scale.",
+      "html": "<button class=\"ds-btn-primary\">حفظ</button>",
+      "css": ".ds-btn-primary { background: var(--brand-700, #1a566a); color: #fff; font-weight: 600; font-size: 14px; min-height: 40px; padding: 0 16px; border: 0; border-radius: 12px; box-shadow: 0 0 0 1px rgb(22 34 42 / 0.1), 0 1px 1px rgb(22 34 42 / 0.05); transition: background-color 140ms cubic-bezier(0.22,1,0.36,1), scale 140ms cubic-bezier(0.22,1,0.36,1); } .ds-btn-primary:hover { background: var(--brand-800, #144556); } .ds-btn-primary:active { scale: 0.96; } .ds-btn-primary:focus-visible { outline: 2px solid var(--brand-500, #2c7e96); outline-offset: 2px; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action on paper, e.g. print statement.",
+      "html": "<button class=\"ds-btn-outline\">طباعة كشف الحساب</button>",
+      "css": ".ds-btn-outline { background: #fff; color: #16222a; font-weight: 600; font-size: 12px; min-height: 36px; padding: 0 12px; border: 0; border-radius: 10px; box-shadow: 0 0 0 1px rgb(22 34 42 / 0.1), 0 1px 1px rgb(22 34 42 / 0.05); transition: background-color 140ms cubic-bezier(0.22,1,0.36,1), scale 140ms cubic-bezier(0.22,1,0.36,1); } .ds-btn-outline:hover { background: #f1efea; } .ds-btn-outline:active { scale: 0.96; } .ds-btn-outline:focus-visible { outline: 2px solid #2c7e96; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Shared field chrome: ring shadow, petrol focus ring with halo.",
+      "html": "<input class=\"ds-input\" placeholder=\"name@example.sa\" dir=\"rtl\" />",
+      "css": ".ds-input { width: 100%; min-height: 40px; padding: 8px 14px; font-size: 14px; color: #16222a; background: #fff; border: 0; border-radius: 12px; outline: none; box-shadow: 0 0 0 1px rgb(22 34 42 / 0.1), 0 1px 1px rgb(22 34 42 / 0.05); transition: box-shadow 140ms cubic-bezier(0.22,1,0.36,1); } .ds-input::placeholder { color: rgb(91 104 112 / 0.7); } .ds-input:hover { box-shadow: 0 0 0 1px #cfcbc0; } .ds-input:focus, .ds-input:focus-visible { box-shadow: 0 0 0 1.5px #1f6a80, 0 0 0 4px rgb(31 106 128 / 0.14); }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Paper surface with layered ring-plus-drop shadow.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">كشف حسابي</h3><p class=\"ds-card-sub\">صافي الدخل بعد المصروفات وعمولة الإدارة</p></div>",
+      "css": ".ds-card { background: #fff; border-radius: 16px; padding: 20px; box-shadow: 0 0 0 1px rgb(22 34 42 / 0.05), 0 1px 2px rgb(22 34 42 / 0.04), 0 8px 20px -10px rgb(22 34 42 / 0.1); } .ds-card-title { margin: 0; font-size: 16px; font-weight: 700; line-height: 1.375; color: #16222a; } .ds-card-sub { margin: 4px 0 0; font-size: 12px; line-height: 1.6; color: #5b6870; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge-success",
+      "description": "Dot plus tinted ground plus same-hue dark text.",
+      "html": "<span class=\"ds-badge\"><span class=\"ds-badge-dot\"></span>نشط</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 9999px; background: #e9f6ee; color: #14683c; font-size: 12px; font-weight: 600; line-height: 1; white-space: nowrap; } .ds-badge-dot { width: 6px; height: 6px; border-radius: 9999px; background: #1e9558; }"
+    },
+    {
+      "name": "Navigation Item (active)",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Rail link on petrol; the active glyph is the only brass.",
+      "html": "<div class=\"ds-rail\"><a class=\"ds-nav ds-nav-active\" href=\"#\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"ds-nav-icon\"><path d=\"M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M15 9h.01M15 13h.01\"/></svg><span>لوحة التحكم</span></a><a class=\"ds-nav\" href=\"#\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z M14 3v6h6\"/></svg><span>العقود</span></a></div>",
+      "css": ".ds-rail { background: #0a2029; padding: 12px; width: 240px; display: flex; flex-direction: column; gap: 2px; direction: rtl; } .ds-nav { display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 0 14px; border-radius: 12px; font-size: 14px; font-weight: 500; color: #b4d7e0; text-decoration: none; transition: background-color 140ms cubic-bezier(0.22,1,0.36,1), color 140ms; } .ds-nav:hover { background: rgb(255 255 255 / 0.06); color: #fff; } .ds-nav-active, .ds-nav-active:hover { background: rgb(255 255 255 / 0.11); color: #fff; } .ds-nav-active .ds-nav-icon { color: #d6a84e; }"
+    },
+    {
+      "name": "Statement Block",
+      "kind": "custom",
+      "refersTo": "net-income-block",
+      "description": "Signature: gross, expenses, fee, then net income in a petrol block with a double top rule.",
+      "html": "<div class=\"ds-stmt\"><div class=\"ds-stmt-row\"><span class=\"ds-stmt-l\">الدخل الإجمالي</span><span class=\"ds-stmt-v\">٢٤٠٬٠٠٠ ر.س</span></div><div class=\"ds-stmt-net\"><span class=\"ds-stmt-nl\">صافي الدخل</span><span class=\"ds-stmt-nv\">٢٠٦٬٤٠٠ ر.س</span></div></div>",
+      "css": ".ds-stmt { direction: rtl; background: #fff; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 0 0 1px rgb(22 34 42 / 0.05), 0 1px 2px rgb(22 34 42 / 0.04), 0 8px 20px -10px rgb(22 34 42 / 0.1); } .ds-stmt-l { display: block; font-size: 12px; font-weight: 600; color: #5b6870; } .ds-stmt-v { display: block; margin-top: 6px; font-size: 24px; font-weight: 800; color: #16222a; font-variant-numeric: tabular-nums; } .ds-stmt-net { background: #144556; color: #fff; border-radius: 12px; padding: 16px 20px; border-top: 5px double rgb(134 188 203 / 0.7); } .ds-stmt-nl { display: block; font-size: 12px; font-weight: 600; color: #b4d7e0; } .ds-stmt-nv { display: block; margin-top: 6px; font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Ledger",
+    "overview": "The product's promise is an owner's net income after expenses and fee, so the interface reads like a clean statement rather than a card dashboard. Warm stone ground (#f6f5f2) carries white surfaces lifted by layered ring-plus-drop shadows; deep petrol (brand-700 for action, brand-950 for the navigation rail) supplies the ink; a single brass accent appears only on the active navigation glyph. Neutrals lean warm and the brand leans cool so the two never merge into one grey-blue; status hues sit far from brand.\n\nOwners and staff share one system. Staff screens run denser (same tokens, tighter rows); owner screens lead with the statement: gross, minus expenses, minus fee, equals net income in a petrol block closed by a double rule, as in a ledger. Arabic RTL with Cairo is a fixed commitment, as are 44px touch targets on phones and reduced-motion respect.\n\nMotion is a single signature: a staged page entrance and a number count-up, both GSAP and both skipped under prefers-reduced-motion.",
+    "keyCharacteristics": [
+      "Warm stone ground, white surfaces, petrol ink; brass only on the active nav glyph.",
+      "Depth by layered transparent shadows; borders reserved for structure (dividers, table rules).",
+      "Arabic-Indic numerals, tabular figures, money isolated left-to-right.",
+      "Status always pairs a dot with tinted ground and darkened same-hue text.",
+      "Concentric radii: 16px cards, 12px controls inside them."
+    ],
+    "rules": [
+      { "name": "The One Brass Rule", "body": "Brass appears on the active nav glyph, and nowhere that carries data. Its rarity is how the rail says \"you are here\".", "section": "colors" },
+      { "name": "The Same-Hue Text Rule", "body": "Tinted status grounds take a darkened text of the same hue (700 step), never grey, never the 500 step.", "section": "colors" },
+      { "name": "The Warm-vs-Cool Rule", "body": "Neutrals stay warm, brand stays cool; do not introduce blue-grey neutrals.", "section": "colors" },
+      { "name": "The Tabular Figure Rule", "body": "Every figure, table, and live number carries tabular numerals (.num, tables) so counts never jitter.", "section": "typography" },
+      { "name": "The One Numeral System Rule", "body": "Digits are Arabic-Indic app-wide, produced by currency() and StatCard; do not mix Latin digits into running Arabic UI.", "section": "typography" },
+      { "name": "The LTR Money Rule", "body": "Amounts are rendered through components/ui/Money.tsx (a bdi dir=\"ltr\", true minus U+2212) wherever a sign matters, so the sign sits on the digits' leading edge inside RTL text.", "section": "typography" },
+      { "name": "The Ring-Not-Border Rule", "body": "A surface's outline is its shadow's 1px ring. Use border only for dividers, table rules, and the top bar's lower edge.", "section": "elevation" },
+      { "name": "The Soft-Blur Rule", "body": "Backdrop blur is reserved for the sticky top bar (md) and the drawer scrim (2px).", "section": "elevation" }
+    ],
+    "dos": [
+      "Do lift surfaces with the Card / Raised / Control shadows and keep border for dividers and table rules.",
+      "Do keep radii concentric: 16px cards, 12px controls, 10px small controls.",
+      "Do render amounts through Money and number text through currency() so numerals are Arabic-Indic and signs stay on the digits.",
+      "Do pair every status with a dot, a tinted ground, and a 700-step same-hue text.",
+      "Do keep touch targets at 44px on phones and add hit-44 to small icon buttons.",
+      "Do let leading content on owner pages be the statement (income, expenses, fee, net) before decorative stats.",
+      "Do wrap new motion in prefers-reduced-motion: no-preference, and reuse PageEnter and CountUp rather than adding new entrances."
+    ],
+    "donts": [
+      "Don't use brass for anything other than the active nav glyph (and the existing soft accent well).",
+      "Don't introduce a second typeface or a Latin-digit run inside Arabic UI.",
+      "Don't return to the generic blue SaaS card grid: no gradient-tinted stat tiles, no colored figures in StatCard (the tone colors the glyph well only).",
+      "Don't convey status by color alone, and don't use the 500-step hue as text on a tinted ground.",
+      "Don't stack a border and a ring shadow on the same surface.",
+      "Don't change print and PDF surfaces (.no-print, .print-sheet) or role-scoped data behavior as a side effect of visual work."
+    ]
+  }
+}

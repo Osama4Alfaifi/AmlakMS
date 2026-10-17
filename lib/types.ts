@@ -172,6 +172,13 @@ export interface ContractPayment {
   amount: number;
   status: PaymentStatus;
   paidAt?: string;
+  paymentSource?: "إيجار" | "تحويل بنكي" | "كاش" | "إيصال";
+  bankName?: string;
+  reference?: string;
+  proofUrl?: string;
+  confirmedBy?: string;
+  confirmedAt?: string;
+  note?: string;
 }
 
 export interface Contract {

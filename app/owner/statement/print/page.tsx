@@ -38,7 +38,7 @@ export default function OwnerStatementPrintPage() {
         <button onClick={() => router.push("/owner")} className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground">
           <ArrowRight size={16} /> رجوع
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" disabled={downloading} onClick={async () => {
             setDownloading(true);
             try {

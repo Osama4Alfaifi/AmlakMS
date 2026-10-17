@@ -113,7 +113,7 @@ export default function AdminDocumentsPage() {
                 الرفع المباشر داخل التطبيق يتطلب ترقية خطة Firebase لاحقًا
               </CardSubtitle>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Select value={category} onChange={(e) => setCategory(e.target.value)} className="w-36">
                 {["الكل", ...CATEGORIES].map((c) => <option key={c} value={c}>{c}</option>)}
               </Select>

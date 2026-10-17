@@ -3,6 +3,7 @@ import { Cairo } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { AccountantScopeProvider } from "@/lib/accountant-scope";
+import { DemoBadge } from "@/components/layout/DemoBadge";
 
 const cairo = Cairo({
   variable: "--font-cairo",
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <AuthProvider>
           <AccountantScopeProvider>{children}</AccountantScopeProvider>
         </AuthProvider>
+        {process.env.NEXT_PUBLIC_DEMO === "true" && <DemoBadge />}
       </body>
     </html>
   );

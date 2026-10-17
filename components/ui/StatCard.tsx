@@ -1,5 +1,6 @@
 import { cn } from "@/lib/cn";
-import type { LucideIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, type LucideIcon } from "lucide-react";
+import { CountUp } from "@/components/motion/CountUp";
 
 interface StatCardProps {
   label: string;
@@ -9,6 +10,8 @@ interface StatCardProps {
   trend?: { value: string; positive: boolean };
 }
 
+// The tone only colours the glyph and its soft well; the figure itself stays
+// in ink so a row of cards reads as data first, decoration second.
 const toneClasses = {
   brand: "bg-brand-50 text-brand-700",
   success: "bg-success-50 text-success-700",
@@ -17,20 +20,28 @@ const toneClasses = {
   accent: "bg-accent-400/15 text-accent-600",
 };
 
+const ARABIC = "٠١٢٣٤٥٦٧٨٩";
+// One numeral system app-wide: currency() already formats in Arabic-Indic digits.
+const toArabicDigits = (v: string) => v.replace(/\d/g, (d) => ARABIC[Number(d)]);
+
 export function StatCard({ label, value, icon: Icon, tone = "brand", trend }: StatCardProps) {
   return (
-    <div className="bg-surface border border-border rounded-2xl p-5 shadow-sm shadow-black/[0.03] flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-muted">{label}</span>
-        <div className={cn("h-9 w-9 rounded-xl flex items-center justify-center", toneClasses[tone])}>
-          <Icon className="h-4.5 w-4.5" size={18} />
+    <div className="bg-surface rounded-2xl p-4 lg:p-5 shadow-card">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-semibold text-muted leading-snug pt-1">{label}</p>
+        <div className={cn("h-8 w-8 rounded-[10px] flex items-center justify-center shrink-0", toneClasses[tone])}>
+          <Icon size={17} strokeWidth={1.75} />
         </div>
       </div>
-      <div className="flex items-end justify-between gap-2">
-        <span className="text-2xl font-extrabold text-foreground">{value}</span>
+      <div className="mt-2.5 flex items-baseline justify-between gap-2">
+        <CountUp
+          value={toArabicDigits(value)}
+          className="num text-[1.45rem] leading-tight font-extrabold text-foreground tracking-tight whitespace-nowrap"
+        />
         {trend && (
-          <span className={cn("text-xs font-semibold pb-1", trend.positive ? "text-success-700" : "text-danger-700")}>
-            {trend.positive ? "▲" : "▼"} {trend.value}
+          <span className={cn("inline-flex items-center gap-0.5 text-xs font-semibold", trend.positive ? "text-success-700" : "text-danger-700")}>
+            {trend.positive ? <ArrowUp size={12} strokeWidth={2.25} /> : <ArrowDown size={12} strokeWidth={2.25} />}
+            {trend.value}
           </span>
         )}
       </div>

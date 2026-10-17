@@ -36,7 +36,7 @@ export default function OwnerDocumentsPage() {
               <CardTitle>مستنداتي</CardTitle>
               <CardSubtitle>{documents.length} مستند مرتبط بعقاراتك وعقودك</CardSubtitle>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Select value={category} onChange={(e) => setCategory(e.target.value)} className="w-36">
                 {["الكل", ...CATEGORIES].map((c) => <option key={c} value={c}>{c}</option>)}
               </Select>
