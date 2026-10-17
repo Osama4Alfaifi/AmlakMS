@@ -8,7 +8,7 @@
 //   npm run build:demo                      -> served from /AmlakMS (GitHub Pages project site)
 //   BASE_PATH= npm run build:demo           -> served from the domain root
 import { spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, cpSync, existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -54,7 +54,16 @@ try {
   status = result.status ?? 1;
 
   if (status === 0) {
+    // next.config.ts sets distDir to ".next-demo"; with `output: "export"` Next
+    // writes the static site there instead of ./out, so copy it across.
+    const exported = join(root, ".next-demo");
+    if (!existsSync(join(exported, "index.html"))) {
+      console.error(`Static export not found at ${exported} (no index.html).`);
+      status = 1;
+      throw new Error("missing static export");
+    }
     mkdirSync(outDir, { recursive: true });
+    cpSync(exported, outDir, { recursive: true });
     // Belt and braces — the Actions deploy doesn't run Jekyll, but a branch-based
     // Pages setup would, and Jekyll ignores the _next directory.
     writeFileSync(join(outDir, ".nojekyll"), "");
