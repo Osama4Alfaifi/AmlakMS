@@ -217,4 +217,17 @@ export const en: Record<string, string> = {
   "المستأجر": "Tenant",
   "تسديد": "Settle",
   "الدور:": "Role:",
+  // owner portfolio
+  "عقاراتي ووحداتها": "My properties and units",
+  "العقار قد يضم عدة وحدات. العقار الذي لا وحدات له يُحتسب وحدة واحدة.": "A property can contain several units. A property with no units counts as one unit.",
+  "الوحدات": "Units",
+  "شاغرة": "Vacant",
+  "وحدة": "Unit",
+  "وحدات": "units",
+  "وحدة واحدة": "1 unit",
+  "العقار كاملًا (وحدة واحدة)": "Whole property (single unit)",
+  "الإيجار السنوي": "Annual rent",
+  "ينتهي العقد": "Contract ends",
+  "ضمن عقد العقار": "Under the property contract",
+  "لا توجد عقارات بعد": "No properties yet",
 };

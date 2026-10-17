@@ -11,6 +11,9 @@ interface StatCardProps {
   icon: LucideIcon;
   tone?: "brand" | "success" | "warning" | "info" | "accent";
   trend?: { value: string; positive: boolean };
+  // Small clarifying line under the figure, and an optional in-page anchor.
+  hint?: string;
+  href?: string;
 }
 
 // The tone only colours the glyph and its soft well; the figure itself stays
@@ -27,9 +30,16 @@ const ARABIC = "٠١٢٣٤٥٦٧٨٩";
 // One numeral system app-wide: currency() already formats in Arabic-Indic digits.
 const toArabicDigits = (v: string) => (getLang() === "en" ? v : v.replace(/\d/g, (d) => ARABIC[Number(d)]));
 
-export function StatCard({ label, value, icon: Icon, tone = "brand", trend }: StatCardProps) {
+export function StatCard({ label, value, icon: Icon, tone = "brand", trend, hint, href }: StatCardProps) {
+  const Wrapper = href ? "a" : "div";
   return (
-    <div className="bg-surface rounded-2xl p-3.5 lg:p-4 shadow-card">
+    <Wrapper
+      {...(href ? { href } : {})}
+      className={cn(
+        "block bg-surface rounded-2xl p-3.5 lg:p-4 shadow-card",
+        href && "pressable hover:shadow-raised"
+      )}
+    >
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-semibold text-muted leading-snug pt-1">{translate(label)}</p>
         <div className={cn("h-8 w-8 rounded-[10px] flex items-center justify-center shrink-0", toneClasses[tone])}>
@@ -48,6 +58,7 @@ export function StatCard({ label, value, icon: Icon, tone = "brand", trend }: St
           </span>
         )}
       </div>
-    </div>
+      {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
+    </Wrapper>
   );
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { StatCard } from "@/components/ui/StatCard";
 import { Money } from "@/components/ui/Money";
+import { buildPortfolio, PortfolioSection } from "@/components/owner/PortfolioSection";
 import { CountUp } from "@/components/motion/CountUp";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -24,6 +25,7 @@ import {
   useOwnerExpenses,
   useOwnerMaintenanceRequests,
   useOwnerProperties,
+  useOwnerUnits,
   useTechnicians,
   useTenants,
 } from "@/lib/firestore/hooks";
@@ -36,6 +38,7 @@ export default function OwnerDashboardPage() {
   const [expandedExpenseId, setExpandedExpenseId] = useState<string | null>(null);
   const currentOwner = useFirestoreDoc<Owner>("owners", user?.linkedId ?? undefined);
   const { data: properties } = useOwnerProperties(user?.linkedId ?? undefined);
+  const { data: units } = useOwnerUnits(user?.linkedId ?? undefined);
   const { data: contracts } = useContracts();
   const { data: myMaintenance } = useOwnerMaintenanceRequests(user?.linkedId);
   const { data: myExpenses } = useOwnerExpenses(user?.linkedId);
@@ -72,13 +75,9 @@ export default function OwnerDashboardPage() {
   const paidPayments = allPayments.filter((p) => p.status === "مسددة");
   const overduePayments = allPayments.filter((p) => p.status !== "مسددة" && p.dueDate < new Date().toISOString().slice(0, 10));
   const outstandingAmount = allPayments.filter((p) => p.status !== "مسددة").reduce((sum, p) => sum + p.amount, 0);
-  const occupiedPropertyIds = new Set(activeContracts.map((c) => c.propertyId));
-  const vacantProperties = myProperties.filter((p) => !occupiedPropertyIds.has(p.id));
-  const propertyRollup = myProperties.map((property) => ({
-    property,
-    contracts: activeContracts.filter((c) => c.propertyId === property.id),
-    income: activeContracts.filter((c) => c.propertyId === property.id).reduce((sum, c) => sum + c.value, 0),
-  }));
+  const portfolio = buildPortfolio(myProperties, units, myContracts, tenants);
+  const totalUnits = portfolio.reduce((n, r) => n + r.units.length, 0);
+  const rentedUnits = portfolio.reduce((n, r) => n + r.rented, 0);
 
   const incomeByProperty = myProperties.map((p) => ({
     name: p.title.split(" ").slice(0, 2).join(" "),
@@ -87,7 +86,7 @@ export default function OwnerDashboardPage() {
 
   return (
     <DashboardShell allow={["owner"]} title={`${t("أهلًا،")} ${currentOwner.name}`}>
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-4">
         <Card>
           <CardHeader>
             <div>
@@ -115,7 +114,7 @@ export default function OwnerDashboardPage() {
                 <dd className="num mt-1.5 text-xl lg:text-2xl font-extrabold text-warning-700"><Money value={managementFee} negative /></dd>
               </div>
               <div className="col-span-2 lg:col-span-1 rounded-xl bg-primary text-on-primary px-5 py-4 lg:ms-6 border-t-[5px] border-double border-white/50">
-                <dt className="text-xs font-semibold text-brand-200">{t("صافي الدخل")}</dt>
+                <dt className="text-xs font-semibold text-white/85">{t("صافي الدخل")}</dt>
                 <dd className="mt-1.5">
                   <CountUp value={currency(netIncome)} className="num text-2xl lg:text-[1.75rem] font-extrabold" />
                 </dd>
@@ -125,30 +124,20 @@ export default function OwnerDashboardPage() {
         </Card>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-          <StatCard label="عقاراتي" value={String(myProperties.length)} icon={Building2} tone="brand" />
+          <StatCard
+            label="عقاراتي"
+            value={String(myProperties.length)}
+            hint={`${totalUnits} ${t("وحدة")} · ${rentedUnits} ${t("مؤجرة")}`}
+            href="#properties"
+            icon={Building2}
+            tone="brand"
+          />
           <StatCard label="عقود نشطة" value={String(activeContracts.length)} icon={FileText} tone="success" />
           <StatCard label="الدخل السنوي المتوقع" value={currency(annualIncome)} icon={TrendingUp} tone="brand" />
           <StatCard label="طلبات صيانة مفتوحة" value={String(openMaintenance.length)} icon={Wrench} tone="warning" />
         </div>
 
-        <Card>
-          <CardHeader>
-            <div>
-              <CardTitle>ملخص المحفظة</CardTitle>
-              <CardSubtitle>صورة سريعة عن الإشغال والتحصيل — حالة الدفع تعتمد على آخر مزامنة أو إثبات معتمد</CardSubtitle>
-            </div>
-            <Badge tone={overduePayments.length ? "danger" : "success"}>{overduePayments.length ? `${overduePayments.length} ${t("دفعة متأخرة")}` : t("لا توجد دفعات متأخرة")}</Badge>
-          </CardHeader>
-          <CardContent>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4 sm:gap-x-0 sm:divide-x sm:divide-border">
-              <div className="sm:pe-6"><dt className="text-xs font-semibold text-muted">{t("وحدات مؤجرة")}</dt><dd className="num mt-1 text-xl font-extrabold text-success-700">{occupiedPropertyIds.size}</dd></div>
-              <div className="sm:px-6"><dt className="text-xs font-semibold text-muted">{t("عقارات شاغرة")}</dt><dd className="num mt-1 text-xl font-extrabold text-warning-700">{vacantProperties.length}</dd></div>
-              <div className="sm:px-6"><dt className="text-xs font-semibold text-muted">{t("دفعات مسددة")}</dt><dd className="num mt-1 text-xl font-extrabold text-brand-700">{paidPayments.length}</dd></div>
-              <div className="sm:ps-6"><dt className="text-xs font-semibold text-muted">{t("مبالغ تحتاج تحقق")}</dt><dd className="num mt-1 text-xl font-extrabold text-danger-700">{currency(outstandingAmount)}</dd></div>
-            </dl>
-            <div className="mt-5 overflow-x-auto"><Table><THead><Tr><Th>العقار / المجمع</Th><Th>العقود النشطة</Th><Th>الدخل المتوقع</Th><Th>الدفعات المتأخرة</Th></Tr></THead><TBody>{propertyRollup.map(({ property, contracts: propertyContracts, income }) => { const late = propertyContracts.flatMap((c) => c.payments ?? []).filter((p) => p.status !== "مسددة" && p.dueDate < new Date().toISOString().slice(0, 10)).length; return <Tr key={property.id}><Td className="font-semibold">{property.title}<span className="block text-xs font-normal text-muted">{property.city} · {property.district}</span></Td><Td>{propertyContracts.length}</Td><Td className="font-semibold">{currency(income)}</Td><Td><Badge tone={late ? "danger" : "success"}>{late ? String(late) : t("لا يوجد")}</Badge></Td></Tr>; })}</TBody></Table></div>
-          </CardContent>
-        </Card>
+        <PortfolioSection rows={portfolio} paidInstallments={paidPayments.length} amountToVerify={outstandingAmount} />
 
         <Card>
           <CardHeader>
@@ -188,38 +177,7 @@ export default function OwnerDashboardPage() {
 
         <BarChartCard data={incomeByProperty} title={t("الدخل السنوي حسب العقار")} dataKey="الدخل السنوي" color="#1a566a" />
 
-        <Card>
-          <CardHeader>
-            <div>
-              <CardTitle>عقاراتي</CardTitle>
-              <CardSubtitle>{`${myProperties.length} ${t("عقار مملوك")}`}</CardSubtitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <THead>
-                <Tr>
-                  <Th>العقار</Th>
-                  <Th>المدينة</Th>
-                  <Th>النوع</Th>
-                  <Th>السعر</Th>
-                  <Th>الحالة</Th>
-                </Tr>
-              </THead>
-              <TBody>
-                {myProperties.map((p) => (
-                  <Tr key={p.id}>
-                    <Td className="font-semibold">{p.title}</Td>
-                    <Td className="text-muted">{p.city} · {p.district}</Td>
-                    <Td>{p.type}</Td>
-                    <Td className="font-semibold">{currency(p.price)}</Td>
-                    <Td><Badge>{p.status}</Badge></Td>
-                  </Tr>
-                ))}
-              </TBody>
-            </Table>
-          </CardContent>
-        </Card>
+
 
         <Card>
           <CardHeader>
