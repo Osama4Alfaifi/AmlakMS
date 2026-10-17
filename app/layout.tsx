@@ -1,27 +1,18 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Noto_Sans_Arabic } from "next/font/google";
+import { Tajawal } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { AccountantScopeProvider } from "@/lib/accountant-scope";
 import { DemoBadge } from "@/components/layout/DemoBadge";
 import { LanguageProvider } from "@/lib/i18n";
 
-// Noto Sans Arabic: the most legible Arabic UI face at body sizes (open
-// counters, even stroke contrast, unambiguous dots). Inter leads the stack for
-// Latin text so English mode is just as crisp; Arabic glyphs fall through to Noto.
-const ui = Noto_Sans_Arabic({
+// Tajawal: clear, open Arabic letterforms with a matching Latin design, so Arabic
+// and English text share one voice (chosen by the user from a side-by-side test).
+// It ships 400/500/700/800; semibold (600) resolves to 700.
+const ui = Tajawal({
   variable: "--font-ui",
-  subsets: ["arabic"],
-  weight: ["400", "500", "600", "700", "800"],
-  // The generated Arial-based fallback face claims every glyph, so it would
-  // answer for Arabic before the real font; the CSS stack handles fallback.
-  adjustFontFallback: false,
-});
-const latin = Inter({
-  variable: "--font-latin",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  adjustFontFallback: false,
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "700", "800"],
 });
 
 // Runs before first paint: restores the saved theme (or the OS preference) and
@@ -51,7 +42,7 @@ export const viewport: Viewport = {
 // harmless warning it's flagging.
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ar" dir="rtl" className={`${ui.variable} ${latin.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="ar" dir="rtl" className={`${ui.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: initScript }} />
       </head>
