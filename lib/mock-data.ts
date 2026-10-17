@@ -1,3 +1,4 @@
+import { getLang } from "./i18n/state";
 import { generatePaymentSchedule } from "./contracts/schedule";
 import type {
   AccountManager,
@@ -247,5 +248,8 @@ export function getTechnicianById(id: string | null) {
 }
 
 export function currency(value: number) {
+  if (getLang() === "en") {
+    return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value) + " SAR";
+  }
   return new Intl.NumberFormat("ar-SA", { maximumFractionDigits: 0 }).format(value) + " ﷼";
 }

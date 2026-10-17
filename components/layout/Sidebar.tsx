@@ -8,6 +8,7 @@ import { useCustomRole } from "@/lib/firestore/hooks";
 import type { PermissionResource, Role } from "@/lib/types";
 import { customResourceNav, navByRole, type NavItem } from "./nav-config";
 import { LogoMark } from "./Logo";
+import { useT } from "@/lib/i18n";
 import { Building2, X } from "lucide-react";
 
 // A "custom" role has no fixed nav — it's whatever resources the admin
@@ -24,13 +25,14 @@ function useNavItems(role: Role, customRoleId?: string | null): NavItem[] {
 }
 
 function Brand({ action }: { action?: React.ReactNode }) {
+  const t = useT();
   return (
     <div className="flex items-center justify-between gap-2.5 px-5 min-h-16 shrink-0 pt-[env(safe-area-inset-top)]">
       <div className="flex items-center gap-3">
         <LogoMark size={34} />
         <div>
-          <p className="text-[15px] font-extrabold leading-none text-white">أملاك MS</p>
-          <p className="text-[11px] text-brand-300 mt-1.5 leading-none">نظام إدارة الأملاك</p>
+          <p className="text-[15px] font-extrabold leading-none text-white">{t("أملاك MS")}</p>
+          <p className="text-[11px] text-white/60 mt-1.5 leading-none">{t("نظام إدارة الأملاك")}</p>
         </div>
       </div>
       {action}
@@ -41,6 +43,7 @@ function Brand({ action }: { action?: React.ReactNode }) {
 function NavList({ role, customRoleId, onNavigate }: { role: Role; customRoleId?: string | null; onNavigate?: () => void }) {
   const pathname = usePathname();
   const items = useNavItems(role, customRoleId);
+  const t = useT();
   // The longest matching href wins, so /admin never lights up beside /admin/contracts.
   const activeHref = items
     .filter((i) => pathname === i.href || pathname.startsWith(i.href + "/"))
@@ -60,11 +63,11 @@ function NavList({ role, customRoleId, onNavigate }: { role: Role; customRoleId?
             className={cn(
               "relative flex items-center gap-3 rounded-xl px-3.5 min-h-11 lg:min-h-10 text-sm font-medium",
               "transition-[background-color,color] duration-[var(--duration-quick)] ease-[var(--ease-out)]",
-              active ? "bg-white/[0.11] text-white" : "text-brand-200 hover:bg-white/[0.06] hover:text-white"
+              active ? "bg-white/[0.12] text-white" : "text-white/75 hover:bg-white/[0.07] hover:text-white"
             )}
           >
             <Icon size={18} strokeWidth={active ? 2 : 1.75} className={active ? "text-accent-400" : ""} />
-            <span className="truncate">{item.label}</span>
+            <span className="truncate">{t(item.label)}</span>
           </Link>
         );
       })}
@@ -92,6 +95,7 @@ export function MobileSidebar({
   open: boolean;
   onClose: () => void;
 }) {
+  const t = useT();
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -114,16 +118,16 @@ export function MobileSidebar({
       />
       <aside
         className={cn(
-          "absolute top-0 right-0 h-full w-[18.5rem] max-w-[85vw] bg-brand-950 flex flex-col pb-[env(safe-area-inset-bottom)] shadow-raised",
+          "absolute top-0 start-0 h-full w-[18.5rem] max-w-[85vw] bg-brand-950 flex flex-col pb-[env(safe-area-inset-bottom)] shadow-raised",
           "transition-transform duration-[var(--duration-slow)] ease-[var(--ease-out)]",
-          open ? "translate-x-0" : "translate-x-full"
+          open ? "translate-x-0" : "ltr:-translate-x-full rtl:translate-x-full"
         )}
       >
         <Brand
           action={
             <button
               onClick={onClose}
-              aria-label="إغلاق القائمة"
+              aria-label={t("إغلاق القائمة")}
               className="pressable grid place-items-center h-11 w-11 rounded-xl text-brand-200 hover:bg-white/10 hover:text-white"
             >
               <X size={20} />

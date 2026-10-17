@@ -49,6 +49,8 @@ function ChartShell({ title, subtitle, action, children, height = 280 }: ChartSh
 const tooltipStyle = {
   borderRadius: 12,
   border: "none",
+  backgroundColor: "var(--surface)",
+  color: "var(--foreground)",
   boxShadow: "var(--shadow-raised)",
   padding: "8px 12px",
   fontSize: 12,

@@ -202,8 +202,8 @@ export default function AdminUsersPage() {
               <CardSubtitle>{rows.length} مستخدم مسجّل في النظام — اضغط على صف محاسب أو وسيط لربطه بالملاك</CardSubtitle>
             </div>
             <div className="relative w-56">
-              <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
-              <Input placeholder="بحث بالاسم أو البريد" value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />
+              <Search size={15} className="absolute end-3 top-1/2 -translate-y-1/2 text-muted" />
+              <Input placeholder="بحث بالاسم أو البريد" value={query} onChange={(e) => setQuery(e.target.value)} className="pe-9" />
             </div>
           </CardHeader>
           <CardContent>
@@ -269,7 +269,7 @@ export default function AdminUsersPage() {
                       {isOpen && hasOwnerScope && (
                         <Tr className="bg-background">
                           <Td colSpan={7} className="py-4 whitespace-normal align-top">
-                            <div className="pr-8 flex flex-col gap-3 max-w-lg">
+                            <div className="pe-8 flex flex-col gap-3 max-w-lg">
                               <p className="text-xs font-semibold text-muted">الملاك الذين يديرهم {r.name}</p>
                               <div className="flex flex-col gap-2">
                                 {owners.map((o) => (

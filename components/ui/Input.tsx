@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { tr } from "@/lib/i18n/translate";
 import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 // Field chrome is shared so inputs, textareas and selects never drift apart.
@@ -27,5 +28,7 @@ export function Select({ className, children, ...props }: SelectHTMLAttributes<H
 }
 
 export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
-  return <label className={cn("block text-xs font-semibold text-foreground/70 mb-1.5", className)} {...props} />;
+  return <label className={cn("block text-xs font-semibold text-foreground/70 mb-1.5", className)} {...props}>
+      {tr(props.children)}
+    </label>;
 }

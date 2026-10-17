@@ -69,7 +69,7 @@ export default function QuotePrintPage() {
               {quote.taxRate > 0 && <p className="text-xs text-muted mt-0.5">الرقم الضريبي: {COMPANY_VAT_NUMBER}</p>}
             </div>
           </div>
-          <div className="text-left">
+          <div className="text-end">
             <p className="text-xl font-extrabold text-brand-700">عرض سعر</p>
             <p className="text-xs text-muted mt-1">{quote.number}</p>
           </div>
@@ -81,7 +81,7 @@ export default function QuotePrintPage() {
             <p className="font-bold">{quote.clientName}</p>
             <p className="text-muted mt-1">{quote.propertyTitle}</p>
           </div>
-          <div className="text-left">
+          <div className="text-end">
             <p className="text-xs text-muted mb-1">تاريخ الإصدار</p>
             <p className="font-semibold">{quote.createdAt}</p>
             <p className="text-xs text-muted mt-2 mb-1">صالح حتى</p>
@@ -92,10 +92,10 @@ export default function QuotePrintPage() {
         <table className="w-full text-sm mb-6">
           <thead>
             <tr className="border-b border-border text-xs text-muted">
-              <th className="text-right font-semibold py-2">الوصف</th>
+              <th className="text-start font-semibold py-2">الوصف</th>
               <th className="text-center font-semibold py-2">الكمية</th>
-              <th className="text-left font-semibold py-2">سعر الوحدة</th>
-              <th className="text-left font-semibold py-2">الإجمالي</th>
+              <th className="text-end font-semibold py-2">سعر الوحدة</th>
+              <th className="text-end font-semibold py-2">الإجمالي</th>
             </tr>
           </thead>
           <tbody>
@@ -103,8 +103,8 @@ export default function QuotePrintPage() {
               <tr key={i} className="border-b border-border/60">
                 <td className="py-2.5">{item.description}</td>
                 <td className="py-2.5 text-center">{item.quantity}</td>
-                <td className="py-2.5 text-left">{currency(item.unitPrice)}</td>
-                <td className="py-2.5 text-left font-semibold">{currency(item.quantity * item.unitPrice)}</td>
+                <td className="py-2.5 text-end">{currency(item.unitPrice)}</td>
+                <td className="py-2.5 text-end font-semibold">{currency(item.quantity * item.unitPrice)}</td>
               </tr>
             ))}
           </tbody>

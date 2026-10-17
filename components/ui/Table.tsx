@@ -1,9 +1,10 @@
 import { cn } from "@/lib/cn";
+import { tr } from "@/lib/i18n/translate";
 import type { HTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from "react";
 
 export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="overflow-x-auto -mx-5 px-5 lg:-mx-6 lg:px-6">
+    <div className="overflow-x-auto -mx-4 px-4 lg:-mx-5 lg:px-5">
       <table className={cn("w-full text-sm border-collapse", className)} {...props} />
     </div>
   );
@@ -30,7 +31,9 @@ export function Tr({ className, ...props }: HTMLAttributes<HTMLTableRowElement>)
 }
 
 export function Th({ className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {
-  return <th className={cn("text-right font-semibold py-3 px-3 whitespace-nowrap", className)} {...props} />;
+  return <th className={cn("text-start font-semibold py-3 px-3 whitespace-nowrap", className)} {...props}>
+      {tr(props.children)}
+    </th>;
 }
 
 export function Td({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {

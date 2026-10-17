@@ -1,19 +1,32 @@
 @import "tailwindcss";
 
+/* `dark:` variants follow the data-theme attribute set before first paint. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /*
  * AmlakMS design tokens.
  * World: ledger-grade calm. Warm stone ground, deep petrol ink, one brass
  * accent used sparingly. Neutrals lean warm; brand leans cool, so the two
  * never read as the same grey-blue. Status hues sit well away from brand.
+ *
+ * Light is the default. Dark redefines the same names: the brand scale
+ * inverts (50 = deepest tint, 900 = lightest) so `text-brand-700` stays
+ * readable on either ground, while filled controls use --primary.
  */
 :root {
+  color-scheme: light;
+
   --background: #f6f5f2;
   --surface: #ffffff;
   --surface-sunken: #f1efea;
-  --foreground: #16222a;
-  --muted: #5b6870;
+  --foreground: #121c23;
+  --muted: #56636b;
   --border: #e4e1d9;
   --border-strong: #cfcbc0;
+
+  --primary: #1a566a;
+  --primary-strong: #144556;
+  --on-primary: #ffffff;
 
   --brand-50: #eef6f8;
   --brand-100: #d9ebf0;
@@ -49,12 +62,66 @@
   --info-500: #2b7bd6;
   --info-700: #1d559a;
 
+  --shadow-ring: 22 34 42;
+
   /* Motion */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --duration-quick: 140ms;
   --duration-base: 220ms;
   --duration-slow: 420ms;
+}
+
+/* screen only, so printed statements and invoices always stay light */
+@media screen {
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --background: #0c1318;
+    --surface: #131c22;
+    --surface-sunken: #1a252c;
+    --foreground: #eaf0f3;
+    --muted: #9fafb8;
+    --border: #243139;
+    --border-strong: #35454e;
+
+    --primary: #2a7a91;
+    --primary-strong: #348aa1;
+    --on-primary: #ffffff;
+
+    --brand-50: #10262e;
+    --brand-100: #15333e;
+    --brand-200: #1c4352;
+    --brand-300: #2a6277;
+    --brand-400: #4a93aa;
+    --brand-500: #63aabf;
+    --brand-600: #7dbccd;
+    --brand-700: #9acbd9;
+    --brand-800: #b6dae4;
+    --brand-900: #d3ebf1;
+
+    --accent-600: #d6a84e;
+
+    --success-50: #10281b;
+    --success-500: #3fbf7f;
+    --success-700: #7be0aa;
+
+    --warning-50: #2d2410;
+    --warning-500: #e0a23a;
+    --warning-600: #e8b04a;
+    --warning-700: #f0c060;
+
+    --danger-50: #301516;
+    --danger-500: #e46a6a;
+    --danger-600: #ec8080;
+    --danger-700: #f4a0a0;
+
+    --info-50: #11243a;
+    --info-500: #5aa3ea;
+    --info-700: #8cc0f5;
+
+    --shadow-ring: 255 255 255;
+  }
 }
 
 @theme inline {
@@ -65,6 +132,10 @@
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
+
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-on-primary: var(--on-primary);
 
   --color-brand-50: var(--brand-50);
   --color-brand-100: var(--brand-100);
@@ -100,29 +171,36 @@
   --color-info-500: var(--info-500);
   --color-info-700: var(--info-700);
 
-  --font-sans: var(--font-ui);
+  --font-sans: var(--font-ui), var(--font-latin), sans-serif;
 }
 
 @theme {
   /* Elevation comes from layered transparent shadows; borders are kept for
      structure (dividers, inputs, selected states). */
   --shadow-card:
-    0 0 0 1px rgb(22 34 42 / 0.05), 0 1px 2px rgb(22 34 42 / 0.04), 0 8px 20px -10px rgb(22 34 42 / 0.1);
+    0 0 0 1px rgb(var(--shadow-ring) / 0.06), 0 1px 2px rgb(var(--shadow-ring) / 0.05),
+    0 8px 20px -10px rgb(var(--shadow-ring) / 0.12);
   --shadow-raised:
-    0 0 0 1px rgb(22 34 42 / 0.06), 0 2px 4px rgb(22 34 42 / 0.06), 0 14px 32px -12px rgb(22 34 42 / 0.18);
-  --shadow-control: 0 0 0 1px rgb(22 34 42 / 0.1), 0 1px 1px rgb(22 34 42 / 0.05);
-  --shadow-press: inset 0 1px 2px rgb(22 34 42 / 0.12);
+    0 0 0 1px rgb(var(--shadow-ring) / 0.08), 0 2px 4px rgb(var(--shadow-ring) / 0.06),
+    0 14px 32px -12px rgb(var(--shadow-ring) / 0.22);
+  --shadow-control: 0 0 0 1px rgb(var(--shadow-ring) / 0.12), 0 1px 1px rgb(var(--shadow-ring) / 0.05);
+  --shadow-press: inset 0 1px 2px rgb(var(--shadow-ring) / 0.14);
 }
 
 html {
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
   text-rendering: optimizeLegibility;
+  /* One notch above the browser default: every rem-based size and space
+     scales with it, which is what makes small Arabic text read clearly. */
+  font-size: 106.25%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  font-weight: 450;
+  line-height: 1.6;
   /* Suppresses the browser/WebView's own native overscroll bounce at the
      top of the page so it doesn't visually fight with the custom
      pull-to-refresh indicator — see components/layout/PullToRefresh.tsx. */
@@ -136,6 +214,7 @@ h2,
 h3,
 h4 {
   text-wrap: balance;
+  line-height: 1.3;
 }
 p,
 li {
@@ -149,7 +228,7 @@ table,
 /* Browser surfaces carry the palette too. */
 ::selection {
   background: var(--brand-200);
-  color: var(--brand-950);
+  color: var(--foreground);
 }
 :focus-visible {
   outline: 2px solid var(--brand-500);
@@ -161,8 +240,8 @@ table,
 input,
 textarea,
 select {
-  accent-color: var(--brand-600);
-  caret-color: var(--brand-600);
+  accent-color: var(--primary);
+  caret-color: var(--primary);
 }
 input:focus-visible,
 textarea:focus-visible,
@@ -203,8 +282,6 @@ select:focus-visible {
   inset: -8px;
 }
 
-/* Surfaces that should wait for GSAP before showing are hidden only while
-   JS has not yet taken over, and never when motion is reduced. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

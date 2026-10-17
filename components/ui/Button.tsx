@@ -1,5 +1,6 @@
 import { cn } from "@/lib/cn";
 import Link from "next/link";
+import { tr } from "@/lib/i18n/translate";
 import type { ButtonHTMLAttributes } from "react";
 
 type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger";
@@ -7,8 +8,8 @@ type Size = "sm" | "md" | "lg";
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    "bg-brand-700 text-white shadow-control hover:bg-brand-800",
-  secondary: "bg-brand-50 text-brand-800 hover:bg-brand-100",
+    "bg-primary text-on-primary shadow-control hover:bg-primary-strong",
+  secondary: "bg-brand-100 text-brand-800 hover:bg-brand-200",
   outline: "bg-surface text-foreground shadow-control hover:bg-surface-sunken",
   ghost: "text-foreground hover:bg-surface-sunken",
   danger: "bg-danger-600 text-white shadow-control hover:bg-danger-700",
@@ -31,7 +32,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export function Button({ variant = "primary", size = "md", className, ...props }: ButtonProps) {
-  return <button className={cn(base, variantClasses[variant], sizeClasses[size], className)} {...props} />;
+  return (
+    <button className={cn(base, variantClasses[variant], sizeClasses[size], className)} {...props}>
+      {tr(props.children)}
+    </button>
+  );
 }
 
 interface LinkButtonProps {
@@ -45,7 +50,7 @@ interface LinkButtonProps {
 export function LinkButton({ href, variant = "primary", size = "md", className, children }: LinkButtonProps) {
   return (
     <Link href={href} className={cn(base, variantClasses[variant], sizeClasses[size], className)}>
-      {children}
+      {tr(children)}
     </Link>
   );
 }

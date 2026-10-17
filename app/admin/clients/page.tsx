@@ -34,8 +34,8 @@ export default function AdminClientsPage() {
               ))}
             </Select>
             <div className="relative w-52">
-              <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
-              <Input placeholder="بحث بالاسم" value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />
+              <Search size={15} className="absolute end-3 top-1/2 -translate-y-1/2 text-muted" />
+              <Input placeholder="بحث بالاسم" value={query} onChange={(e) => setQuery(e.target.value)} className="pe-9" />
             </div>
           </div>
         </CardHeader>

@@ -101,7 +101,7 @@ export default function AccountantDashboardPage() {
               </Link>
               <Link href="/admin/vouchers">
                 <Button variant="outline" className="w-full justify-between">
-                  <Receipt size={15} className="ml-1" /> السندات <ArrowLeft size={15} />
+                  <Receipt size={15} className="ms-1" /> السندات <ArrowLeft size={15} />
                 </Button>
               </Link>
               <Link href="/reports">
@@ -111,12 +111,12 @@ export default function AccountantDashboardPage() {
               </Link>
               <Link href="/admin/reports/financial">
                 <Button variant="outline" className="w-full justify-between">
-                  <BarChart3 size={15} className="ml-1" /> التقارير المالية <ArrowLeft size={15} />
+                  <BarChart3 size={15} className="ms-1" /> التقارير المالية <ArrowLeft size={15} />
                 </Button>
               </Link>
               <Link href="/admin/audit-log">
                 <Button variant="outline" className="w-full justify-between">
-                  <FileWarning size={15} className="ml-1" /> سجل العمليات <ArrowLeft size={15} />
+                  <FileWarning size={15} className="ms-1" /> سجل العمليات <ArrowLeft size={15} />
                 </Button>
               </Link>
             </div>

@@ -60,7 +60,7 @@ export default function OwnerStatementPrintPage() {
       <div className="print-sheet max-w-3xl mx-auto bg-surface border border-border rounded-2xl shadow-sm shadow-black/[0.03] p-8 lg:p-10">
         <div className="flex items-start justify-between border-b border-border pb-6 mb-6">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl bg-brand-600 flex items-center justify-center text-white">
+            <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center text-on-primary">
               <Building2 size={22} />
             </div>
             <div>
@@ -68,7 +68,7 @@ export default function OwnerStatementPrintPage() {
               <p className="text-xs text-muted">نظام إدارة الأملاك · الرياض، المملكة العربية السعودية</p>
             </div>
           </div>
-          <div className="text-left">
+          <div className="text-end">
             <p className="text-xl font-extrabold text-brand-700">كشف حساب مالك</p>
             <p className="text-xs text-muted mt-1">{new Date().toISOString().slice(0, 10)}</p>
           </div>
@@ -83,9 +83,9 @@ export default function OwnerStatementPrintPage() {
         <table className="w-full text-sm mb-6">
           <thead>
             <tr className="border-b border-border text-xs text-muted">
-              <th className="text-right font-semibold py-2">العقار</th>
-              <th className="text-right font-semibold py-2">المدينة</th>
-              <th className="text-left font-semibold py-2">قيمة العقد السنوي</th>
+              <th className="text-start font-semibold py-2">العقار</th>
+              <th className="text-start font-semibold py-2">المدينة</th>
+              <th className="text-end font-semibold py-2">قيمة العقد السنوي</th>
             </tr>
           </thead>
           <tbody>
@@ -95,7 +95,7 @@ export default function OwnerStatementPrintPage() {
                 <tr key={c.id} className="border-b border-border/60">
                   <td className="py-2.5">{property?.title ?? "—"}</td>
                   <td className="py-2.5 text-muted">{property?.city ?? "—"}</td>
-                  <td className="py-2.5 text-left font-semibold">{currency(c.value)}</td>
+                  <td className="py-2.5 text-end font-semibold">{currency(c.value)}</td>
                 </tr>
               );
             })}

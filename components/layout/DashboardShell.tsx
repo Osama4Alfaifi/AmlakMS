@@ -7,6 +7,7 @@ import { useAccountantOwnerScope } from "@/lib/accountant-scope";
 import { useAppSettings, useCustomRole } from "@/lib/firestore/hooks";
 import type { PermissionResource, Role } from "@/lib/types";
 import { useRequireAuth } from "@/lib/auth-context";
+import { useT } from "@/lib/i18n";
 import { MobileSidebar, Sidebar } from "./Sidebar";
 import { PullToRefresh } from "./PullToRefresh";
 import { LogoMark } from "./Logo";
@@ -31,6 +32,7 @@ export function DashboardShell({
 }) {
   const { user, ready } = useRequireAuth(allow);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const t = useT();
   const settings = useAppSettings();
   const customRole = useCustomRole(user?.role === "custom" ? user.customRoleId : undefined);
 
@@ -38,7 +40,7 @@ export function DashboardShell({
     return (
       <div role="status" aria-live="polite" className="min-h-screen flex flex-col items-center justify-center gap-4 text-muted text-sm">
         <LogoMark size={44} className="animate-pulse" />
-        <span>جارِ التحميل...</span>
+        <span>{t("جارِ التحميل...")}</span>
       </div>
     );
   }
@@ -50,8 +52,8 @@ export function DashboardShell({
           <div className="grid place-items-center h-12 w-12 rounded-2xl bg-warning-50 text-warning-600">
             <TriangleAlert size={24} />
           </div>
-          <p className="font-bold">النظام مغلق مؤقتًا للصيانة</p>
-          <p className="text-sm text-muted">يرجى المحاولة لاحقًا، أو التواصل مع الإدارة.</p>
+          <p className="font-bold">{t("النظام مغلق مؤقتًا للصيانة")}</p>
+          <p className="text-sm text-muted">{t("يرجى المحاولة لاحقًا، أو التواصل مع الإدارة.")}</p>
         </div>
       </div>
     );
@@ -66,7 +68,7 @@ export function DashboardShell({
       <MobileSidebar role={user.role} customRoleId={user.customRoleId} open={mobileOpen} onClose={() => setMobileOpen(false)} />
       <div className="flex-1 min-w-0 flex flex-col">
         <Topbar title={title} onMenuClick={() => setMobileOpen(true)} />
-        <main className="flex-1 w-full max-w-[96rem] mx-auto px-4 pt-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] lg:px-8 lg:pt-8 lg:pb-10 overflow-x-hidden flex flex-col gap-4 lg:gap-6">
+        <main className="flex-1 w-full px-3 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] lg:px-5 lg:pt-5 lg:pb-6 overflow-x-hidden flex flex-col gap-3 lg:gap-4">
           <PullToRefresh>
             <ShellOwnerScopeBanner />
             {customDenied ? (
@@ -75,8 +77,8 @@ export function DashboardShell({
                   <div className="grid place-items-center h-12 w-12 rounded-2xl bg-danger-50 text-danger-600">
                     <ShieldAlert size={24} />
                   </div>
-                  <p className="font-bold">ليس لديك صلاحية الوصول لهذه الصفحة</p>
-                  <p className="text-sm text-muted">تواصل مع مدير النظام إذا كنت بحاجة لهذه الصلاحية.</p>
+                  <p className="font-bold">{t("ليس لديك صلاحية الوصول لهذه الصفحة")}</p>
+                  <p className="text-sm text-muted">{t("تواصل مع مدير النظام إذا كنت بحاجة لهذه الصلاحية.")}</p>
                 </div>
               </div>
             ) : (

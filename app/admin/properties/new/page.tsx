@@ -364,7 +364,7 @@ export default function NewPropertyWizardPage() {
               <div key={label} className="flex items-center gap-2 flex-1">
                 <div
                   className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap ${
-                    active ? "bg-brand-600 text-white" : done ? "bg-brand-50 text-brand-700" : "bg-background text-muted"
+                    active ? "bg-primary text-on-primary" : done ? "bg-brand-50 text-brand-700" : "bg-background text-muted"
                   }`}
                 >
                   <span className="h-5 w-5 rounded-full bg-white/20 flex items-center justify-center">{n}</span>
@@ -387,10 +387,10 @@ export default function NewPropertyWizardPage() {
             <CardContent className="flex flex-col gap-5">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="flex rounded-lg border border-border overflow-hidden text-xs">
-                  <button type="button" onClick={() => setOwnerMode("existing")} className={`px-3 py-1.5 font-semibold ${ownerMode === "existing" ? "bg-brand-600 text-white" : "text-muted"}`}>
+                  <button type="button" onClick={() => setOwnerMode("existing")} className={`px-3 py-1.5 font-semibold ${ownerMode === "existing" ? "bg-primary text-on-primary" : "text-muted"}`}>
                     مالك موجود
                   </button>
-                  <button type="button" onClick={() => setOwnerMode("new")} className={`px-3 py-1.5 font-semibold ${ownerMode === "new" ? "bg-brand-600 text-white" : "text-muted"}`}>
+                  <button type="button" onClick={() => setOwnerMode("new")} className={`px-3 py-1.5 font-semibold ${ownerMode === "new" ? "bg-primary text-on-primary" : "text-muted"}`}>
                     مالك جديد
                   </button>
                 </div>
@@ -621,14 +621,14 @@ export default function NewPropertyWizardPage() {
                     <button
                       type="button"
                       onClick={() => setAmenitiesMode("none")}
-                      className={`rounded-xl border px-4 py-3 text-sm font-semibold text-right transition-colors ${amenitiesMode === "none" ? "border-brand-500 bg-brand-50 text-brand-700" : "border-border text-muted hover:bg-background"}`}
+                      className={`rounded-xl border px-4 py-3 text-sm font-semibold text-start transition-colors ${amenitiesMode === "none" ? "border-brand-500 bg-brand-50 text-brand-700" : "border-border text-muted hover:bg-background"}`}
                     >
                       لا يوجد مرافق
                     </button>
                     <button
                       type="button"
                       onClick={() => setAmenitiesMode("has")}
-                      className={`rounded-xl border px-4 py-3 text-sm font-semibold text-right transition-colors ${amenitiesMode === "has" ? "border-brand-500 bg-brand-50 text-brand-700" : "border-border text-muted hover:bg-background"}`}
+                      className={`rounded-xl border px-4 py-3 text-sm font-semibold text-start transition-colors ${amenitiesMode === "has" ? "border-brand-500 bg-brand-50 text-brand-700" : "border-border text-muted hover:bg-background"}`}
                     >
                       يوجد مرافق
                     </button>
@@ -653,7 +653,7 @@ export default function NewPropertyWizardPage() {
                                 <button
                                   type="button"
                                   onClick={() => updateAmenityCount(a, -1)}
-                                  className="h-6 w-6 rounded-md border border-brand-300 bg-white flex items-center justify-center text-brand-700 hover:bg-brand-100"
+                                  className="h-6 w-6 rounded-md border border-brand-300 bg-surface flex items-center justify-center text-brand-700 hover:bg-brand-100"
                                 >
                                   <Minus size={12} />
                                 </button>
@@ -661,7 +661,7 @@ export default function NewPropertyWizardPage() {
                                 <button
                                   type="button"
                                   onClick={() => updateAmenityCount(a, 1)}
-                                  className="h-6 w-6 rounded-md border border-brand-300 bg-white flex items-center justify-center text-brand-700 hover:bg-brand-100"
+                                  className="h-6 w-6 rounded-md border border-brand-300 bg-surface flex items-center justify-center text-brand-700 hover:bg-brand-100"
                                 >
                                   <Plus size={12} />
                                 </button>

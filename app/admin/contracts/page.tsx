@@ -291,8 +291,8 @@ export default function AdminContractsPage() {
                 {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
               </Select>
               <div className="relative w-52">
-                <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
-                <Input placeholder="بحث..." value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />
+                <Search size={15} className="absolute end-3 top-1/2 -translate-y-1/2 text-muted" />
+                <Input placeholder="بحث..." value={query} onChange={(e) => setQuery(e.target.value)} className="pe-9" />
               </div>
               <Button size="sm" variant="outline" onClick={() => downloadCsv("العقود", exportRows())}>
                 <Download size={15} /> تصدير CSV
@@ -389,7 +389,7 @@ export default function AdminContractsPage() {
                         return (
                         <Tr className="bg-background">
                           <Td colSpan={10} className="py-4 whitespace-normal align-top">
-                            <div className="pr-8 grid lg:grid-cols-2 gap-6">
+                            <div className="pe-8 grid lg:grid-cols-2 gap-6">
                               <div>
                                 <p className="text-xs font-semibold text-muted mb-2">بيانات العقد</p>
                                 <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm max-w-lg">
@@ -416,9 +416,9 @@ export default function AdminContractsPage() {
                                 <table className="w-full text-sm max-w-lg">
                                   <thead>
                                     <tr className="text-xs text-muted border-b border-border">
-                                      <th className="text-right font-semibold py-1.5">تاريخ الاستحقاق</th>
-                                      <th className="text-right font-semibold py-1.5">المبلغ</th>
-                                      <th className="text-right font-semibold py-1.5">الحالة</th>
+                                      <th className="text-start font-semibold py-1.5">تاريخ الاستحقاق</th>
+                                      <th className="text-start font-semibold py-1.5">المبلغ</th>
+                                      <th className="text-start font-semibold py-1.5">الحالة</th>
                                       <th></th>
                                     </tr>
                                   </thead>
@@ -617,10 +617,10 @@ export default function AdminContractsPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Label className="mb-0">المستأجر</Label>
                     <div className="flex rounded-lg border border-border overflow-hidden text-xs">
-                      <button type="button" onClick={() => setForm((f) => ({ ...f, tenantMode: "existing" }))} className={`px-3 py-1.5 font-semibold ${form.tenantMode === "existing" ? "bg-brand-600 text-white" : "text-muted"}`}>
+                      <button type="button" onClick={() => setForm((f) => ({ ...f, tenantMode: "existing" }))} className={`px-3 py-1.5 font-semibold ${form.tenantMode === "existing" ? "bg-primary text-on-primary" : "text-muted"}`}>
                         مستأجر موجود
                       </button>
-                      <button type="button" onClick={() => setForm((f) => ({ ...f, tenantMode: "new" }))} className={`px-3 py-1.5 font-semibold ${form.tenantMode === "new" ? "bg-brand-600 text-white" : "text-muted"}`}>
+                      <button type="button" onClick={() => setForm((f) => ({ ...f, tenantMode: "new" }))} className={`px-3 py-1.5 font-semibold ${form.tenantMode === "new" ? "bg-primary text-on-primary" : "text-muted"}`}>
                         مستأجر جديد
                       </button>
                     </div>

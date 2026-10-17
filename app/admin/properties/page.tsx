@@ -229,8 +229,8 @@ export default function AdminPropertiesPage() {
               ))}
             </Select>
             <div className="relative w-52">
-              <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
-              <Input placeholder="بحث..." value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />
+              <Search size={15} className="absolute end-3 top-1/2 -translate-y-1/2 text-muted" />
+              <Input placeholder="بحث..." value={query} onChange={(e) => setQuery(e.target.value)} className="pe-9" />
             </div>
             <Button size="sm" variant="outline" onClick={() => downloadCsv("العقارات", exportRows())}>
               <Download size={15} /> تصدير CSV
@@ -313,7 +313,7 @@ export default function AdminPropertiesPage() {
                     {isOpen && (
                       <Tr className="bg-background">
                         <Td colSpan={11} className="py-4 whitespace-normal align-top">
-                          <div className="pr-8 flex flex-col gap-4">
+                          <div className="pe-8 flex flex-col gap-4">
                             {(p.deedType || p.region || p.street || p.usage || p.propertyNumber || p.coOwners?.length || p.electricityMeterNumber || p.waterMeterNumber) && (
                               <div className="rounded-xl border border-border bg-surface p-4">
                                 <p className="text-xs font-bold text-muted mb-2">تفاصيل إضافية</p>

@@ -79,7 +79,7 @@ export default function VoucherPrintPage() {
               <p className="text-xs text-muted">نظام إدارة الأملاك · الرياض، المملكة العربية السعودية</p>
             </div>
           </div>
-          <div className="text-left">
+          <div className="text-end">
             <p className="text-xl font-extrabold text-brand-700">سند {voucher.type}</p>
             <p className="text-xs text-muted mt-1">{voucher.number}</p>
           </div>
@@ -90,7 +90,7 @@ export default function VoucherPrintPage() {
             <p className="text-xs text-muted mb-1">{voucher.type === "قبض" ? "استلمنا من" : "صرفنا إلى"}</p>
             <p className="font-bold">{voucher.personName}</p>
           </div>
-          <div className="text-left">
+          <div className="text-end">
             <p className="text-xs text-muted mb-1">التاريخ</p>
             <p className="font-semibold">{voucher.date}</p>
           </div>
@@ -101,7 +101,7 @@ export default function VoucherPrintPage() {
             <p className="text-xs text-muted mb-1">المبلغ</p>
             <p className="text-lg font-extrabold text-brand-700">{currency(voucher.amount)}</p>
           </div>
-          <div className="text-left">
+          <div className="text-end">
             <p className="text-xs text-muted mb-1">طريقة {voucher.type === "قبض" ? "الاستلام" : "الصرف"}</p>
             <p className="font-semibold">{voucher.method}</p>
           </div>
@@ -116,7 +116,7 @@ export default function VoucherPrintPage() {
               </div>
             )}
             {voucher.periodFrom && voucher.periodTo && (
-              <div className="text-left">
+              <div className="text-end">
                 <p className="text-xs text-muted mb-1">الفترة</p>
                 <p className="font-semibold">من {voucher.periodFrom} إلى {voucher.periodTo}</p>
               </div>

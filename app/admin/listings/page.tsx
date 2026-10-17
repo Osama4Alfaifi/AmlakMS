@@ -98,8 +98,8 @@ export default function ListingsPage() {
             <CardSubtitle>{filtered.length} من {rows.length} — حدد نوع العرض والسعر لكل وحدة أو عقار مستقل</CardSubtitle>
           </div>
           <div className="relative w-64">
-            <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
-            <Input placeholder="بحث عن عقار أو وحدة..." value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />
+            <Search size={15} className="absolute end-3 top-1/2 -translate-y-1/2 text-muted" />
+            <Input placeholder="بحث عن عقار أو وحدة..." value={query} onChange={(e) => setQuery(e.target.value)} className="pe-9" />
           </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -110,7 +110,7 @@ export default function ListingsPage() {
                 type="button"
                 onClick={() => setTab(t)}
                 className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  tab === t ? "bg-brand-600 text-white" : "text-muted hover:bg-background"
+                  tab === t ? "bg-primary text-on-primary" : "text-muted hover:bg-background"
                 }`}
               >
                 {t} <span className="opacity-70">({countByTab[t]})</span>
@@ -140,7 +140,7 @@ export default function ListingsPage() {
                           key={t}
                           type="button"
                           onClick={() => handleListingTypeChange(r, t)}
-                          className={`px-2.5 py-1.5 font-semibold ${r.listingType === t ? "bg-brand-600 text-white" : "text-muted hover:bg-background"}`}
+                          className={`px-2.5 py-1.5 font-semibold ${r.listingType === t ? "bg-primary text-on-primary" : "text-muted hover:bg-background"}`}
                         >
                           {t}
                         </button>

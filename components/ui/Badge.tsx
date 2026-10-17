@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { tr } from "@/lib/i18n/translate";
 
 type Tone = "success" | "warning" | "danger" | "info" | "brand" | "neutral";
 
@@ -51,7 +52,7 @@ export function Badge({ children, tone, className }: { children: React.ReactNode
       )}
     >
       <span aria-hidden className={cn("h-1.5 w-1.5 rounded-full shrink-0", t.dot)} />
-      {children}
+      {tr(children)}
     </span>
   );
 }

@@ -35,7 +35,7 @@ export default function CustomRoleHomePage() {
                 return (
                   <Link key={resource} href={nav.href}>
                     <Button variant="outline" className="w-full justify-between">
-                      <nav.icon size={15} className="ml-1" /> {nav.label} <ArrowLeft size={15} />
+                      <nav.icon size={15} className="ms-1" /> {nav.label} <ArrowLeft size={15} />
                     </Button>
                   </Link>
                 );

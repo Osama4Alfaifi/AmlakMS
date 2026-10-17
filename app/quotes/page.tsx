@@ -126,8 +126,8 @@ export default function QuotesPage() {
                 ))}
               </Select>
               <div className="relative w-48">
-                <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />
-                <Input placeholder="بحث..." value={query} onChange={(e) => setQuery(e.target.value)} className="pr-9" />
+                <Search size={15} className="absolute end-3 top-1/2 -translate-y-1/2 text-muted" />
+                <Input placeholder="بحث..." value={query} onChange={(e) => setQuery(e.target.value)} className="pe-9" />
               </div>
               <Button size="sm" variant="outline" onClick={() => downloadCsv("عروض الأسعار", exportRows())}>
                 <Download size={15} /> تصدير CSV

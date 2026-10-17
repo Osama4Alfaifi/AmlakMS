@@ -166,7 +166,7 @@ export default function AdminRolesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-background text-xs text-muted">
-                  <th className="text-right font-semibold py-2 px-3">الصفحة</th>
+                  <th className="text-start font-semibold py-2 px-3">الصفحة</th>
                   <th className="text-center font-semibold py-2 px-3">عرض</th>
                   <th className="text-center font-semibold py-2 px-3">تعديل</th>
                 </tr>

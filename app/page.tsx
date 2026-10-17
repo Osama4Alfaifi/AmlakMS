@@ -3,192 +3,153 @@
 import Link from "next/link";
 import {
   ArrowLeft,
+  Bell,
   BarChart3,
   Building2,
+  CalendarClock,
+  FileScan,
   FileText,
-  Headset,
   KeyRound,
-  LifeBuoy,
+  LayoutDashboard,
   MapPin,
   Receipt,
+  Settings,
   ShieldCheck,
-  UserCog,
-  Users,
   Wrench,
 } from "lucide-react";
-import { useClients, useContracts, useProperties, useSystemUsers } from "@/lib/firestore/hooks";
 import { LogoMark } from "@/components/layout/Logo";
+import { LangToggle, ThemeToggle } from "@/components/layout/Toggles";
 import { PageEnter } from "@/components/motion/PageEnter";
-import { CountUp } from "@/components/motion/CountUp";
+import { useLanguage } from "@/lib/i18n";
 
-// Role portals are the product's front doors; owners lead because they are the
-// primary audience. Everything else is a utility route into the same app.
-const rolePortals = [
-  {
-    title: "بوابة الملاك",
-    desc: "تابع عقاراتك وعقودك وصافي دخلك وطلبات الصيانة في مكان واحد.",
-    href: "/login?role=owner",
-    icon: ShieldCheck,
-  },
-  {
-    title: "بوابة المستأجرين",
-    desc: "اطّلع على عقد الإيجار والفواتير وقدّم طلبات الصيانة.",
-    href: "/login?role=tenant",
-    icon: KeyRound,
-  },
-  {
-    title: "بوابة فنيي الصيانة",
-    desc: "استلم أوامر العمل وحدّث حالتها من الموقع.",
-    href: "/login?role=technician",
-    icon: Wrench,
-  },
+const features = [
+  { icon: FileScan, title: "كشف حساب المالك", desc: "الدخل والمصروفات وعمولة الإدارة وصافي الدخل في كشف واضح قابل للطباعة." },
+  { icon: Building2, title: "إدارة العقارات والوحدات", desc: "سجّل العقارات ووحداتها وبيانات العدادات والمرافق، وحدّث العروض والأسعار." },
+  { icon: FileText, title: "عقود إلكترونية", desc: "أنشئ العقود أو استوردها من ملف عقد إيجار، وتابع التجديد والانتهاء." },
+  { icon: CalendarClock, title: "جدولة الدفعات والتحصيل", desc: "جدول دفعات لكل عقد، مع تسديد الدفعات وتنبيه بالمتأخرات." },
+  { icon: Wrench, title: "طلبات الصيانة", desc: "يرفع المستأجر الطلب ويُسنَد إلى فني ويُتابَع حتى الإغلاق." },
+  { icon: Receipt, title: "فواتير وسندات وعروض أسعار", desc: "مستندات PDF جاهزة للطباعة والمشاركة بضغطة واحدة." },
+  { icon: BarChart3, title: "تقارير مالية", desc: "تحليلات ورسوم بيانية وتصدير إلى Excel وCSV." },
+  { icon: MapPin, title: "الخريطة التفاعلية", desc: "كل عقاراتك على خريطة واحدة مع فلاتر للمدينة والحالة." },
+  { icon: Bell, title: "إشعارات ذكية", desc: "تنبيه قبل انتهاء العقود وعند استحقاق الدفعات." },
+  { icon: ShieldCheck, title: "صلاحيات حسب الدور", desc: "مدير ومحاسب ووسيط ومالك ومستأجر وفني، وكل طرف يرى ما يخصه فقط." },
+  { icon: LayoutDashboard, title: "ويب وجوال", desc: "يعمل من المتصفح ومن تطبيق أندرويد بنفس الحساب." },
+  { icon: Settings, title: "عربي وإنجليزي، نهاري وليلي", desc: "واجهة تدعم اللغتين والوضعين لراحة العين في أي وقت." },
 ] as const;
 
-const tools = [
-  { title: "المستخدمون وأدوارهم", desc: "عدد مستخدمي النظام وحالة نشاطهم.", href: "/login?role=admin&next=/admin/users", icon: Users },
-  { title: "العقارات والعملاء", desc: "إحصائيات العقارات وقاعدة العملاء.", href: "/login?role=admin&next=/admin/properties", icon: Building2 },
-  { title: "العقود الإلكترونية", desc: "أرشيف رقمي للعقود وتواريخ التجديد.", href: "/login?role=admin&next=/admin/contracts", icon: FileText },
-  { title: "عروض الأسعار", desc: "إنشاء عروض أسعار وتصديرها PDF.", href: "/login?role=admin&next=/quotes", icon: Receipt },
-  { title: "التقارير والفواتير", desc: "تحليلات تفاعلية وتصدير الفواتير.", href: "/login?role=admin&next=/reports", icon: BarChart3 },
-  { title: "الخريطة التفاعلية", desc: "جميع العقارات على خريطة بفلاتر ذكية.", href: "/login?role=admin&next=/map", icon: MapPin },
-  { title: "خدمة العملاء", desc: "تذاكر الاستفسارات حتى الإغلاق.", href: "/login?role=admin&next=/support/customer", icon: Headset },
-  { title: "الدعم الفني", desc: "تذاكر الأعطال التقنية وتوزيعها.", href: "/login?role=admin&next=/support/technical", icon: LifeBuoy },
-  { title: "مدير الحساب", desc: "تواصل مباشر مع مدير حسابك.", href: "/login?role=admin&next=/account-manager", icon: UserCog },
+const rolePortals = [
+  { title: "بوابة الملاك", desc: "عقاراتك وعقودك ودخلك الصافي.", href: "/login?role=owner", icon: ShieldCheck },
+  { title: "بوابة المستأجرين", desc: "العقد والفواتير وطلبات الصيانة.", href: "/login?role=tenant", icon: KeyRound },
+  { title: "بوابة فنيي الصيانة", desc: "أوامر العمل وتحديث حالتها ميدانيًا.", href: "/login?role=technician", icon: Wrench },
 ] as const;
 
 export default function LandingPage() {
-  const { data: properties } = useProperties();
-  const { data: contracts } = useContracts();
-  const { data: clients } = useClients();
-  const { data: systemUsers } = useSystemUsers();
-
-  const stats = [
-    { label: "عقار مُدار", value: properties.length },
-    { label: "عقد نشط", value: contracts.filter((c) => c.status === "نشط").length },
-    { label: "عميل مسجل", value: clients.length },
-    { label: "مستخدم نظام", value: systemUsers.length },
-  ];
+  const { t } = useLanguage();
 
   return (
     <div className="min-h-screen bg-background">
       <PageEnter>
-        <header className="bg-brand-950 pt-[env(safe-area-inset-top)]">
-          <div className="max-w-6xl mx-auto px-5 lg:px-8 min-h-16 flex items-center justify-between">
+        <header className="bg-brand-950 text-white pt-[env(safe-area-inset-top)]">
+          <div className="max-w-7xl mx-auto px-4 lg:px-6 min-h-16 flex items-center justify-between gap-2">
             <div className="flex items-center gap-3">
               <LogoMark size={34} />
-              <span className="text-base font-extrabold text-white">أملاك MS</span>
+              <span className="text-base font-extrabold">{t("أملاك MS")}</span>
             </div>
-            <Link
-              href="/login"
-              className="pressable inline-flex items-center min-h-11 sm:min-h-10 px-4 rounded-xl bg-white/10 text-sm font-semibold text-white hover:bg-white/15"
-            >
-              تسجيل الدخول
-            </Link>
+            <div className="flex items-center gap-1">
+              <ThemeToggle tone="onDark" />
+              <LangToggle tone="onDark" />
+              <Link
+                href="/login"
+                className="pressable inline-flex items-center min-h-11 sm:min-h-10 px-4 rounded-xl bg-white/12 text-sm font-semibold text-white hover:bg-white/20 ms-1"
+              >
+                {t("تسجيل الدخول")}
+              </Link>
+            </div>
           </div>
 
-          <div className="max-w-6xl mx-auto px-5 lg:px-8 pt-10 pb-16 lg:pt-16 lg:pb-24 grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-10 lg:gap-14 items-center">
+          <div className="max-w-7xl mx-auto px-4 lg:px-6 pt-8 pb-14 lg:pt-14 lg:pb-20 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-12 items-center">
             <div>
-              <h1 className="text-4xl lg:text-[3.4rem] font-extrabold leading-[1.15] text-white">
-                عقاراتك، عقودك، ودخلك الصافي — بوضوح تام.
+              <h1 className="text-[2.2rem] sm:text-5xl lg:text-[3.4rem] font-extrabold leading-[1.2]">
+                {t("أدِر عقاراتك بثقة، وتابع دخلك لحظة بلحظة")}
               </h1>
-              <p className="mt-5 text-base lg:text-lg leading-relaxed text-brand-200 max-w-xl">
-                أملاك MS تجمع إدارة العقارات والعقود والتحصيل والصيانة في منصة واحدة، وتعرض للمالك كشف حسابه
-                أولًا بأول بعد المصروفات وعمولة الإدارة.
+              <p className="mt-5 text-base lg:text-lg leading-relaxed text-white/80 max-w-xl">
+                {t("منصة واحدة تجمع العقارات والعقود والتحصيل والصيانة والتقارير، بصلاحيات واضحة لكل دور، على الجوال والمتصفح.")}
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link
                   href="/login?role=owner"
-                  className="pressable inline-flex items-center gap-2 min-h-12 px-6 rounded-xl bg-white text-brand-900 font-bold hover:bg-brand-50"
+                  className="pressable inline-flex items-center gap-2 min-h-12 px-6 rounded-xl bg-white text-brand-950 font-bold hover:bg-white/90"
                 >
-                  دخول الملاك
-                  <ArrowLeft size={18} />
+                  {t("ابدأ الآن")}
+                  <ArrowLeft size={18} className="ltr:rotate-180" />
                 </Link>
                 <Link
-                  href="/login"
-                  className="pressable inline-flex items-center min-h-12 px-5 rounded-xl text-white/90 font-semibold hover:bg-white/10"
+                  href="#features"
+                  className="pressable inline-flex items-center min-h-12 px-5 rounded-xl text-white font-semibold hover:bg-white/10"
                 >
-                  بقية الأدوار
+                  {t("اكتشف الميزات")}
                 </Link>
               </div>
             </div>
 
-            <StatementPreview />
+            <Skyline />
           </div>
         </header>
 
-        {stats.every((x) => x.value > 0) && (
-        <section className="max-w-6xl mx-auto px-5 lg:px-8 -mt-8 relative">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-px rounded-2xl overflow-hidden bg-border shadow-raised">
-            {stats.map((s) => (
-              <div key={s.label} className="bg-surface px-5 py-5 lg:py-6">
-                <CountUp value={String(s.value).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[Number(d)])} className="num block text-3xl font-extrabold text-brand-800" />
-                <p className="text-xs font-semibold text-muted mt-1.5">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-        )}
-
-        <section className="max-w-6xl mx-auto px-5 lg:px-8 pt-16">
-          <h2 className="text-2xl font-extrabold">ادخل حسب دورك</h2>
-          <p className="text-sm text-muted mt-1.5">كل دور يرى ما يخصه فقط، بصلاحيات واضحة.</p>
-          <Link
-            href={rolePortals[0].href}
-            className="pressable group mt-6 flex items-center gap-5 rounded-2xl bg-brand-700 text-white shadow-raised hover:bg-brand-800 p-6 lg:p-8"
-          >
-            <span className="h-12 w-12 shrink-0 rounded-xl bg-white/12 grid place-items-center">
-              <ShieldCheck size={24} strokeWidth={1.75} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-xl font-bold">{rolePortals[0].title}</span>
-              <span className="block text-sm text-brand-100 mt-1.5 leading-relaxed">{rolePortals[0].desc}</span>
-            </span>
-            <ArrowLeft size={22} className="shrink-0 transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)] group-hover:-translate-x-1" />
-          </Link>
-          <ul className="mt-3 grid md:grid-cols-2 gap-3">
-            {rolePortals.slice(1).map((p) => {
-              const Icon = p.icon;
+        <section id="features" className="max-w-7xl mx-auto px-4 lg:px-6 pt-14 lg:pt-20 scroll-mt-4">
+          <h2 className="text-2xl lg:text-3xl font-extrabold">{t("كل ما تحتاجه لإدارة أملاكك")}</h2>
+          <p className="text-muted mt-2 max-w-2xl">{t("مهام يومية كانت تأخذ ساعات، أصبحت في مكان واحد وبخطوات قليلة.")}</p>
+          <ul className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-2 border-t-2 border-foreground/80">
+            {features.map((f) => {
+              const Icon = f.icon;
               return (
-                <li key={p.title}>
-                  <Link
-                    href={p.href}
-                    className="pressable group flex items-center gap-4 rounded-2xl bg-surface shadow-card hover:shadow-raised p-4 lg:p-5 min-h-20"
-                  >
-                    <span className="h-10 w-10 shrink-0 rounded-xl bg-brand-50 text-brand-700 grid place-items-center">
-                      <Icon size={20} strokeWidth={1.75} />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-bold">{p.title}</span>
-                      <span className="block text-xs text-muted mt-1 leading-relaxed">{p.desc}</span>
-                    </span>
-                    <ArrowLeft size={18} className="shrink-0 text-muted transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)] group-hover:-translate-x-1" />
-                  </Link>
+                <li key={f.title} className="flex gap-4 py-5 border-b border-border">
+                  <span className="mt-0.5 h-10 w-10 shrink-0 rounded-xl bg-brand-100 text-brand-700 grid place-items-center">
+                    <Icon size={20} strokeWidth={1.75} />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="font-bold">{t(f.title)}</h3>
+                    <p className="text-sm text-muted mt-1 leading-relaxed">{t(f.desc)}</p>
+                  </div>
                 </li>
               );
             })}
           </ul>
         </section>
 
-        <section className="max-w-6xl mx-auto px-5 lg:px-8 pt-16 pb-20">
-          <h2 className="text-2xl font-extrabold">أدوات الإدارة</h2>
-          <p className="text-sm text-muted mt-1.5">اختصارات مباشرة لفريق العمل بعد تسجيل الدخول.</p>
-          <ul className="mt-6 grid md:grid-cols-2 lg:grid-cols-3 gap-x-8 border-t-2 border-foreground/80">
-            {tools.map((t) => {
-              const Icon = t.icon;
+        <section className="max-w-7xl mx-auto px-4 lg:px-6 pt-14 lg:pt-20">
+          <h2 className="text-2xl lg:text-3xl font-extrabold">{t("لكل دور تجربته")}</h2>
+          <p className="text-muted mt-2">{t("اختر بوابتك وادخل مباشرة.")}</p>
+          <ul className="mt-6 grid md:grid-cols-3 gap-3">
+            {rolePortals.map((p, i) => {
+              const Icon = p.icon;
+              const lead = i === 0;
               return (
-                <li key={t.title} className="border-b border-border">
+                <li key={p.title}>
                   <Link
-                    href={t.href}
-                    className="group flex items-center gap-3 py-3 -mx-3 px-3 rounded-xl min-h-14 transition-colors duration-[var(--duration-quick)] hover:bg-surface-sunken"
+                    href={p.href}
+                    className={
+                      "pressable group flex items-center gap-4 rounded-2xl p-5 min-h-24 " +
+                      (lead
+                        ? "bg-primary text-on-primary shadow-raised hover:bg-primary-strong"
+                        : "bg-surface shadow-card hover:shadow-raised")
+                    }
                   >
-                    <Icon size={18} strokeWidth={1.75} className="shrink-0 text-brand-700" />
+                    <span
+                      className={
+                        "h-11 w-11 shrink-0 rounded-xl grid place-items-center " +
+                        (lead ? "bg-white/15" : "bg-brand-100 text-brand-700")
+                      }
+                    >
+                      <Icon size={21} strokeWidth={1.75} />
+                    </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block font-semibold text-sm">{t.title}</span>
-                      <span className="block text-xs text-muted mt-0.5 truncate">{t.desc}</span>
+                      <span className="block font-bold">{t(p.title)}</span>
+                      <span className={"block text-sm mt-0.5 " + (lead ? "text-white/80" : "text-muted")}>{t(p.desc)}</span>
                     </span>
                     <ArrowLeft
-                      size={16}
-                      className="text-muted opacity-0 -translate-x-1 transition-[opacity,transform] duration-[var(--duration-base)] ease-[var(--ease-out)] group-hover:opacity-100 group-hover:translate-x-0"
+                      size={18}
+                      className="shrink-0 ltr:rotate-180 transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)] rtl:group-hover:-translate-x-1 ltr:group-hover:translate-x-1"
                     />
                   </Link>
                 </li>
@@ -197,44 +158,73 @@ export default function LandingPage() {
           </ul>
         </section>
 
+        <section className="max-w-7xl mx-auto px-4 lg:px-6 pt-14 lg:pt-20 pb-16">
+          <div className="rounded-3xl bg-brand-950 text-white px-6 py-10 lg:px-12 lg:py-14 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div className="max-w-xl">
+              <h2 className="text-2xl lg:text-3xl font-extrabold">{t("جاهز تشوف عقاراتك بوضوح؟")}</h2>
+              <p className="mt-2 text-white/75">{t("سجّل الدخول وابدأ بإدارة عقاراتك وعقودك ودخلك من مكان واحد.")}</p>
+            </div>
+            <Link
+              href="/login"
+              className="pressable inline-flex items-center justify-center gap-2 min-h-12 px-7 rounded-xl bg-white text-brand-950 font-bold hover:bg-white/90 self-start lg:self-auto"
+            >
+              {t("تسجيل الدخول")}
+              <ArrowLeft size={18} className="ltr:rotate-180" />
+            </Link>
+          </div>
+        </section>
+
         <footer className="border-t border-border py-6 text-center text-xs text-muted">
-          © {new Date().getFullYear()} أملاك MS — منصة تجريبية لإدارة الأملاك.
+          © {new Date().getFullYear()} {t("أملاك MS")} — {t("نسخة تجريبية ببيانات وهمية.")}
         </footer>
       </PageEnter>
     </div>
   );
 }
 
-// A synthetic owner statement: shows the product's central promise (net
-// income after expenses and management fee) the moment the page loads.
-// Figures are illustrative and labelled as such.
-function StatementPreview() {
-  const rows = [
-    { label: "الدخل الإجمالي", value: "٤٨٠٬٠٠٠ ﷼", tone: "text-foreground" },
-    { label: "المصروفات", value: "−٦٢٬٤٠٠ ﷼", tone: "text-danger-700" },
-    { label: "عمولة الإدارة (٥٪)", value: "−٢٠٬٨٨٠ ﷼", tone: "text-warning-700" },
+// Authored skyline: a few towers in petrol tones with a handful of lit brass
+// windows. Positions and lit windows are derived from fixed numbers, so the
+// server and client always render the same picture.
+function Skyline() {
+  const towers = [
+    { x: 18, w: 70, h: 150, fill: "#123846" },
+    { x: 100, w: 88, h: 250, fill: "#164557" },
+    { x: 200, w: 64, h: 190, fill: "#123846" },
+    { x: 276, w: 104, h: 300, fill: "#1b5468" },
+    { x: 392, w: 72, h: 210, fill: "#164557" },
+    { x: 474, w: 52, h: 130, fill: "#123846" },
   ];
+  const ground = 340;
   return (
-    <div className="rounded-2xl bg-surface text-foreground shadow-raised p-5 lg:p-6" aria-label="مثال على كشف حساب المالك">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold text-muted">كشف حساب المالك</p>
-          <p className="font-bold mt-1">السنة التعاقدية الحالية</p>
-        </div>
-        <span className="text-[11px] font-semibold text-muted bg-surface-sunken rounded-full px-2.5 py-1">مثال توضيحي</span>
-      </div>
-      <dl className="mt-5 divide-y divide-border">
-        {rows.map((r) => (
-          <div key={r.label} className="flex items-center justify-between py-3 text-sm">
-            <dt className="text-muted">{r.label}</dt>
-            <dd className={`num font-bold ${r.tone}`}><bdi dir="ltr">{r.value}</bdi></dd>
-          </div>
-        ))}
-      </dl>
-      <div className="mt-1 rounded-xl bg-brand-50 border-t-[5px] border-double border-brand-300 px-4 py-3.5 flex items-center justify-between">
-        <span className="text-sm font-bold text-brand-800">صافي الدخل</span>
-        <bdi dir="ltr" className="num text-xl font-extrabold text-brand-800">٣٩٦٬٧٢٠ ﷼</bdi>
-      </div>
-    </div>
+    <svg viewBox="0 0 544 360" className="w-full h-auto" role="img" aria-label="">
+      <rect x="0" y={ground} width="544" height="2" fill="#ffffff" fillOpacity="0.18" />
+      {towers.map((b, bi) => {
+        const top = ground - b.h;
+        const cols = Math.floor((b.w - 16) / 18);
+        const rows = Math.floor((b.h - 20) / 24);
+        return (
+          <g key={bi}>
+            <rect x={b.x} y={top} width={b.w} height={b.h} rx="4" fill={b.fill} />
+            {Array.from({ length: rows }).flatMap((_, r) =>
+              Array.from({ length: cols }).map((__, c) => {
+                const lit = (bi * 7 + r * 5 + c * 3) % 11 === 0;
+                return (
+                  <rect
+                    key={`${r}-${c}`}
+                    x={b.x + 10 + c * 18}
+                    y={top + 14 + r * 24}
+                    width="9"
+                    height="12"
+                    rx="2"
+                    fill={lit ? "#d6a84e" : "#ffffff"}
+                    fillOpacity={lit ? 0.95 : 0.1}
+                  />
+                );
+              })
+            )}
+          </g>
+        );
+      })}
+    </svg>
   );
 }

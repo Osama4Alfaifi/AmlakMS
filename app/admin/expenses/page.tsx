@@ -176,19 +176,19 @@ export default function AdminExpensesPage() {
                       {isOpen && (
                         <Tr className="bg-background">
                           <Td colSpan={7} className="py-3 whitespace-normal align-top">
-                            <div className="pr-8">
+                            <div className="pe-8">
                               <p className="text-xs font-semibold text-muted mb-2">تفصيل المبلغ ({e.items?.length ?? 0} بند)</p>
                               <table className="w-full text-sm max-w-md">
                                 <tbody>
                                   {(e.items ?? []).map((item, idx) => (
                                     <tr key={idx} className="border-b border-border/60">
                                       <td className="py-1.5 text-muted">{item.description}</td>
-                                      <td className="py-1.5 text-left font-medium">{currency(item.amount)}</td>
+                                      <td className="py-1.5 text-end font-medium">{currency(item.amount)}</td>
                                     </tr>
                                   ))}
                                   <tr>
                                     <td className="py-1.5 font-semibold">الإجمالي</td>
-                                    <td className="py-1.5 text-left font-bold text-brand-700">{currency(e.amount)}</td>
+                                    <td className="py-1.5 text-end font-bold text-brand-700">{currency(e.amount)}</td>
                                   </tr>
                                 </tbody>
                               </table>
