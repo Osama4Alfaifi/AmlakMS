@@ -5,12 +5,15 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useT } from "@/lib/i18n";
 import { currency } from "@/lib/mock-data";
+import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import type { Contract, Property, Tenant, Unit } from "@/lib/types";
 
-interface UnitRow {
+export interface UnitRow {
   key: string;
+  unit?: Unit;
+  contract?: Contract;
   label: string;
   detail: string;
   // The property itself acting as its only unit (it has no Unit records).
@@ -25,8 +28,9 @@ interface UnitRow {
   overdue: number;
 }
 
-interface PropertyRow {
+export interface PropertyRow {
   property: Property;
+  wholeContract?: Contract;
   units: UnitRow[];
   rented: number;
   income: number;
@@ -60,6 +64,8 @@ export function buildPortfolio(properties: Property[], units: Unit[], contracts:
             const c = own_c ?? wholeContract;
             return {
               key: u.id,
+              unit: u,
+              contract: c,
               label: u.unitNumber,
               detail: [u.type, u.area ? `${u.area} م²` : null].filter(Boolean).join(" · "),
               whole: false,
@@ -76,6 +82,7 @@ export function buildPortfolio(properties: Property[], units: Unit[], contracts:
           return [
             {
               key: property.id,
+              contract: c,
               label: "",
               detail: [property.type, property.area ? `${property.area} م²` : null].filter(Boolean).join(" · "),
               whole: true,
@@ -90,6 +97,7 @@ export function buildPortfolio(properties: Property[], units: Unit[], contracts:
 
     return {
       property,
+      wholeContract,
       units: rows,
       rented: rows.filter((r) => r.status === "مؤجرة").length,
       income: rows.reduce((s, r) => s + r.rent, 0) + (wholeContract?.value ?? 0),
@@ -206,6 +214,14 @@ function PropertyItem({ row, defaultOpen }: { row: PropertyRow; defaultOpen: boo
           <p className="sm:hidden px-4 pb-1 text-xs text-muted">
             {single ? t("وحدة واحدة") : `${units.length} ${t("وحدات")}`} · {row.rented}/{units.length} {t("مؤجرة")} · {currency(row.income)}
           </p>
+          <div className="px-4 pt-1">
+            <Link
+              href={`/owner/properties/${property.id}`}
+              className="inline-flex items-center min-h-10 text-sm font-semibold text-brand-700 hover:underline"
+            >
+              {t("تفاصيل العقار والمستندات")}
+            </Link>
+          </div>
           <ul className="px-2 pb-2">
             {units.map((u) => (
               <li key={u.key} className="rounded-xl bg-surface px-3.5 py-3 mt-2 shadow-control">

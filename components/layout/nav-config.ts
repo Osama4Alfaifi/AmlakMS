@@ -83,6 +83,7 @@ export const navByRole: Record<Role, NavItem[]> = {
   ],
   owner: [
     { label: "لوحة التحكم", href: "/owner", icon: LayoutDashboard },
+    { label: "عقاراتي", href: "/owner/properties", icon: Building2 },
     { label: "عروض الأسعار", href: "/quotes", icon: Receipt },
     { label: "التقارير والفواتير", href: "/reports", icon: BarChart3 },
     { label: "المستندات", href: "/owner/documents", icon: FolderOpen },

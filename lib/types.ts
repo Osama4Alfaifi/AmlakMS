@@ -504,7 +504,9 @@ export interface Viewing {
 // Firebase project to the Blaze plan; deferred until that's decided (see
 // the same call on expense receipts).
 export type DocumentCategory = "عقد" | "فاتورة" | "هوية" | "صك ملكية" | "تأمين" | "أخرى";
-export type DocumentEntityType = "عقار" | "عقد" | "مالك" | "مستأجر";
+// "وحدة" documents (unit deed copies, meter bills, inspection reports) hang off
+// a Unit; like the others they carry the denormalized ownerId.
+export type DocumentEntityType = "عقار" | "وحدة" | "عقد" | "مالك" | "مستأجر";
 
 export interface DocumentLink {
   id: string;

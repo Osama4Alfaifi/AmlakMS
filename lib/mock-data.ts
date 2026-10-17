@@ -133,6 +133,8 @@ export const viewings: Viewing[] = [
 // Placeholder URLs (example.com) — real usage has the admin paste a link to
 // an actually-hosted file (Drive, email, etc.) via app/admin/documents.
 export const documentLinks: DocumentLink[] = [
+  { id: "doc-u1", title: "فاتورة عداد الكهرباء - وحدة 101", category: "فاتورة", entityType: "وحدة", entityId: "unit-1", entityLabel: "شقة فاخرة بحي الملقا — وحدة 101", ownerId: "own-1", url: "https://drive.example.com/docs/unit-1-electricity.pdf", createdAt: "2026-03-05" },
+  { id: "doc-u2", title: "تقرير فحص الوحدة 102", category: "أخرى", entityType: "وحدة", entityId: "unit-2", entityLabel: "شقة فاخرة بحي الملقا — وحدة 102", ownerId: "own-1", url: "https://drive.example.com/docs/unit-2-inspection.pdf", createdAt: "2026-03-12" },
   { id: "doc-1", title: "عقد إيجار شقة الملقا", category: "عقد", entityType: "عقد", entityId: "con-1", entityLabel: "CON-1", ownerId: "own-1", url: "https://drive.example.com/docs/con-1-lease.pdf", createdAt: "2026-02-01" },
   { id: "doc-2", title: "صك ملكية فيلا النرجس", category: "صك ملكية", entityType: "عقار", entityId: "prop-2", entityLabel: "فيلا دورين بحي النرجس", ownerId: "own-2", url: "https://drive.example.com/docs/prop-2-deed.pdf", createdAt: "2026-02-20" },
   { id: "doc-3", title: "وثيقة تأمين شقة الملقا", category: "تأمين", entityType: "عقار", entityId: "prop-1", entityLabel: "شقة فاخرة بحي الملقا", ownerId: "own-1", url: "https://drive.example.com/docs/prop-1-insurance.pdf", createdAt: "2026-01-20" },

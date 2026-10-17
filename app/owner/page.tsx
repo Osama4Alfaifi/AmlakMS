@@ -146,7 +146,7 @@ export default function OwnerDashboardPage() {
               <CardSubtitle>عقود قرب الانتهاء ودفعات مستحقة على عقاراتي، الأقدم أولًا</CardSubtitle>
             </div>
             {allNotifications.length > notifications.length && (
-              <span className="text-xs font-semibold text-muted">+{allNotifications.length - notifications.length} {t("أخرى")}</span>
+              <span className="text-xs font-semibold text-muted">+{allNotifications.length - notifications.length} {t("إشعارات أخرى")}</span>
             )}
           </CardHeader>
           <CardContent>

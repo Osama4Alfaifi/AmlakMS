@@ -13,6 +13,7 @@ import {
   useOwners,
   useProperties,
   useTenants,
+  useUnits,
 } from "@/lib/firestore/hooks";
 import { contractDisplayNumber } from "@/lib/contracts/display";
 import { createDocumentLink } from "@/lib/firestore/mutations";
@@ -20,7 +21,7 @@ import type { DocumentCategory, DocumentEntityType } from "@/lib/types";
 import { ExternalLink, Plus, Search } from "lucide-react";
 
 const CATEGORIES: DocumentCategory[] = ["عقد", "فاتورة", "هوية", "صك ملكية", "تأمين", "أخرى"];
-const ENTITY_TYPES: DocumentEntityType[] = ["عقار", "عقد", "مالك", "مستأجر"];
+const ENTITY_TYPES: DocumentEntityType[] = ["عقار", "وحدة", "عقد", "مالك", "مستأجر"];
 
 export default function AdminDocumentsPage() {
   const { data: documents } = useDocumentLinks();
@@ -28,6 +29,7 @@ export default function AdminDocumentsPage() {
   const { data: contracts } = useContracts();
   const { data: owners } = useOwners();
   const { data: tenants } = useTenants();
+  const { data: units } = useUnits();
 
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("الكل");
@@ -45,6 +47,11 @@ export default function AdminDocumentsPage() {
     switch (entityType) {
       case "عقار":
         return properties.map((p) => ({ id: p.id, label: p.title }));
+      case "وحدة":
+        return units.map((u) => ({
+          id: u.id,
+          label: `${properties.find((p) => p.id === u.propertyId)?.title ?? ""} — وحدة ${u.unitNumber}`,
+        }));
       case "عقد":
         return contracts.map((c) => ({ id: c.id, label: contractDisplayNumber(c) }));
       case "مالك":
@@ -52,7 +59,7 @@ export default function AdminDocumentsPage() {
       case "مستأجر":
         return tenants.map((t) => ({ id: t.id, label: t.name }));
     }
-  }, [entityType, properties, contracts, owners, tenants]);
+  }, [entityType, properties, units, contracts, owners, tenants]);
 
   const filtered = useMemo(
     () =>
@@ -66,6 +73,8 @@ export default function AdminDocumentsPage() {
     switch (entityType) {
       case "عقار":
         return properties.find((p) => p.id === entityId)?.ownerId;
+      case "وحدة":
+        return units.find((u) => u.id === entityId)?.ownerId;
       case "عقد":
         return contracts.find((c) => c.id === entityId)?.ownerId;
       case "مالك":
