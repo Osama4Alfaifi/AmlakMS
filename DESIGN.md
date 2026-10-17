@@ -39,35 +39,35 @@ colors:
   info-700: "#1d559a"
 typography:
   headline:
-    fontFamily: "Cairo, sans-serif"
+    fontFamily: "IBM Plex Sans Arabic, sans-serif"
     fontSize: "1.125rem"
     fontWeight: 800
     lineHeight: 1.5
   title:
-    fontFamily: "Cairo, sans-serif"
+    fontFamily: "IBM Plex Sans Arabic, sans-serif"
     fontSize: "1rem"
     fontWeight: 700
     lineHeight: 1.375
   figure:
-    fontFamily: "Cairo, sans-serif"
+    fontFamily: "IBM Plex Sans Arabic, sans-serif"
     fontSize: "1.75rem"
     fontWeight: 800
     lineHeight: 1.25
     fontFeature: "tabular-nums"
   stat:
-    fontFamily: "Cairo, sans-serif"
+    fontFamily: "IBM Plex Sans Arabic, sans-serif"
     fontSize: "1.45rem"
     fontWeight: 800
     lineHeight: 1.25
     letterSpacing: "-0.025em"
     fontFeature: "tabular-nums"
   body:
-    fontFamily: "Cairo, sans-serif"
+    fontFamily: "IBM Plex Sans Arabic, sans-serif"
     fontSize: "0.875rem"
     fontWeight: 400
     lineHeight: 1.5
   label:
-    fontFamily: "Cairo, sans-serif"
+    fontFamily: "IBM Plex Sans Arabic, sans-serif"
     fontSize: "0.75rem"
     fontWeight: 600
     lineHeight: 1.375
@@ -147,7 +147,7 @@ components:
 
 The product's promise is an owner's net income after expenses and fee, so the interface reads like a clean statement rather than a card dashboard. Warm stone ground (#f6f5f2) carries white surfaces lifted by layered ring-plus-drop shadows; deep petrol (brand-700 for action, brand-950 for the navigation rail) supplies the ink; a single brass accent appears only on the active navigation glyph. Neutrals lean warm and the brand leans cool so the two never merge into one grey-blue; status hues sit far from brand.
 
-Owners and staff share one system. Staff screens run denser (same tokens, tighter rows); owner screens lead with the statement: gross, minus expenses, minus fee, equals net income in a petrol block closed by a double rule, as in a ledger. Arabic RTL with Cairo is a fixed commitment, as are 44px touch targets on phones and reduced-motion respect.
+Owners and staff share one system. Staff screens run denser (same tokens, tighter rows); owner screens lead with the statement: gross, minus expenses, minus fee, equals net income in a petrol block closed by a double rule, as in a ledger. Arabic RTL with IBM Plex Sans Arabic is a fixed commitment, as are 44px touch targets on phones and reduced-motion respect.
 
 Motion is a single signature: a staged page entrance and a number count-up, both GSAP and both skipped under `prefers-reduced-motion`.
 
@@ -190,7 +190,7 @@ Success (#1e9558 dot, #14683c text, #e9f6ee ground), Warning (#d4900e, #8f5d06, 
 
 ## Typography
 
-**Display / Body / Label Font:** Cairo (Arabic and Latin subsets; weights 400, 500, 600, 700, 800), loaded via next/font as `--font-cairo`, falling back to sans-serif.
+**Display / Body / Label Font:** IBM Plex Sans Arabic (Arabic and Latin subsets; weights 400, 500, 600, 700; "extrabold" resolves to 700), loaded via next/font as `--font-ui`, falling back to sans-serif.
 
 **Character:** One humanist Arabic family does everything; hierarchy comes from weight (700 to 800 for anything that is a figure or heading) and size, not from a second face. Headings use balanced wrapping and running text uses `text-wrap: pretty`.
 

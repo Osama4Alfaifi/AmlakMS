@@ -22,7 +22,7 @@ Property/real-estate management system for Saudi Arabia: properties and units, c
 Used on desktop by staff and on phones (including the Android WebView) by owners, tenants, technicians. Documents are printed and exported (PDF invoices, quotes, vouchers, owner statements, CSV/Excel).
 
 ## Capabilities and Constraints
-- Keep Arabic RTL and the Cairo face unless explicitly changed.
+- Keep Arabic RTL. UI face is IBM Plex Sans Arabic (changed from Cairo at the user's request for clarity); PDFs still embed Cairo.
 - Safe-area insets must keep working in the Android WebView (viewportFit cover).
 - Print and PDF surfaces (`.no-print`, `.print-sheet`) must stay intact.
 - Role-scoped data (accountant and leasing agent scoped by owner) must not be changed by visual work.

@@ -52,7 +52,7 @@ const tooltipStyle = {
   boxShadow: "var(--shadow-raised)",
   padding: "8px 12px",
   fontSize: 12,
-  fontFamily: "var(--font-cairo)",
+  fontFamily: "var(--font-ui)",
   direction: "rtl" as const,
 };
 

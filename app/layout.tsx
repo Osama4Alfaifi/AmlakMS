@@ -1,14 +1,16 @@
 import type { Metadata, Viewport } from "next";
-import { Cairo } from "next/font/google";
+import { IBM_Plex_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { AccountantScopeProvider } from "@/lib/accountant-scope";
 import { DemoBadge } from "@/components/layout/DemoBadge";
 
-const cairo = Cairo({
-  variable: "--font-cairo",
+// IBM Plex Sans Arabic: open apertures and distinct letterforms read more
+// clearly at small sizes than Cairo did, and its numerals are even and legible.
+const ui = IBM_Plex_Sans_Arabic({
+  variable: "--font-ui",
   subsets: ["arabic", "latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -34,7 +36,7 @@ export const viewport: Viewport = {
 // harmless warning it's flagging.
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ar" dir="rtl" className={`${cairo.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="ar" dir="rtl" className={`${ui.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col font-sans">
         <AuthProvider>
           <AccountantScopeProvider>{children}</AccountantScopeProvider>
