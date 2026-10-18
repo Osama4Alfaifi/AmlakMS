@@ -98,23 +98,22 @@ export default function LandingPage() {
 
         <section id="features" className="max-w-7xl mx-auto px-4 lg:px-6 pt-14 lg:pt-20 scroll-mt-4">
           <h2 className="text-2xl lg:text-3xl font-extrabold">{t("كل ما تحتاجه لإدارة أملاكك")}</h2>
-          <p className="text-muted mt-2 max-w-2xl">{t("مهام يومية كانت تأخذ ساعات، أصبحت في مكان واحد وبخطوات قليلة.")}</p>
-          <ul className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-2 border-t-2 border-foreground/80">
-            {features.map((f) => {
-              const Icon = f.icon;
-              return (
-                <li key={f.title} className="flex gap-4 py-5 border-b border-border">
-                  <span className="mt-0.5 h-10 w-10 shrink-0 rounded-xl bg-brand-100 text-brand-700 grid place-items-center">
-                    <Icon size={20} strokeWidth={1.75} />
-                  </span>
-                  <div className="min-w-0">
-                    <h3 className="font-bold">{t(f.title)}</h3>
-                    <p className="text-sm text-muted mt-1 leading-relaxed">{t(f.desc)}</p>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          
+          <div className="mt-6 rounded-2xl bg-surface shadow-card p-3 sm:p-5">
+            <ul className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 sm:gap-x-6 gap-y-1">
+              {features.map((f) => {
+                const Icon = f.icon;
+                return (
+                  <li key={f.title} className="flex items-center gap-2.5 py-2.5">
+                    <span className="h-9 w-9 shrink-0 rounded-xl bg-brand-100 text-brand-700 grid place-items-center">
+                      <Icon size={18} strokeWidth={1.75} />
+                    </span>
+                    <span className="font-semibold leading-snug">{t(f.title)}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </section>
 
         <section className="max-w-7xl mx-auto px-4 lg:px-6 pt-14 lg:pt-20">
