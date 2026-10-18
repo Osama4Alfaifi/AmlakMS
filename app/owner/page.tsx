@@ -123,7 +123,7 @@ export default function OwnerDashboardPage() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4">
           <StatCard
             label="عقاراتي"
             value={String(myProperties.length)}
@@ -132,9 +132,8 @@ export default function OwnerDashboardPage() {
             icon={Building2}
             tone="brand"
           />
-          <StatCard label="عقود نشطة" value={String(activeContracts.length)} icon={FileText} tone="success" />
-          <StatCard label="الدخل السنوي المتوقع" value={currency(annualIncome)} icon={TrendingUp} tone="brand" />
-          <StatCard label="طلبات صيانة مفتوحة" value={String(openMaintenance.length)} icon={Wrench} tone="warning" />
+          <StatCard label="عقود نشطة" value={String(activeContracts.length)} href="#contracts" icon={FileText} tone="success" />
+          <StatCard label="طلبات صيانة مفتوحة" value={String(openMaintenance.length)} href="#maintenance" icon={Wrench} tone="warning" />
         </div>
 
         <PortfolioSection rows={portfolio} paidInstallments={paidPayments.length} amountToVerify={outstandingAmount} />
@@ -179,7 +178,7 @@ export default function OwnerDashboardPage() {
 
 
 
-        <Card>
+        <Card id="contracts" className="scroll-mt-20">
           <CardHeader>
             <div>
               <CardTitle>عقودي</CardTitle>
@@ -212,7 +211,7 @@ export default function OwnerDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="maintenance" className="scroll-mt-20">
           <CardHeader>
             <div>
               <CardTitle>طلبات الصيانة على عقاراتي</CardTitle>
