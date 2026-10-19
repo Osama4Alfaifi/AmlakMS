@@ -9,10 +9,8 @@ import {
   CalendarClock,
   FileScan,
   FileText,
-  LayoutDashboard,
   MapPin,
   Receipt,
-  Settings,
   ShieldCheck,
   Wrench,
 } from "lucide-react";
@@ -32,8 +30,6 @@ const features = [
   { icon: MapPin, title: "الخريطة التفاعلية", desc: "كل عقاراتك على خريطة واحدة مع فلاتر للمدينة والحالة." },
   { icon: Bell, title: "إشعارات ذكية", desc: "تنبيه قبل انتهاء العقود وعند استحقاق الدفعات." },
   { icon: ShieldCheck, title: "صلاحيات حسب الدور", desc: "مدير ومحاسب ووسيط ومالك ومستأجر وفني، وكل طرف يرى ما يخصه فقط." },
-  { icon: LayoutDashboard, title: "ويب وجوال", desc: "يعمل من المتصفح ومن تطبيق أندرويد بنفس الحساب." },
-  { icon: Settings, title: "عربي وإنجليزي، نهاري وليلي", desc: "واجهة تدعم اللغتين والوضعين لراحة العين في أي وقت." },
 ] as const;
 
 
@@ -111,18 +107,19 @@ export default function LandingPage() {
         </section>
 
         <section className="max-w-7xl mx-auto px-4 lg:px-6 pt-14 lg:pt-20 pb-16">
-          <div className="rounded-3xl bg-brand-950 text-white px-6 py-10 lg:px-12 lg:py-14 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="max-w-xl">
-              <h2 className="text-2xl lg:text-3xl font-extrabold">{t("جاهز تشوف عقاراتك بوضوح؟")}</h2>
-              <p className="mt-2 text-white/75">{t("سجّل الدخول وابدأ بإدارة عقاراتك وعقودك ودخلك من مكان واحد.")}</p>
+          <div className="relative overflow-hidden rounded-3xl bg-brand-950 text-white text-center px-6 pt-16 pb-44 lg:pt-24 lg:pb-56">
+            <SkylineBackdrop />
+            <div className="relative mx-auto max-w-2xl">
+              <h2 className="text-3xl lg:text-5xl font-extrabold leading-tight">{t("جاهز تشوف عقاراتك بوضوح؟")}</h2>
+              <p className="mt-4 text-lg lg:text-xl text-white/80">{t("سجّل الدخول وابدأ بإدارة عقاراتك وعقودك ودخلك من مكان واحد.")}</p>
+              <Link
+                href="/login"
+                className="pressable mt-8 inline-flex items-center justify-center gap-2 min-h-14 px-10 rounded-2xl bg-white text-brand-950 text-lg font-bold hover:bg-white/90"
+              >
+                {t("تسجيل الدخول")}
+                <ArrowLeft size={20} className="ltr:rotate-180" />
+              </Link>
             </div>
-            <Link
-              href="/login"
-              className="pressable inline-flex items-center justify-center gap-2 min-h-12 px-7 rounded-xl bg-white text-brand-950 font-bold hover:bg-white/90 self-start lg:self-auto"
-            >
-              {t("تسجيل الدخول")}
-              <ArrowLeft size={18} className="ltr:rotate-180" />
-            </Link>
           </div>
         </section>
 
@@ -131,6 +128,58 @@ export default function LandingPage() {
         </footer>
       </PageEnter>
     </div>
+  );
+}
+
+// Wide city skyline that sits along the bottom of the closing band. Towers and
+// lit windows come from fixed patterns, so server and client render the same.
+function SkylineBackdrop() {
+  const widths = [64, 88, 56, 104, 72, 80, 60, 96];
+  const heights = [120, 200, 150, 250, 170, 220, 130, 190];
+  const fills = ["#123846", "#164557", "#1b5468", "#164557"];
+  const ground = 250;
+  let x = -10;
+  const towers: { x: number; w: number; h: number; fill: string }[] = [];
+  for (let i = 0; x < 1210; i++) {
+    const w = widths[i % widths.length];
+    towers.push({ x, w, h: heights[(i * 3) % heights.length], fill: fills[i % fills.length] });
+    x += w + 8;
+  }
+  return (
+    <svg
+      viewBox="0 0 1200 260"
+      preserveAspectRatio="xMidYMax slice"
+      aria-hidden
+      className="absolute inset-x-0 bottom-0 h-56 lg:h-72 w-full"
+    >
+      {towers.map((b, bi) => {
+        const top = ground - b.h;
+        const cols = Math.floor((b.w - 14) / 18);
+        const rows = Math.floor((b.h - 18) / 24);
+        return (
+          <g key={bi}>
+            <rect x={b.x} y={top} width={b.w} height={b.h + 10} rx="4" fill={b.fill} />
+            {Array.from({ length: rows }).flatMap((_, r) =>
+              Array.from({ length: cols }).map((__, c) => {
+                const lit = (bi * 7 + r * 5 + c * 3) % 9 === 0;
+                return (
+                  <rect
+                    key={`${r}-${c}`}
+                    x={b.x + 9 + c * 18}
+                    y={top + 12 + r * 24}
+                    width="9"
+                    height="12"
+                    rx="2"
+                    fill={lit ? "#d6a84e" : "#ffffff"}
+                    fillOpacity={lit ? 0.95 : 0.12}
+                  />
+                );
+              })
+            )}
+          </g>
+        );
+      })}
+    </svg>
   );
 }
 
