@@ -19,7 +19,7 @@ import {
   YAxis,
 } from "recharts";
 
-export const CHART_COLORS = ["#2c7e96", "#b98a2e", "#1e9558", "#d03a3a", "#2b7bd6", "#1a566a"];
+export const CHART_COLORS = ["#3b7ea8", "#b98a2e", "#1e9558", "#d03a3a", "#2b7bd6", "#255d82"];
 
 interface ChartShellProps {
   title: string;
@@ -73,8 +73,8 @@ export function RevenueAreaChart({
         <AreaChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
           <defs>
             <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#2c7e96" stopOpacity={0.35} />
-              <stop offset="95%" stopColor="#2c7e96" stopOpacity={0} />
+              <stop offset="5%" stopColor="#3b7ea8" stopOpacity={0.35} />
+              <stop offset="95%" stopColor="#3b7ea8" stopOpacity={0} />
             </linearGradient>
             <linearGradient id="expensesFill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#d03a3a" stopOpacity={0.25} />
@@ -86,7 +86,7 @@ export function RevenueAreaChart({
           <YAxis tick={{ fontSize: 11, fill: "var(--muted)" }} axisLine={false} tickLine={false} width={50} />
           <Tooltip contentStyle={tooltipStyle} formatter={(v) => (typeof v === "number" ? v.toLocaleString("ar-SA") : v)} />
           <Legend wrapperStyle={{ fontSize: 12 }} />
-          <Area type="monotone" dataKey="revenue" name="الإيرادات" stroke="#2c7e96" fill="url(#revenueFill)" strokeWidth={2.5} />
+          <Area type="monotone" dataKey="revenue" name="الإيرادات" stroke="#3b7ea8" fill="url(#revenueFill)" strokeWidth={2.5} />
           <Area type="monotone" dataKey="expenses" name="المصروفات" stroke="#d03a3a" fill="url(#expensesFill)" strokeWidth={2.5} />
         </AreaChart>
       </ResponsiveContainer>
@@ -100,7 +100,7 @@ export function BarChartCard({
   subtitle,
   dataKey,
   nameKey = "name",
-  color = "#2c7e96",
+  color = "#3b7ea8",
 }: {
   data: Record<string, string | number>[];
   title: string;

@@ -40,7 +40,7 @@ function emptyUnitForm() {
 }
 // Rotates through the map's existing marker palette (see lib/mock-data.ts)
 // instead of asking the leasing agent to pick a color for every listing.
-const MARKER_COLORS = ["#2c7e96", "#1e9558", "#d4900e", "#d03a3a", "#2b7bd6", "#1a566a"];
+const MARKER_COLORS = ["#3b7ea8", "#1e9558", "#d4900e", "#d03a3a", "#2b7bd6", "#255d82"];
 // Riyadh city-center default — still editable, since there's no map picker.
 const DEFAULT_LAT = 24.7136;
 const DEFAULT_LNG = 46.6753;

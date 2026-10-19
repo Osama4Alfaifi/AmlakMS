@@ -174,7 +174,7 @@ export default function OwnerDashboardPage() {
           </CardContent>
         </Card>
 
-        <BarChartCard data={incomeByProperty} title={t("الدخل السنوي حسب العقار")} dataKey="الدخل السنوي" color="#1a566a" />
+        <BarChartCard data={incomeByProperty} title={t("الدخل السنوي حسب العقار")} dataKey="الدخل السنوي" color="#255d82" />
 
 
 

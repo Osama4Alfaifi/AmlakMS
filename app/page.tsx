@@ -39,18 +39,18 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       <PageEnter>
-        <header className="bg-brand-950 text-white pt-[env(safe-area-inset-top)]">
+        <header className="bg-hero text-hero-fg pt-[env(safe-area-inset-top)]">
           <div className="max-w-7xl mx-auto px-4 lg:px-6 min-h-16 flex items-center justify-between gap-2">
             <div className="flex items-center gap-3">
               <LogoMark size={34} />
               <span className="text-base font-extrabold">{t("أملاك MS")}</span>
             </div>
             <div className="flex items-center gap-1">
-              <ThemeToggle tone="onDark" />
-              <LangToggle tone="onDark" />
+              <ThemeToggle tone="hero" />
+              <LangToggle tone="hero" />
               <Link
                 href="/login"
-                className="pressable inline-flex items-center min-h-11 sm:min-h-10 px-4 rounded-xl bg-white/12 text-sm font-semibold text-white hover:bg-white/20 ms-1"
+                className="pressable inline-flex items-center min-h-11 sm:min-h-10 px-4 rounded-xl bg-surface text-sm font-semibold text-foreground shadow-control hover:bg-surface-sunken ms-1"
               >
                 {t("تسجيل الدخول")}
               </Link>
@@ -62,20 +62,20 @@ export default function LandingPage() {
               <h1 className="text-[2.2rem] sm:text-5xl lg:text-[3.4rem] font-extrabold leading-[1.2]">
                 {t("أدِر عقاراتك بثقة، وتابع دخلك لحظة بلحظة")}
               </h1>
-              <p className="mt-5 text-base lg:text-lg leading-relaxed text-white/80 max-w-xl">
+              <p className="mt-5 text-base lg:text-lg leading-relaxed text-hero-muted max-w-xl">
                 {t("منصة واحدة تجمع العقارات والعقود والتحصيل والصيانة والتقارير، بصلاحيات واضحة لكل دور، على الجوال والمتصفح.")}
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link
                   href="/login?role=owner"
-                  className="pressable inline-flex items-center gap-2 min-h-12 px-6 rounded-xl bg-white text-brand-950 font-bold hover:bg-white/90"
+                  className="pressable inline-flex items-center gap-2 min-h-12 px-6 rounded-xl bg-cta text-cta-fg font-bold shadow-control hover:opacity-90"
                 >
                   {t("ابدأ الآن")}
                   <ArrowLeft size={18} className="ltr:rotate-180" />
                 </Link>
                 <Link
                   href="#features"
-                  className="pressable inline-flex items-center min-h-12 px-5 rounded-xl text-white font-semibold hover:bg-white/10"
+                  className="pressable inline-flex items-center min-h-12 px-5 rounded-xl text-hero-fg font-semibold hover:bg-hero-fg/10"
                 >
                   {t("اكتشف الميزات")}
                 </Link>
@@ -107,14 +107,14 @@ export default function LandingPage() {
         </section>
 
         <section className="max-w-7xl mx-auto px-4 lg:px-6 pt-14 lg:pt-20 pb-16">
-          <div className="relative overflow-hidden rounded-3xl bg-brand-950 text-white text-center px-6 pt-16 pb-44 lg:pt-24 lg:pb-56">
+          <div className="relative overflow-hidden rounded-3xl bg-hero text-hero-fg text-center px-6 pt-16 pb-44 lg:pt-24 lg:pb-56">
             <SkylineBackdrop />
             <div className="relative mx-auto max-w-2xl">
               <h2 className="text-3xl lg:text-5xl font-extrabold leading-tight">{t("جاهز تشوف عقاراتك بوضوح؟")}</h2>
-              <p className="mt-4 text-lg lg:text-xl text-white/80">{t("سجّل الدخول وابدأ بإدارة عقاراتك وعقودك ودخلك من مكان واحد.")}</p>
+              <p className="mt-4 text-lg lg:text-xl text-hero-muted">{t("سجّل الدخول وابدأ بإدارة عقاراتك وعقودك ودخلك من مكان واحد.")}</p>
               <Link
                 href="/login"
-                className="pressable mt-8 inline-flex items-center justify-center gap-2 min-h-14 px-10 rounded-2xl bg-white text-brand-950 text-lg font-bold hover:bg-white/90"
+                className="pressable mt-8 inline-flex items-center justify-center gap-2 min-h-14 px-10 rounded-2xl bg-cta text-cta-fg text-lg font-bold shadow-control hover:opacity-90"
               >
                 {t("تسجيل الدخول")}
                 <ArrowLeft size={20} className="ltr:rotate-180" />
@@ -136,7 +136,7 @@ export default function LandingPage() {
 function SkylineBackdrop() {
   const widths = [64, 88, 56, 104, 72, 80, 60, 96];
   const heights = [120, 200, 150, 250, 170, 220, 130, 190];
-  const fills = ["#123846", "#164557", "#1b5468", "#164557"];
+  const fills = ["var(--sky-1)", "var(--sky-2)", "var(--sky-3)", "var(--sky-2)"];
   const ground = 250;
   let x = -10;
   const towers: { x: number; w: number; h: number; fill: string }[] = [];
@@ -158,7 +158,7 @@ function SkylineBackdrop() {
         const rows = Math.floor((b.h - 18) / 24);
         return (
           <g key={bi}>
-            <rect x={b.x} y={top} width={b.w} height={b.h + 10} rx="4" fill={b.fill} />
+            <rect x={b.x} y={top} width={b.w} height={b.h + 10} rx="4" style={{ fill: b.fill }} />
             {Array.from({ length: rows }).flatMap((_, r) =>
               Array.from({ length: cols }).map((__, c) => {
                 const lit = (bi * 7 + r * 5 + c * 3) % 9 === 0;
@@ -170,8 +170,7 @@ function SkylineBackdrop() {
                     width="9"
                     height="12"
                     rx="2"
-                    fill={lit ? "#d6a84e" : "#ffffff"}
-                    fillOpacity={lit ? 0.95 : 0.12}
+                    style={{ fill: lit ? "var(--sky-lit)" : "var(--sky-win)", fillOpacity: lit ? 0.95 : "var(--sky-win-op)" }}
                   />
                 );
               })
@@ -188,24 +187,24 @@ function SkylineBackdrop() {
 // server and client always render the same picture.
 function Skyline() {
   const towers = [
-    { x: 18, w: 70, h: 150, fill: "#123846" },
-    { x: 100, w: 88, h: 250, fill: "#164557" },
-    { x: 200, w: 64, h: 190, fill: "#123846" },
-    { x: 276, w: 104, h: 300, fill: "#1b5468" },
-    { x: 392, w: 72, h: 210, fill: "#164557" },
-    { x: 474, w: 52, h: 130, fill: "#123846" },
+    { x: 18, w: 70, h: 150, fill: "var(--sky-1)" },
+    { x: 100, w: 88, h: 250, fill: "var(--sky-2)" },
+    { x: 200, w: 64, h: 190, fill: "var(--sky-1)" },
+    { x: 276, w: 104, h: 300, fill: "var(--sky-3)" },
+    { x: 392, w: 72, h: 210, fill: "var(--sky-2)" },
+    { x: 474, w: 52, h: 130, fill: "var(--sky-1)" },
   ];
   const ground = 340;
   return (
     <svg viewBox="0 0 544 360" className="w-full h-auto" role="img" aria-label="">
-      <rect x="0" y={ground} width="544" height="2" fill="#ffffff" fillOpacity="0.18" />
+      <rect x="0" y={ground} width="544" height="2" style={{ fill: "var(--hero-fg)" }} fillOpacity="0.25" />
       {towers.map((b, bi) => {
         const top = ground - b.h;
         const cols = Math.floor((b.w - 16) / 18);
         const rows = Math.floor((b.h - 20) / 24);
         return (
           <g key={bi}>
-            <rect x={b.x} y={top} width={b.w} height={b.h} rx="4" fill={b.fill} />
+            <rect x={b.x} y={top} width={b.w} height={b.h} rx="4" style={{ fill: b.fill }} />
             {Array.from({ length: rows }).flatMap((_, r) =>
               Array.from({ length: cols }).map((__, c) => {
                 const lit = (bi * 7 + r * 5 + c * 3) % 11 === 0;
@@ -217,8 +216,7 @@ function Skyline() {
                     width="9"
                     height="12"
                     rx="2"
-                    fill={lit ? "#d6a84e" : "#ffffff"}
-                    fillOpacity={lit ? 0.95 : 0.1}
+                    style={{ fill: lit ? "var(--sky-lit)" : "var(--sky-win)", fillOpacity: lit ? 0.95 : "var(--sky-win-op)" }}
                   />
                 );
               })

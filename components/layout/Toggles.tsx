@@ -4,11 +4,11 @@ import { cn } from "@/lib/cn";
 import { useLanguage } from "@/lib/i18n";
 import { GlobeIcon, MoonIcon, SunIcon } from "@/components/ui/icons";
 
-type Tone = "default" | "onDark";
+type Tone = "default" | "hero";
 
 const toneClasses: Record<Tone, string> = {
   default: "text-foreground/75 hover:bg-surface-sunken hover:text-foreground",
-  onDark: "text-white/80 hover:bg-white/10 hover:text-white",
+  hero: "text-hero-fg/80 hover:bg-hero-fg/10 hover:text-hero-fg",
 };
 
 // Both icons stay mounted and cross-fade (scale + opacity + blur) with CSS, so

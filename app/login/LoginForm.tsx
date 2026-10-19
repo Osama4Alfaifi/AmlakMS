@@ -72,18 +72,18 @@ export function LoginForm() {
 
   return (
     <div className="min-h-screen grid lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] xl:grid-cols-[minmax(0,1fr)_34rem]">
-      <aside className="hidden lg:flex flex-col justify-between bg-brand-950 text-white p-12 xl:p-16">
+      <aside className="hidden lg:flex flex-col justify-between bg-hero text-hero-fg p-12 xl:p-16">
         <Link href="/" className="flex items-center gap-3 w-fit">
           <LogoMark size={40} />
           <span className="text-lg font-extrabold">{t("أملاك MS")}</span>
         </Link>
         <div className="max-w-md">
           <h2 className="text-4xl font-extrabold leading-[1.25]">{t("كل ما يخص عقارك، في كشف واحد واضح.")}</h2>
-          <p className="mt-5 text-white/75 leading-relaxed">
+          <p className="mt-5 text-hero-muted leading-relaxed">
             {t("العقود والتحصيل والصيانة وصافي الدخل بعد المصروفات وعمولة الإدارة — محدّثة أولًا بأول لكل دور بصلاحياته.")}
           </p>
         </div>
-        <p className="text-xs text-white/60">© {new Date().getFullYear()} {t("أملاك MS")}</p>
+        <p className="text-xs text-hero-muted">© {new Date().getFullYear()} {t("أملاك MS")}</p>
       </aside>
 
       <main className="relative flex items-center justify-center p-4 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1.25rem,env(safe-area-inset-bottom))]">

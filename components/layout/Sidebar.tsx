@@ -31,8 +31,8 @@ function Brand({ action }: { action?: React.ReactNode }) {
       <div className="flex items-center gap-3">
         <LogoMark size={34} />
         <div>
-          <p className="text-[15px] font-extrabold leading-none text-white">{t("أملاك MS")}</p>
-          <p className="text-[11px] text-white/60 mt-1.5 leading-none">{t("نظام إدارة الأملاك")}</p>
+          <p className="text-[15px] font-extrabold leading-none text-rail-fg">{t("أملاك MS")}</p>
+          <p className="text-[11px] text-rail-muted mt-1.5 leading-none">{t("نظام إدارة الأملاك")}</p>
         </div>
       </div>
       {action}
@@ -50,7 +50,7 @@ function NavList({ role, customRoleId, onNavigate }: { role: Role; customRoleId?
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   return (
-    <nav className="flex-1 overflow-y-auto py-3 px-3 flex flex-col gap-0.5 [scrollbar-color:rgb(255_255_255/0.2)_transparent]">
+    <nav className="flex-1 overflow-y-auto py-3 px-3 flex flex-col gap-0.5 ">
       {items.map((item) => {
         const active = item.href === activeHref;
         const Icon = item.icon;
@@ -63,10 +63,10 @@ function NavList({ role, customRoleId, onNavigate }: { role: Role; customRoleId?
             className={cn(
               "relative flex items-center gap-3 rounded-xl px-3.5 min-h-11 lg:min-h-10 text-sm font-medium",
               "transition-[background-color,color] duration-[var(--duration-quick)] ease-[var(--ease-out)]",
-              active ? "bg-white/[0.12] text-white" : "text-white/75 hover:bg-white/[0.07] hover:text-white"
+              active ? "bg-rail-active text-rail-fg shadow-control" : "text-rail-muted hover:bg-rail-active/60 hover:text-rail-fg"
             )}
           >
-            <Icon size={18} strokeWidth={active ? 2 : 1.75} className={active ? "text-accent-400" : ""} />
+            <Icon size={18} strokeWidth={active ? 2 : 1.75} className={active ? "text-rail-icon-active" : ""} />
             <span className="truncate">{t(item.label)}</span>
           </Link>
         );
@@ -77,7 +77,7 @@ function NavList({ role, customRoleId, onNavigate }: { role: Role; customRoleId?
 
 export function Sidebar({ role, customRoleId }: { role: Role; customRoleId?: string | null }) {
   return (
-    <aside className="no-print hidden lg:flex w-64 shrink-0 flex-col bg-brand-950 sticky top-0 h-screen">
+    <aside className="no-print hidden lg:flex w-64 shrink-0 flex-col bg-rail sticky top-0 h-screen">
       <Brand />
       <NavList role={role} customRoleId={customRoleId} />
     </aside>
@@ -118,7 +118,7 @@ export function MobileSidebar({
       />
       <aside
         className={cn(
-          "absolute top-0 start-0 h-full w-[18.5rem] max-w-[85vw] bg-brand-950 flex flex-col pb-[env(safe-area-inset-bottom)] shadow-raised",
+          "absolute top-0 start-0 h-full w-[18.5rem] max-w-[85vw] bg-rail flex flex-col pb-[env(safe-area-inset-bottom)] shadow-raised",
           "transition-transform duration-[var(--duration-slow)] ease-[var(--ease-out)]",
           open ? "translate-x-0" : "ltr:-translate-x-full rtl:translate-x-full"
         )}
@@ -128,7 +128,7 @@ export function MobileSidebar({
             <button
               onClick={onClose}
               aria-label={t("إغلاق القائمة")}
-              className="pressable grid place-items-center h-11 w-11 rounded-xl text-brand-200 hover:bg-white/10 hover:text-white"
+              className="pressable grid place-items-center h-11 w-11 rounded-xl text-rail-muted hover:bg-rail-active hover:text-rail-fg"
             >
               <X size={20} />
             </button>

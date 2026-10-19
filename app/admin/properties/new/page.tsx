@@ -42,7 +42,7 @@ const LocationPicker = dynamic(() => import("@/components/map/LocationPicker").t
 const PROPERTY_TYPES: PropertyType[] = ["أرض", "عمارة", "فيلا", "مجمع تجاري مفتوح", "مجمع تجاري مغلق", "برج", "استراحة", "أخرى"];
 const DEED_TYPES = ["إلكتروني", "ورقي", "عقد إيجار", "سجل عقاري"] as const;
 const USAGE_TYPES = ["سكن عائلات", "سكن أفراد", "تجاري", "سكني-تجاري", "سكن جماعي"] as const;
-const MARKER_COLORS = ["#2c7e96", "#1e9558", "#d4900e", "#d03a3a", "#2b7bd6", "#1a566a"];
+const MARKER_COLORS = ["#3b7ea8", "#1e9558", "#d4900e", "#d03a3a", "#2b7bd6", "#255d82"];
 const METER_BILLED_TO: MeterBilledTo[] = ["المالك", "المستأجر"];
 const DEFAULT_LAT = 24.7136;
 const DEFAULT_LNG = 46.6753;

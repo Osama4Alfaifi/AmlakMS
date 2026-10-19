@@ -160,7 +160,7 @@ export default function FinancialReportsPage() {
           title="التدفق النقدي التراكمي"
           subtitle="صافي الرصيد المتراكم شهرًا بعد شهر"
           dataKey="الرصيد التراكمي"
-          color="#1a566a"
+          color="#255d82"
         />
 
         <Card>

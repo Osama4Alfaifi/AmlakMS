@@ -15,9 +15,9 @@ const ui = Tajawal({
   weight: ["400", "500", "700", "800"],
 });
 
-// Runs before first paint: restores the saved theme (or the OS preference) and
+// Runs before first paint: restores the saved theme (light by default) and
 // language so there is no flash of the wrong theme or text direction.
-const initScript = `(function(){try{var d=document.documentElement;var t=localStorage.getItem('theme');if(!t){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}d.dataset.theme=t;if(localStorage.getItem('lang')==='en'){d.lang='en';d.dir='ltr'}}catch(e){}})();`;
+const initScript = `(function(){try{var d=document.documentElement;var t=localStorage.getItem('theme');if(!t){t='light'}d.dataset.theme=t;if(localStorage.getItem('lang')==='en'){d.lang='en';d.dir='ltr'}}catch(e){}})();`;
 
 export const metadata: Metadata = {
   title: "أملاك MS | نظام إدارة الأملاك",

@@ -5,40 +5,61 @@
 
 /*
  * AmlakMS design tokens.
- * World: ledger-grade calm. Warm stone ground, deep petrol ink, one brass
- * accent used sparingly. Neutrals lean warm; brand leans cool, so the two
- * never read as the same grey-blue. Status hues sit well away from brand.
+ * Light is "soft sky": a pale blue-white ground, white surfaces and a calm
+ * mid-blue primary that stays easy on the eyes. Dark is "petrol": deep teal
+ * ink with a brass accent used sparingly. Status hues sit away from brand.
  *
- * Light is the default. Dark redefines the same names: the brand scale
- * inverts (50 = deepest tint, 900 = lightest) so `text-brand-700` stays
- * readable on either ground, while filled controls use --primary.
+ * Dark redefines the same names: the brand scale inverts (50 = deepest tint,
+ * 900 = lightest) so `text-brand-700` stays readable on either ground, while
+ * filled controls use --primary. Shell chrome (sidebar rail, landing hero) has
+ * its own tokens because it is pale in light mode and deep petrol in dark.
  */
 :root {
   color-scheme: light;
 
-  --background: #f6f5f2;
+  --background: #f4f8fb;
   --surface: #ffffff;
-  --surface-sunken: #f1efea;
-  --foreground: #121c23;
-  --muted: #56636b;
-  --border: #e4e1d9;
-  --border-strong: #cfcbc0;
+  --surface-sunken: #ebf2f7;
+  --foreground: #13222d;
+  --muted: #566a78;
+  --border: #dce6ee;
+  --border-strong: #c3d2de;
 
-  --primary: #1a566a;
-  --primary-strong: #144556;
+  --primary: #2f729c;
+  --primary-strong: #255d82;
   --on-primary: #ffffff;
 
-  --brand-50: #eef6f8;
-  --brand-100: #d9ebf0;
-  --brand-200: #b4d7e0;
-  --brand-300: #86bccb;
-  --brand-400: #4f9bb0;
-  --brand-500: #2c7e96;
-  --brand-600: #1f6a80;
-  --brand-700: #1a566a;
-  --brand-800: #144556;
-  --brand-900: #0f2f3c;
+  --brand-50: #eef5fa;
+  --brand-100: #dcebf5;
+  --brand-200: #bcd8ea;
+  --brand-300: #8fbcd9;
+  --brand-400: #5e9cc4;
+  --brand-500: #3b7ea8;
+  --brand-600: #2f729c;
+  --brand-700: #255d82;
+  --brand-800: #1d4a69;
+  --brand-900: #153650;
   --brand-950: #0a2029;
+
+  --rail: #e6f0f7;
+  --rail-fg: #16324a;
+  --rail-muted: #46647a;
+  --rail-active: #ffffff;
+  --rail-icon-active: #2f729c;
+
+  --hero: #e3eef6;
+  --hero-fg: #11273a;
+  --hero-muted: #3d5a70;
+  --cta-bg: #2f729c;
+  --cta-fg: #ffffff;
+  --sky-1: #c9deed;
+  --sky-2: #b0cde3;
+  --sky-3: #9ac0d9;
+  --sky-win: #ffffff;
+  --sky-win-op: 0.9;
+  --sky-lit: #e8a92e;
+  --logo-bg: #2f729c;
+  --logo-win: #bcd8ea;
 
   --accent-400: #d6a84e;
   --accent-500: #b98a2e;
@@ -62,7 +83,7 @@
   --info-500: #2b7bd6;
   --info-700: #1d559a;
 
-  --shadow-ring: 22 34 42;
+  --shadow-ring: 19 34 45;
 
   /* Motion */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -77,16 +98,16 @@
   :root[data-theme="dark"] {
     color-scheme: dark;
 
-    --background: #0c1318;
-    --surface: #131c22;
-    --surface-sunken: #1a252c;
-    --foreground: #eaf0f3;
-    --muted: #9fafb8;
-    --border: #243139;
-    --border-strong: #35454e;
+    --background: #09171d;
+    --surface: #102530;
+    --surface-sunken: #163240;
+    --foreground: #e9f2f5;
+    --muted: #9db6c0;
+    --border: #1f3b48;
+    --border-strong: #2f5262;
 
-    --primary: #2a7a91;
-    --primary-strong: #348aa1;
+    --primary: #2c7f98;
+    --primary-strong: #3892ab;
     --on-primary: #ffffff;
 
     --brand-50: #10262e;
@@ -99,6 +120,26 @@
     --brand-700: #9acbd9;
     --brand-800: #b6dae4;
     --brand-900: #d3ebf1;
+
+    --rail: #0a2029;
+    --rail-fg: #ffffff;
+    --rail-muted: #b9cdd5;
+    --rail-active: #1b3a46;
+    --rail-icon-active: #d6a84e;
+
+    --hero: #0a2029;
+    --hero-fg: #ffffff;
+    --hero-muted: #c4d4db;
+    --cta-bg: #ffffff;
+    --cta-fg: #0a2029;
+    --sky-1: #123846;
+    --sky-2: #164557;
+    --sky-3: #1b5468;
+    --sky-win: #ffffff;
+    --sky-win-op: 0.12;
+    --sky-lit: #d6a84e;
+    --logo-bg: #1a566a;
+    --logo-win: #86bccb;
 
     --accent-600: #d6a84e;
 
@@ -148,6 +189,17 @@
   --color-brand-800: var(--brand-800);
   --color-brand-900: var(--brand-900);
   --color-brand-950: var(--brand-950);
+
+  --color-rail: var(--rail);
+  --color-rail-fg: var(--rail-fg);
+  --color-rail-muted: var(--rail-muted);
+  --color-rail-active: var(--rail-active);
+  --color-rail-icon-active: var(--rail-icon-active);
+  --color-hero: var(--hero);
+  --color-hero-fg: var(--hero-fg);
+  --color-hero-muted: var(--hero-muted);
+  --color-cta: var(--cta-bg);
+  --color-cta-fg: var(--cta-fg);
 
   --color-accent-400: var(--accent-400);
   --color-accent-500: var(--accent-500);
