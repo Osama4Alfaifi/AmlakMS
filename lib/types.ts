@@ -191,6 +191,9 @@ export interface Contract {
   ownerId: string;
   tenantId: string;
   type: "إيجار" | "بيع" | "استثمار";
+  // For leases: residential or commercial (chosen first in the leasing agent's
+  // new-lease flow). Optional because older contracts predate it.
+  usage?: "سكني" | "تجاري";
   // تاريخ إبرام العقد — قد يسبق تاريخ بداية سريانه.
   signedAt?: string;
   startDate: string;

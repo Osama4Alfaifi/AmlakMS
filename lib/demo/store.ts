@@ -50,7 +50,9 @@ export const printablePoolId = (n: number) => `demo-${n}`;
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
 function seed(): Persisted {
-  const personas = buildPersonas();
+  // The demo agent manages two owners so the new-lease flow has properties to
+  // pick from; the shared personas (also used to seed Firebase) stay unassigned.
+  const personas = buildPersonas().map((p) => (p.id === "agent-1" ? { ...p, ownerIds: ["own-1", "own-4"] } : p));
   const uidOf = (personaId: string) => `uid-${personaId}`;
   const adminUid = uidOf("admin");
   const tenantUidByName = new Map(tenants.map((t) => [t.name, uidOf(t.id)]));

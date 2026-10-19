@@ -37,6 +37,17 @@ export default function LeasingAgentDashboardPage() {
           <StatCard label="تم تحويلهم لمستأجرين" value={String(converted)} icon={Users} tone="success" />
         </div>
 
+        <Link
+          href="/leasing-agent/contracts/new"
+          className="pressable flex items-center justify-between gap-4 rounded-2xl bg-primary text-on-primary shadow-raised hover:bg-primary-strong p-5"
+        >
+          <span>
+            <span className="block text-lg font-bold">أنشئ عقد إيجار جديد</span>
+            <span className="block text-sm text-white/85 mt-0.5">سكني أو تجاري، خطوة بخطوة، مع جدول الدفعات.</span>
+          </span>
+          <ArrowLeft size={22} className="shrink-0 ltr:rotate-180" />
+        </Link>
+
         <Card>
           <CardHeader>
             <div>

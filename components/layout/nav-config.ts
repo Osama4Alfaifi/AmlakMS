@@ -115,6 +115,7 @@ export const navByRole: Record<Role, NavItem[]> = {
   ],
   leasingAgent: [
     { label: "لوحة التحكم", href: "/leasing-agent", icon: LayoutDashboard },
+    { label: "عقد إيجار جديد", href: "/leasing-agent/contracts/new", icon: FileText },
     { label: "العملاء المحتملون", href: "/admin/leads", icon: UserPlus },
     { label: "العقارات", href: "/admin/properties", icon: Building2 },
     { label: "العروض", href: "/admin/listings", icon: Tag },
