@@ -74,7 +74,7 @@ export default function LandingPage() {
                   <ArrowLeft size={18} className="ltr:rotate-180" />
                 </Link>
                 <Link
-                  href="#features"
+                  href="/features"
                   className="pressable inline-flex items-center min-h-12 px-5 rounded-xl text-hero-fg font-semibold hover:bg-hero-fg/10"
                 >
                   {t("اكتشف الميزات")}
