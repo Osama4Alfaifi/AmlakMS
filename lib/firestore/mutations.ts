@@ -124,6 +124,11 @@ export async function createProperty(property: Omit<Property, "id">) {
 // Leasing-agent/admin only (see firestore.rules) — used by both the plain
 // "owner موجود" picker and the intake wizard's inline "مالك جديد" creation
 // (app/admin/properties/new).
+export async function updateOwner(id: string, patch: Partial<Omit<Owner, "id">>) {
+  await updateDoc(doc(getDb(), "owners", id), patch);
+  void logAudit("owners", id, "update");
+}
+
 export async function createOwner(owner: Omit<Owner, "id">) {
   const ref = await addDoc(collection(getDb(), "owners"), owner);
   void logAudit("owners", ref.id, "create", owner.name);

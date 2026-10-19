@@ -257,6 +257,10 @@ service cloud.firestore {
     // default-deny.
     match /documentLinks/{id} {
       allow read: if signedIn() && myRole() == "owner" && resource.data.ownerId == myProfile().linkedId;
+      // Leasing agents attach the deed when they onboard a new property in the
+      // new-lease flow. Unscoped for the same reason property create is: the
+      // owner may not be assigned to the agent yet.
+      allow create: if isLeasingAgent();
     }
 
     // Receipt/disbursement vouchers — accountant tooling.

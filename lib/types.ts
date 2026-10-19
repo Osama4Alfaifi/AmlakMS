@@ -51,6 +51,8 @@ export interface CustomRole {
 export type PropertyType =
   | "شقة"
   | "فيلا"
+  | "دور"
+  | "روف"
   | "محل تجاري"
   | "مكتب"
   | "أرض"
@@ -90,6 +92,8 @@ export interface Property {
   listingType: "إيجار" | "بيع" | "استثمار";
   status: PropertyStatus;
   ownerId: string;
+  // عدد الأدوار.
+  floors?: number;
   lat: number;
   lng: number;
   color: string;
@@ -121,6 +125,8 @@ export interface Property {
   electricityMeterBilledTo?: MeterBilledTo;
   waterMeterNumber?: string;
   waterMeterBilledTo?: MeterBilledTo;
+  gasMeterNumber?: string;
+  gasMeterBilledTo?: MeterBilledTo;
 }
 
 export interface Owner {
@@ -137,6 +143,8 @@ export interface Owner {
   managementFeeRate?: number;
   idNumber?: string;
   birthDate?: string;
+  // رقم الجوال المسجّل في أبشر (قد يختلف عن جوال التواصل).
+  absherPhone?: string;
 }
 
 export interface Tenant {
@@ -149,6 +157,8 @@ export interface Tenant {
   email?: string;
   idNumber?: string;
   birthDate?: string;
+  // رقم الجوال المسجّل في أبشر (قد يختلف عن جوال التواصل).
+  absherPhone?: string;
   // تاريخ انتهاء الهوية/الإقامة — يُستخدم لإصدار تنبيه قرب الانتهاء، انظر
   // computeNotifications في lib/notifications.ts.
   idExpiryDate?: string;
@@ -163,7 +173,7 @@ export interface Tenant {
 }
 
 export type ContractStatus = "نشط" | "منتهي" | "قيد التجديد";
-export type PaymentCycle = "شهري" | "ربع سنوي" | "نصف سنوي" | "سنوي";
+export type PaymentCycle = "دفعة واحدة" | "شهري" | "ربع سنوي" | "ثلث سنوي" | "نصف سنوي" | "سنوي";
 export type PaymentStatus = "مستحقة" | "مسددة";
 
 export interface ContractPayment {
@@ -483,6 +493,8 @@ export interface Unit {
   electricityMeterBilledTo?: MeterBilledTo;
   waterMeterNumber?: string;
   waterMeterBilledTo?: MeterBilledTo;
+  gasMeterNumber?: string;
+  gasMeterBilledTo?: MeterBilledTo;
 }
 
 // CRM pipeline stage for Client records of type "عميل محتمل" — see

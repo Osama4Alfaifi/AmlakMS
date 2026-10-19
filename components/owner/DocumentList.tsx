@@ -1,6 +1,7 @@
 "use client";
 
 import { ExternalLink, FileText } from "lucide-react";
+import { DocLink } from "@/components/ui/DocLink";
 import { useT } from "@/lib/i18n";
 import { Badge } from "@/components/ui/Badge";
 import type { DocumentLink } from "@/lib/types";
@@ -26,14 +27,9 @@ export function DocumentList({ documents, empty }: { documents: DocumentLink[]; 
               <span className="num">{d.createdAt}</span>
             </p>
           </div>
-          <a
-            href={d.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="pressable inline-flex items-center gap-1.5 min-h-10 px-3 rounded-xl text-sm font-semibold text-brand-700 hover:bg-brand-100"
-          >
+          <DocLink url={d.url} className="pressable inline-flex items-center gap-1.5 min-h-10 px-3 rounded-xl text-sm font-semibold text-brand-700 hover:bg-brand-100">
             <ExternalLink size={15} /> {t("فتح")}
-          </a>
+          </DocLink>
         </li>
       ))}
     </ul>

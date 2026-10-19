@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { DocLink } from "@/components/ui/DocLink";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -69,9 +70,9 @@ export default function OwnerDocumentsPage() {
                     <Td><Badge>{d.category}</Badge></Td>
                     <Td className="text-muted">{d.entityType} · {d.entityLabel}</Td>
                     <Td>
-                      <a href={d.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline">
+                      <DocLink url={d.url} className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline">
                         <ExternalLink size={14} /> فتح الرابط
-                      </a>
+                      </DocLink>
                     </Td>
                     <Td className="text-muted">{d.createdAt}</Td>
                   </Tr>

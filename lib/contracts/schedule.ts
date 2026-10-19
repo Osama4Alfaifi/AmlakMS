@@ -3,8 +3,12 @@ import type { ContractPayment, PaymentCycle } from "@/lib/types";
 const CYCLE_MONTHS: Record<PaymentCycle, number> = {
   "شهري": 1,
   "ربع سنوي": 3,
+  "ثلث سنوي": 4,
   "نصف سنوي": 6,
   "سنوي": 12,
+  // Everything up front: the cycle is longer than any contract, so the
+  // instalment count rounds down to exactly one payment on the start date.
+  "دفعة واحدة": 100000,
 };
 
 // Pure Y/M/D arithmetic via Date.UTC — parsing "YYYY-MM-DD" as local time
