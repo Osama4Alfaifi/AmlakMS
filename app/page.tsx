@@ -9,7 +9,6 @@ import {
   CalendarClock,
   FileScan,
   FileText,
-  KeyRound,
   LayoutDashboard,
   MapPin,
   Receipt,
@@ -37,11 +36,6 @@ const features = [
   { icon: Settings, title: "عربي وإنجليزي، نهاري وليلي", desc: "واجهة تدعم اللغتين والوضعين لراحة العين في أي وقت." },
 ] as const;
 
-const rolePortals = [
-  { title: "بوابة الملاك", desc: "عقاراتك وعقودك ودخلك الصافي.", href: "/login?role=owner", icon: ShieldCheck },
-  { title: "بوابة المستأجرين", desc: "العقد والفواتير وطلبات الصيانة.", href: "/login?role=tenant", icon: KeyRound },
-  { title: "بوابة فنيي الصيانة", desc: "أوامر العمل وتحديث حالتها ميدانيًا.", href: "/login?role=technician", icon: Wrench },
-] as const;
 
 export default function LandingPage() {
   const { t } = useLanguage();
@@ -114,47 +108,6 @@ export default function LandingPage() {
               })}
             </ul>
           </div>
-        </section>
-
-        <section className="max-w-7xl mx-auto px-4 lg:px-6 pt-14 lg:pt-20">
-          <h2 className="text-2xl lg:text-3xl font-extrabold">{t("لكل دور تجربته")}</h2>
-          <p className="text-muted mt-2">{t("اختر بوابتك وادخل مباشرة.")}</p>
-          <ul className="mt-6 grid md:grid-cols-3 gap-3">
-            {rolePortals.map((p, i) => {
-              const Icon = p.icon;
-              const lead = i === 0;
-              return (
-                <li key={p.title}>
-                  <Link
-                    href={p.href}
-                    className={
-                      "pressable group flex items-center gap-4 rounded-2xl p-5 min-h-24 " +
-                      (lead
-                        ? "bg-primary text-on-primary shadow-raised hover:bg-primary-strong"
-                        : "bg-surface shadow-card hover:shadow-raised")
-                    }
-                  >
-                    <span
-                      className={
-                        "h-11 w-11 shrink-0 rounded-xl grid place-items-center " +
-                        (lead ? "bg-white/15" : "bg-brand-100 text-brand-700")
-                      }
-                    >
-                      <Icon size={21} strokeWidth={1.75} />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-bold">{t(p.title)}</span>
-                      <span className={"block text-sm mt-0.5 " + (lead ? "text-white/80" : "text-muted")}>{t(p.desc)}</span>
-                    </span>
-                    <ArrowLeft
-                      size={18}
-                      className="shrink-0 ltr:rotate-180 transition-transform duration-[var(--duration-base)] ease-[var(--ease-out)] rtl:group-hover:-translate-x-1 ltr:group-hover:translate-x-1"
-                    />
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
         </section>
 
         <section className="max-w-7xl mx-auto px-4 lg:px-6 pt-14 lg:pt-20 pb-16">
