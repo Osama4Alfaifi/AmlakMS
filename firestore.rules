@@ -302,6 +302,9 @@ service cloud.firestore {
     match /quotes/{id} {
       allow read: if signedIn() && myRole() == "owner" && resource.data.ownerId == myProfile().linkedId;
       allow create: if signedIn() && myRole() == "owner" && request.resource.data.ownerId == myProfile().linkedId;
+      // Quotes moved from the owner portal to the leasing agent: agents read and
+      // create them (price quotes to clients; no owner PII beyond the client name).
+      allow read, create: if isLeasingAgent();
     }
 
     // Support tickets: anyone signed in can file one (as themselves only).

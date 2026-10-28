@@ -356,6 +356,8 @@ export type MaintenanceStatus = "جديد" | "قيد التنفيذ" | "مكتم
 export interface MaintenanceRequest {
   id: string;
   propertyId: string;
+  // The unit the request is about (set from the tenant's unit when they file it).
+  unitId?: string;
   ownerId?: string | null;
   tenantName: string;
   createdByUid?: string;

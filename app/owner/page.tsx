@@ -87,7 +87,28 @@ export default function OwnerDashboardPage() {
   return (
     <DashboardShell allow={["owner"]} title={`${t("أهلًا،")} ${currentOwner.name}`}>
       <div className="flex flex-col gap-4">
-        <Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+          <StatCard
+            label="عقاراتي"
+            value={String(myProperties.length)}
+            hint={`${totalUnits} ${t("وحدة")} · ${rentedUnits} ${t("مؤجرة")}`}
+            href="#properties"
+            icon={Building2}
+            tone="brand"
+          />
+          <StatCard label="عقود نشطة" value={String(activeContracts.length)} href="#contracts" icon={FileText} tone="success" />
+          <StatCard
+            label="كشف حسابي"
+            value={currency(netIncome)}
+            hint={t("صافي الدخل")}
+            href="#statement"
+            icon={FileScan}
+            tone="info"
+          />
+          <StatCard label="طلبات صيانة مفتوحة" value={String(openMaintenance.length)} href="#maintenance" icon={Wrench} tone="warning" />
+        </div>
+
+        <Card id="statement" className="scroll-mt-20">
           <CardHeader>
             <div>
               <CardTitle>كشف حسابي</CardTitle>
@@ -122,19 +143,6 @@ export default function OwnerDashboardPage() {
             </dl>
           </CardContent>
         </Card>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4">
-          <StatCard
-            label="عقاراتي"
-            value={String(myProperties.length)}
-            hint={`${totalUnits} ${t("وحدة")} · ${rentedUnits} ${t("مؤجرة")}`}
-            href="#properties"
-            icon={Building2}
-            tone="brand"
-          />
-          <StatCard label="عقود نشطة" value={String(activeContracts.length)} href="#contracts" icon={FileText} tone="success" />
-          <StatCard label="طلبات صيانة مفتوحة" value={String(openMaintenance.length)} href="#maintenance" icon={Wrench} tone="warning" />
-        </div>
 
         <PortfolioSection rows={portfolio} paidInstallments={paidPayments.length} amountToVerify={outstandingAmount} />
 
@@ -190,6 +198,8 @@ export default function OwnerDashboardPage() {
               <THead>
                 <Tr>
                   <Th>رقم العقد</Th>
+                  <Th>العقار</Th>
+                  <Th>الوحدة</Th>
                   <Th>القيمة</Th>
                   <Th>البداية</Th>
                   <Th>النهاية</Th>
@@ -200,6 +210,15 @@ export default function OwnerDashboardPage() {
                 {myContracts.map((c) => (
                   <Tr key={c.id}>
                     <Td className="font-semibold text-brand-700">{contractDisplayNumber(c)}</Td>
+                    <Td className="font-semibold">{myProperties.find((p) => p.id === c.propertyId)?.title ?? "—"}</Td>
+                    <Td className="text-muted">
+                      {(() => {
+                        const u = c.unitId ? units.find((x) => x.id === c.unitId) : undefined;
+                        if (u) return `${u.unitNumber} — ${u.type}`;
+                        const hasUnits = units.some((x) => x.propertyId === c.propertyId);
+                        return hasUnits ? t("كل وحدات العقار") : t("العقار كاملًا (وحدة واحدة)");
+                      })()}
+                    </Td>
                     <Td className="font-semibold">{currency(c.value)}</Td>
                     <Td className="text-muted">{c.startDate}</Td>
                     <Td className="text-muted">{c.endDate}</Td>
@@ -223,6 +242,8 @@ export default function OwnerDashboardPage() {
               <THead>
                 <Tr>
                   <Th>الطلب</Th>
+                  <Th>العقار</Th>
+                  <Th>الوحدة</Th>
                   <Th>الأولوية</Th>
                   <Th>الفني</Th>
                   <Th>الحالة</Th>
@@ -231,12 +252,21 @@ export default function OwnerDashboardPage() {
               <TBody>
                 {myMaintenance.length === 0 && (
                   <Tr>
-                    <Td colSpan={4} className="text-center text-muted py-6">{t("لا توجد طلبات صيانة حاليًا")}</Td>
+                    <Td colSpan={6} className="text-center text-muted py-6">{t("لا توجد طلبات صيانة حاليًا")}</Td>
                   </Tr>
                 )}
                 {myMaintenance.map((m) => (
                   <Tr key={m.id}>
                     <Td className="font-semibold">{m.title}</Td>
+                    <Td>{myProperties.find((p) => p.id === m.propertyId)?.title ?? "—"}</Td>
+                    <Td className="text-muted">
+                      {(() => {
+                        // Older requests have no unitId: fall back to the filing tenant's unit.
+                        const unitId = m.unitId ?? tenants.find((x) => x.name === m.tenantName && x.propertyId === m.propertyId)?.unitId;
+                        const u = unitId ? units.find((x) => x.id === unitId) : undefined;
+                        return u ? `${u.unitNumber} — ${u.type}` : "—";
+                      })()}
+                    </Td>
                     <Td><Badge>{m.priority}</Badge></Td>
                     <Td className="text-muted">{technicians.find((t) => t.id === m.technicianId)?.name ?? t("غير معيّن")}</Td>
                     <Td><Badge>{m.status}</Badge></Td>

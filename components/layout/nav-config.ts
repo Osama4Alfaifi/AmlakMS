@@ -84,10 +84,9 @@ export const navByRole: Record<Role, NavItem[]> = {
   owner: [
     { label: "لوحة التحكم", href: "/owner", icon: LayoutDashboard },
     { label: "عقاراتي", href: "/owner/properties", icon: Building2 },
-    { label: "عروض الأسعار", href: "/quotes", icon: Receipt },
     { label: "التقارير والفواتير", href: "/reports", icon: BarChart3 },
-    { label: "المستندات", href: "/owner/documents", icon: FolderOpen },
-    { label: "الخريطة التفاعلية", href: "/map", icon: MapPin },
+    { label: "العقود", href: "/owner/documents/contracts", icon: FileText },
+    { label: "وثائق أخرى", href: "/owner/documents", icon: FolderOpen },
     { label: "خدمة العملاء", href: "/support/customer", icon: Headset },
     { label: "مدير الحساب", href: "/account-manager", icon: UserCog },
   ],
@@ -120,6 +119,7 @@ export const navByRole: Record<Role, NavItem[]> = {
     { label: "العقارات", href: "/admin/properties", icon: Building2 },
     { label: "العروض", href: "/admin/listings", icon: Tag },
     { label: "العقود", href: "/admin/contracts", icon: FileText },
+    { label: "عروض الأسعار", href: "/quotes", icon: Receipt },
     { label: "الخريطة التفاعلية", href: "/map", icon: MapPin },
   ],
   maintenanceStaff: [

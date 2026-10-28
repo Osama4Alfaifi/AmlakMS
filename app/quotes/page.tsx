@@ -12,9 +12,9 @@ import { currency } from "@/lib/mock-data";
 import { downloadCsv } from "@/lib/csv";
 import { downloadExcel } from "@/lib/excel";
 import { useAuth } from "@/lib/auth-context";
-import { useFirestoreDoc, useOwnerQuotes } from "@/lib/firestore/hooks";
+import { useOwnerQuotes } from "@/lib/firestore/hooks";
 import { createQuote } from "@/lib/firestore/mutations";
-import type { InvoiceItem, Owner } from "@/lib/types";
+import type { InvoiceItem } from "@/lib/types";
 import { Download, Eye, FileSpreadsheet, Plus, Search, Trash2 } from "lucide-react";
 
 function totalOf(items: InvoiceItem[], taxRate: number) {
@@ -23,14 +23,10 @@ function totalOf(items: InvoiceItem[], taxRate: number) {
 }
 
 export default function QuotesPage() {
-  const { user, ready } = useAuth();
-  const currentOwner = useFirestoreDoc<Owner>("owners", user?.role === "owner" ? user.linkedId ?? undefined : undefined);
-  // Owner-scoped at the query level (ownerId is set on every owner-created
-  // quote — see handleSubmit) — null for admin gives the unconstrained
-  // fetch it's entitled to via the wildcard rule. Gated on `ready` first so
-  // an eventual owner never briefly fires the unconstrained branch before
-  // their role is known (see the same note in app/map/page.tsx).
-  const { data: quotesList } = useOwnerQuotes(!ready ? undefined : user?.role === "owner" ? user.linkedId ?? undefined : null);
+  const { ready } = useAuth();
+  // Quotes are a staff tool (admin and leasing agents); null = unconstrained list.
+  // Gated on `ready` so nothing fires before the role is known.
+  const { data: quotesList } = useOwnerQuotes(!ready ? undefined : null);
 
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -87,10 +83,6 @@ export default function QuotesPage() {
       number,
       clientName,
       propertyTitle,
-      // Tied to the creating owner regardless of what they typed in
-      // propertyTitle — this is what firestore.rules actually checks, not
-      // a match against the real property list (see the rules comment).
-      ownerId: user?.role === "owner" ? currentOwner?.id : undefined,
       items: items.filter((i) => i.description.trim()),
       taxRate,
       status: "مسودة",
@@ -109,14 +101,14 @@ export default function QuotesPage() {
   }
 
   return (
-    <DashboardShell allow={["admin", "owner"]} title="عروض الأسعار">
+    <DashboardShell allow={["admin", "leasingAgent"]} title="عروض الأسعار">
       <div className="flex flex-col gap-6">
         <Card>
           <CardHeader>
             <div>
               <CardTitle>عروض الأسعار</CardTitle>
               <CardSubtitle>
-                {filteredQuotes.length} من {quotesList.length} عرض سعر {user?.role === "owner" ? "لعقاراتك" : "— قابلة للتصدير كملف PDF"}
+                {filteredQuotes.length} من {quotesList.length} عرض سعر — قابلة للتصدير كملف PDF
               </CardSubtitle>
             </div>
             <div className="flex flex-wrap items-center gap-2">

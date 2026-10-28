@@ -33,6 +33,7 @@ export default function TenantMaintenancePage() {
     setSubmitting(true);
     await createMaintenanceRequest({
       propertyId: currentTenant.propertyId,
+      unitId: currentTenant.unitId || undefined,
       ownerId: myProperty?.ownerId ?? null,
       tenantName: currentTenant.name,
       createdByUid: user.uid,

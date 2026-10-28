@@ -31,7 +31,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!snap.exists) return NextResponse.json({ error: "not found" }, { status: 404 });
   const quote = { id: snap.id, ...snap.data() } as Quote;
 
-  const canView = profile.role === "admin" || (profile.role === "owner" && profile.linkedId === quote.ownerId);
+  // Quotes are a staff tool now (admin and leasing agents); an owner may still
+  // read a quote that was issued to them (matches firestore.rules).
+  const canView =
+    profile.role === "admin" ||
+    profile.role === "leasingAgent" ||
+    (profile.role === "owner" && profile.linkedId === quote.ownerId);
   if (!canView) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
   const buffer = await renderToBuffer(

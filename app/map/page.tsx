@@ -48,7 +48,7 @@ export default function MapPage() {
   );
 
   return (
-    <DashboardShell allow={["admin", "owner", "leasingAgent"]} title="الخريطة التفاعلية">
+    <DashboardShell allow={["admin", "leasingAgent"]} title="الخريطة التفاعلية">
       <div className="grid lg:grid-cols-[280px_1fr] gap-4 items-start h-[calc(100vh-8rem)]">
         <Card className="h-full overflow-y-auto">
           <CardHeader>
