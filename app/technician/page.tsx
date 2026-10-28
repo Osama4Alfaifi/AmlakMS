@@ -1,5 +1,7 @@
 "use client";
 
+import { PhotoStrip } from "@/components/ui/PhotoStrip";
+
 import { useMemo, useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { StatCard } from "@/components/ui/StatCard";
@@ -8,7 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Input, Select } from "@/components/ui/Input";
 import { Table, TBody, Td, Th, THead, Tr } from "@/components/ui/Table";
 import { useAuth } from "@/lib/auth-context";
-import { useFirestoreDoc, useMaintenanceRequests, useProperties } from "@/lib/firestore/hooks";
+import { useFirestoreDoc, useMaintenanceRequests, useProperties, useUnits } from "@/lib/firestore/hooks";
 import { claimMaintenanceRequest, updateMaintenanceRequest } from "@/lib/firestore/mutations";
 import type { MaintenanceStatus, Technician } from "@/lib/types";
 import { CheckCircle2, ClipboardList, Search, Star, Wrench } from "lucide-react";
@@ -18,6 +20,7 @@ export default function TechnicianDashboardPage() {
   const currentTechnician = useFirestoreDoc<Technician>("technicians", user?.linkedId ?? undefined);
   const { data: requests } = useMaintenanceRequests();
   const { data: properties } = useProperties();
+  const { data: units } = useUnits();
   const [query, setQuery] = useState("");
   const [priority, setPriority] = useState("الكل");
 
@@ -76,6 +79,9 @@ export default function TechnicianDashboardPage() {
                 <Tr>
                   <Th>الطلب</Th>
                   <Th>العقار</Th>
+                  <Th>الوحدة</Th>
+                  <Th>تاريخ الطلب</Th>
+                  <Th>تاريخ الرد</Th>
                   <Th>الأولوية</Th>
                   <Th>الموعد</Th>
                   <Th>الحالة</Th>
@@ -84,22 +90,37 @@ export default function TechnicianDashboardPage() {
               <TBody>
                 {filteredTasks.length === 0 && (
                   <Tr>
-                    <Td colSpan={5} className="text-center text-muted py-6">لا توجد مهام مطابقة</Td>
+                    <Td colSpan={8} className="text-center text-muted py-6">لا توجد مهام مطابقة</Td>
                   </Tr>
                 )}
                 {filteredTasks.map((r) => (
                   <Tr key={r.id}>
                     <Td className="font-semibold max-w-[200px]">
                       <span className="block truncate">{r.title}</span>
+                      <PhotoStrip photos={r.photos} />
                       <span className="block text-xs text-muted truncate">{r.description}</span>
                     </Td>
                     <Td className="text-muted max-w-[160px] truncate">{properties.find((p) => p.id === r.propertyId)?.title}</Td>
+                    <Td className="text-muted">
+                      {(() => {
+                        const u = r.unitId ? units.find((x) => x.id === r.unitId) : undefined;
+                        return u ? `${u.unitNumber} — ${u.type}` : "—";
+                      })()}
+                    </Td>
+                    <Td className="text-muted num">{r.createdAt}</Td>
+                    <Td className="text-muted num">{r.respondedAt ?? "—"}</Td>
                     <Td><Badge>{r.priority}</Badge></Td>
                     <Td className="text-muted">{r.scheduledDate ?? "—"}</Td>
                     <Td>
                       <Select
                         value={r.status}
-                        onChange={(e) => updateMaintenanceRequest(r.id, { status: e.target.value as MaintenanceStatus })}
+                        onChange={(e) =>
+                          updateMaintenanceRequest(r.id, {
+                            status: e.target.value as MaintenanceStatus,
+                            // The first status change after filing counts as the response.
+                            ...(r.respondedAt || e.target.value === "جديد" ? {} : { respondedAt: new Date().toISOString().slice(0, 10) }),
+                          })
+                        }
                         className="w-32 py-1.5 text-xs"
                       >
                         <option value="جديد">جديد</option>

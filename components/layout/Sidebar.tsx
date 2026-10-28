@@ -9,7 +9,7 @@ import type { PermissionResource, Role } from "@/lib/types";
 import { customResourceNav, navByRole, type NavItem } from "./nav-config";
 import { LogoMark } from "./Logo";
 import { useT } from "@/lib/i18n";
-import { Building2, X } from "lucide-react";
+import { Building2, Headset, X } from "lucide-react";
 
 // A "custom" role has no fixed nav — it's whatever resources the admin
 // granted it read access to (see app/admin/roles), resolved live from its
@@ -21,7 +21,8 @@ function useNavItems(role: Role, customRoleId?: string | null): NavItem[] {
   const granted = Object.entries(customRole?.permissions ?? {})
     .filter(([, perm]) => perm?.read)
     .map(([resource]) => customResourceNav[resource as PermissionResource]);
-  return [home, ...granted];
+  const support: NavItem = { label: "خدمة العملاء", href: "/support/customer", icon: Headset };
+  return [home, ...granted, support];
 }
 
 function Brand({ action }: { action?: React.ReactNode }) {

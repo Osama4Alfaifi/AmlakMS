@@ -63,6 +63,15 @@ export function ArrowDownIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function CameraIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <path d="M14.5 4h-5L8 6H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-1.5-2Z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </Base>
+  );
+}
+
 export function CheckIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Base {...props}>

@@ -32,7 +32,7 @@ export function TicketBoard({
   // "where category == X" and everyone else queries "where createdByUid ==
   // me" — an unconstrained fetch-everything-then-filter wouldn't satisfy
   // the rule for a non-staff sender.
-  const isStaff = user?.role === "admin" || (category === "الدعم الفني" && user?.role === "technician");
+  const isStaff = user?.role === "admin";
   const { data: staffTickets } = useSupportTicketsByCategory(isStaff ? category : undefined);
   const { data: myTickets } = useMySupportTickets(!isStaff ? user?.uid : undefined);
 

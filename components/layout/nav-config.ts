@@ -99,7 +99,7 @@ export const navByRole: Record<Role, NavItem[]> = {
   ],
   technician: [
     { label: "أوامر العمل", href: "/technician", icon: Wrench },
-    { label: "الدعم الفني", href: "/support/technical", icon: LifeBuoy },
+    { label: "خدمة العملاء", href: "/support/customer", icon: Headset },
   ],
   accountant: [
     { label: "لوحة التحكم", href: "/accountant", icon: LayoutDashboard },
@@ -111,6 +111,7 @@ export const navByRole: Record<Role, NavItem[]> = {
     { label: "التقارير المالية", href: "/admin/reports/financial", icon: BarChart3 },
     { label: "الدفعات القادمة", href: "/admin/reports/upcoming-payments", icon: CalendarClock },
     { label: "سجل العمليات", href: "/admin/audit-log", icon: History },
+    { label: "خدمة العملاء", href: "/support/customer", icon: Headset },
   ],
   leasingAgent: [
     { label: "لوحة التحكم", href: "/leasing-agent", icon: LayoutDashboard },
@@ -121,10 +122,12 @@ export const navByRole: Record<Role, NavItem[]> = {
     { label: "العقود", href: "/admin/contracts", icon: FileText },
     { label: "عروض الأسعار", href: "/quotes", icon: Receipt },
     { label: "الخريطة التفاعلية", href: "/map", icon: MapPin },
+    { label: "خدمة العملاء", href: "/support/customer", icon: Headset },
   ],
   maintenanceStaff: [
     { label: "طلبات الصيانة", href: "/admin/maintenance", icon: Wrench },
     { label: "المورّدون", href: "/admin/vendors", icon: Wrench },
+    { label: "خدمة العملاء", href: "/support/customer", icon: Headset },
   ],
   // Built dynamically from the account's CustomRole permissions — see
   // customResourceNav above and Sidebar.tsx. Empty here on purpose.

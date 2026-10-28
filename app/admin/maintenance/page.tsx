@@ -1,5 +1,7 @@
 "use client";
 
+import { PhotoStrip } from "@/components/ui/PhotoStrip";
+
 import { useMemo, useState } from "react";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { StatCard } from "@/components/ui/StatCard";
@@ -91,6 +93,7 @@ export default function AdminMaintenancePage() {
                   <Tr key={r.id}>
                     <Td className="font-semibold max-w-[200px]">
                       <span className="block truncate">{r.title}</span>
+                      <PhotoStrip photos={r.photos} />
                       <span className="block text-xs text-muted truncate">{r.description}</span>
                     </Td>
                     <Td className="text-muted max-w-[160px] truncate">{propertyTitleById.get(r.propertyId) ?? "—"}</Td>

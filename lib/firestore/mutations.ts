@@ -99,14 +99,18 @@ export async function createMaintenanceRequest(request: Omit<MaintenanceRequest,
 
 export async function updateMaintenanceRequest(
   id: string,
-  patch: Partial<Pick<MaintenanceRequest, "status" | "technicianId" | "vendorId" | "scheduledDate">>
+  patch: Partial<Pick<MaintenanceRequest, "status" | "technicianId" | "vendorId" | "scheduledDate" | "respondedAt">>
 ) {
   await updateDoc(doc(getDb(), "maintenanceRequests", id), patch);
   void logAudit("maintenanceRequests", id, "update");
 }
 
 export async function claimMaintenanceRequest(id: string, technicianId: string) {
-  await updateMaintenanceRequest(id, { technicianId, status: "قيد التنفيذ" as MaintenanceStatus });
+  await updateMaintenanceRequest(id, {
+    technicianId,
+    status: "قيد التنفيذ" as MaintenanceStatus,
+    respondedAt: new Date().toISOString().slice(0, 10),
+  });
 }
 
 export async function assignVendorToMaintenanceRequest(id: string, vendorId: string) {

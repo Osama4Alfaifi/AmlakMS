@@ -5,6 +5,7 @@ import Link from "next/link";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { StatCard } from "@/components/ui/StatCard";
 import { Money } from "@/components/ui/Money";
+import { PhotoStrip } from "@/components/ui/PhotoStrip";
 import { buildPortfolio, PortfolioSection } from "@/components/owner/PortfolioSection";
 import { CountUp } from "@/components/motion/CountUp";
 import { Card, CardContent, CardHeader, CardSubtitle, CardTitle } from "@/components/ui/Card";
@@ -257,7 +258,10 @@ export default function OwnerDashboardPage() {
                 )}
                 {myMaintenance.map((m) => (
                   <Tr key={m.id}>
-                    <Td className="font-semibold">{m.title}</Td>
+                    <Td className="font-semibold">
+                      {m.title}
+                      <PhotoStrip photos={m.photos} />
+                    </Td>
                     <Td>{myProperties.find((p) => p.id === m.propertyId)?.title ?? "—"}</Td>
                     <Td className="text-muted">
                       {(() => {

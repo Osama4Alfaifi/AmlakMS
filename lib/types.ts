@@ -358,6 +358,10 @@ export interface MaintenanceRequest {
   propertyId: string;
   // The unit the request is about (set from the tenant's unit when they file it).
   unitId?: string;
+  // The lease the request is filed under.
+  contractId?: string;
+  // Photos of the problem, as small JPEG data URLs (see lib/files.ts readPhoto).
+  photos?: string[];
   ownerId?: string | null;
   tenantName: string;
   createdByUid?: string;
@@ -370,6 +374,8 @@ export interface MaintenanceRequest {
   priority: Priority;
   status: MaintenanceStatus;
   createdAt: string;
+  // The day the request was first answered (a technician took it or changed its status).
+  respondedAt?: string;
   scheduledDate?: string;
 }
 
